@@ -15,9 +15,10 @@ enum QuestionType {
 model Survey {
   id          String     @id @default(cuid())
   title       String
-  description String?
-  ownerId     String     // References your .env OWNER_ID
+  ownerId     String
   createdAt   DateTime   @default(now())
+  // ADD THIS LINE
+  expiresAt   DateTime?  
   questions   Question[]
   responses   Response[]
 }
