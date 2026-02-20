@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Your config options here
+  async rewrites() {
+    return [
+      {
+        // When someone scans the QR code
+        source: '/fill/:id',
+        // Send them to your actual code folder
+        destination: '/surveys/:id',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

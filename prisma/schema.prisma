@@ -13,38 +13,40 @@ enum QuestionType {
 }
 
 model Survey {
-  id          String     @id @default(cuid())
-  title       String
-  ownerId     String
-  createdAt   DateTime   @default(now())
-  // ADD THIS LINE
-  expiresAt   DateTime?  
-  questions   Question[]
-  responses   Response[]
+  id        String     @id @default(cuid())
+  title     String
+  isActive  Boolean    @default(true)
+  expiresAt DateTime?
+  ownerId   String?    // 🚀 Added to fix admin.ts error
+  createdAt DateTime   @default(now()) // 🚀 Added to fix admin.ts error
+  questions Question[]
+  responses Response[]
 }
 
 model Question {
-  id        String       @id @default(cuid())
-  text      String
-  type      QuestionType @default(TEXT)
-  surveyId  String
-  survey    Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers   Answer[]
-}
-
-model Response {
   id        String   @id @default(cuid())
   surveyId  String
   survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers   Answer[]
-  createdAt DateTime @default(now())
+  text      String
+  type      String   // "SCORE" or "TEXT"
+  isKPI     Boolean  @default(false) // 🎯 Marks the primary metric
+}
+
+model Response {
+  id           String   @id @default(cuid())
+  surveyId     String
+  survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers      Answer[] 
+  primaryScore Float?   
+  globalScore  Float?   
+  fingerprint  String?  
+  createdAt    DateTime @default(now())
 }
 
 model Answer {
   id         String   @id @default(cuid())
-  content    String   // Stores numbers or text as a string
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   responseId String
   response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId String
+  value      String   // 🚀 code must use 'value', not 'content'
 }

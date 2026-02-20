@@ -1,93 +1,50 @@
-import { getAllSurveys, deleteSurvey } from "@/app/action/admin";
+// ✅ FIX 1: Named import for prisma (No default export)
+import { prisma } from "@/lib/prisma"; 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { AutoRefresh } from "./AutoRefresh"; 
+// ✅ FIX 2: Path is singular 'SurveyFilter' in your explorer, not plural
+import { SurveyFilters } from "./SurveyFilter"; 
 
 export default async function AdminDashboard() {
-  const surveys = await getAllSurveys();
+  const surveys = await prisma.survey.findMany({
+    include: { responses: true },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // 📈 REGIONAL BASELINE LOGIC
+  // ✅ FIX 3: Explicitly type 's' and 'r' to remove 'implicitly any' errors
+  const allGlobalScores = surveys.flatMap((s: any) => 
+    s.responses.map((r: any) => r.globalScore).filter(Boolean)
+  ) as number[];
+
+  const regionalAvg = allGlobalScores.length > 0 
+    ? allGlobalScores.reduce((a: number, b: number) => a + b, 0) / allGlobalScores.length 
+    : 0;
 
   return (
-    <div className="p-10 text-white max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage and track regional assessments</p>
-        </div>
-        <Link 
-          href="/surveys/new" 
-          className="bg-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition shadow-lg flex items-center gap-2"
-        >
-          <span>+</span> Create New
-        </Link>
-      </div>
-
-      <div className="grid gap-4">
-        {surveys.length === 0 ? (
-          <div className="text-center py-20 bg-gray-900/50 rounded-2xl border border-gray-800 border-dashed text-gray-500">
-            No assessments found.
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
+      <div className="max-w-6xl mx-auto">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-white/5 pb-8 gap-6">
+          <div>
+            <h1 className="text-5xl font-black italic uppercase tracking-tighter">Regional Console</h1>
+            <p className="text-blue-500 text-xs font-bold uppercase tracking-[0.4em]">System Command & Control</p>
           </div>
-        ) : (
-          surveys.map((survey) => {
-            // Check if deadline has passed
-            const isExpired = survey.expiresAt && new Date() > new Date(survey.expiresAt);
-            
-            return (
-              <div key={survey.id} className="bg-gray-900 p-6 rounded-2xl border border-gray-800 flex flex-col md:flex-row justify-between items-center group hover:border-blue-500/30 transition-all">
-                <div className="mb-4 md:mb-0">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-white">{survey.title}</h2>
-                    {isExpired && (
-                      <span className="bg-red-500/10 text-red-500 text-[10px] px-2 py-0.5 rounded-full border border-red-500/20 font-bold uppercase tracking-wider">
-                        Expired
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-2">
-                    <span>Created: {new Date(survey.createdAt).toLocaleDateString()}</span>
-                    {survey.expiresAt && (
-                      <span className={isExpired ? "text-red-400" : "text-yellow-500"}>
-                        {/* UPDATED: Added time formatting below */}
-                        Deadline: {new Date(survey.expiresAt).toLocaleString([], { 
-                          day: 'numeric', 
-                          month: 'numeric', 
-                          year: 'numeric', 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
-                  <div className="text-center">
-                    <span className="block text-2xl font-bold text-blue-400">
-                      {survey._count.responses}
-                    </span>
-                    <span className="text-[10px] text-gray-500 uppercase font-bold">Responses</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Link 
-                      href={`/surveys/${survey.id}`}
-                      className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-sm font-medium transition"
-                    >
-                      Analysis
-                    </Link>
+          
+          <div className="flex items-center gap-6">
+            <AutoRefresh /> 
+            <Link href="/surveys/new" className="px-8 py-3 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full">+ New Survey</Link>
+            <UserButton afterSignOutUrl="/" />
+          </div>
+        </header>
 
-                    <form action={async () => {
-                      "use server";
-                      await deleteSurvey(survey.id);
-                    }}>
-                      <button className="p-2 text-gray-600 hover:text-red-500 transition-colors rounded-lg border border-transparent hover:border-red-500/20">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
+        <div className="mb-8 p-8 bg-blue-600/5 border border-blue-500/20 rounded-[2.5rem]">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-1">Regional Performance Baseline</p>
+          <h2 className="text-5xl font-black italic">{regionalAvg.toFixed(2)} <span className="text-sm opacity-30 not-italic">/ 5.0</span></h2>
+        </div>
+
+        {/* ✅ Logic and UI mapping handled in SurveyFilter.tsx */}
+        <SurveyFilters surveys={surveys} regionalAvg={regionalAvg} />
       </div>
     </div>
   );

@@ -2,37 +2,37 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server"; // <--- 1. Import Auth
+import { auth } from "@clerk/nextjs/server"; 
 
-// 1. CREATE SURVEY (Updated with Deadline)
+// 1. CREATE SURVEY
 export async function createDynamicSurvey(formData: FormData) {
-  // --- SECURITY CHECK START ---
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID;
+  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
   
-  // If no one is logged in, or the logged-in user isn't the owner
   if (!userId || userId !== ownerId) {
-    throw new Error("Unauthorized: Only the owner can create surveys.");
+    throw new Error("Unauthorized");
   }
-  // --- SECURITY CHECK END ---
 
   const title = formData.get("title") as string;
   const deadline = formData.get("deadline") as string; 
-  
-  // We use the ACTUAL logged-in user ID now, not "default-admin"
   const texts = formData.getAll("qText") as string[];
   const types = formData.getAll("qType") as any[];
 
-  const survey = await prisma.survey.create({
+  let kpiFound = false;
+
+await prisma.survey.create({
     data: {
       title,
-      ownerId: userId, // Link to the real user
+      ownerId: userId,
       expiresAt: deadline ? new Date(deadline) : null,
+      isActive: true,
       questions: {
-        create: texts.map((text, i) => ({
-          text,
-          type: types[i],
-        })),
+        create: texts.map((text, i) => {
+          const isScore = types[i] === "SCORE";
+          const isKPI = isScore && !kpiFound;
+          if (isKPI) kpiFound = true;
+          return { text, type: types[i], isKPI };
+        }),
       },
     },
   });
@@ -41,12 +41,29 @@ export async function createDynamicSurvey(formData: FormData) {
   redirect("/admin");
 }
 
-// 2. DELETE SURVEY (Secured)
+// 2. MANUAL TOGGLE ACTION (The "Close Survey" Button Engine)
+export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
+  const { userId } = await auth();
+  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+
+  if (!userId || userId !== ownerId) return;
+
+  await prisma.survey.update({
+    where: { id },
+    data: { isActive: !currentStatus }, // Flips true to false, or false to true
+  });
+
+  // Revalidate both the admin dashboard and the public survey page
+  revalidatePath("/admin");
+  revalidatePath(`/surveys/${id}`);
+}
+
+// 3. DELETE SURVEY
 export async function deleteSurvey(surveyId: string) {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID;
+  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
 
-  if (!surveyId || userId !== ownerId) return; // Silent fail if not owner
+  if (!surveyId || userId !== ownerId) return;
 
   try {
     await prisma.survey.delete({
@@ -58,77 +75,61 @@ export async function deleteSurvey(surveyId: string) {
   }
 }
 
-// 3. GET SINGLE SURVEY (Public - No Auth needed for analysis usually, but you can lock it too)
-export async function getDetailedAnalysis(surveyId: string) {
-  if (!surveyId || surveyId === "undefined") return null;
-
-  return await prisma.survey.findUnique({
-    where: { id: surveyId },
-    include: {
-      questions: true,
-      responses: {
-        include: { answers: true }
-      }
-    }
-  });
-}
-
-// 4. GET ALL SURVEYS (SECURED - The most important part)
 export async function getAllSurveys() {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
 
-  // Security: If not logged in or not the owner, return empty list
-  if (!userId || userId !== ownerId) {
-    return []; 
-  }
+  if (!userId || userId !== ownerId) return []; 
 
   try {
-    const surveys = await prisma.survey.findMany({
-      where: { ownerId: userId }, // Only fetch YOUR surveys
+    return await prisma.survey.findMany({
+      where: { ownerId: userId }, 
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        expiresAt: true,
+        isActive: true,
         _count: { select: { responses: true } },
-      },
+        // 🚀 Add this to see scores on dashboard
+        responses: {
+          select: { primaryScore: true, globalScore: true }
+        }
+      }
     });
-    return surveys;
   } catch (error) {
     console.error("Failed to fetch surveys:", error);
     return [];
   }
 }
 
-// 5. UPDATE SURVEY (Copy and paste this at the bottom)
+// 5. UPDATE SURVEY (Improved with status support)
 export async function updateSurvey(formData: FormData) {
-  "use server";
-  // 1. Get the current user
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID;
+  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
 
-  // 2. Security Check
-  if (!userId || userId !== ownerId) {
-    throw new Error("Unauthorized");
-  }
+  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
 
-  // 3. Get Data from Form
   const id = formData.get("id") as string;
   const title = formData.get("title") as string;
   const deadline = formData.get("deadline") as string;
-  
-  // Get Question Data
   const qIds = formData.getAll("qId") as string[];
   const qTexts = formData.getAll("qText") as string[];
+  
+  // Optional: Check if status was toggled in an edit form
+  const statusInput = formData.get("isActive");
+  const isActive = statusInput === null ? undefined : statusInput === "true";
 
-  // 4. Update Title & Deadline
   await prisma.survey.update({
     where: { id },
     data: {
       title,
       expiresAt: deadline ? new Date(deadline) : null,
+      ...(isActive !== undefined && { isActive }),
     },
   });
 
-  // 5. Update Each Question
   await Promise.all(
     qIds.map((qId, index) => 
       prisma.question.update({
@@ -138,7 +139,27 @@ export async function updateSurvey(formData: FormData) {
     )
   );
 
-  // 6. Refresh and Go Back
   revalidatePath("/admin");
+  revalidatePath(`/surveys/${id}/results`); 
+  revalidatePath(`/surveys/${id}`); 
+  
   redirect("/admin");
+}
+
+export async function getDetailedAnalysis(surveyId: string) {
+  const { userId } = await auth();
+  const ownerId = process.env.OWNER_ID;
+
+  if (!userId || userId !== ownerId) return null;
+
+  return await prisma.survey.findUnique({
+    where: { id: surveyId },
+    include: {
+      questions: true,
+      responses: {
+        include: { answers: true },
+        orderBy: { createdAt: 'desc' }
+      }
+    }
+  });
 }

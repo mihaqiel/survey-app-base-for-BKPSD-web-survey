@@ -1,130 +1,96 @@
-import { getDetailedAnalysis } from "@/app/action/admin";
-import ShareCard from "./ShareCard"; 
-import ExportButton from "./ExportButton"; // <--- The new Export feature
-import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import { submitResponse } from "@/app/action/submit";
 
-// Helper function to color-code the ratings
-const getRatingBadge = (value: string) => {
-  switch (value) {
-    case "1": return <span className="px-3 py-1 rounded bg-red-900 text-red-200 border border-red-700 text-xs font-bold">POOR</span>;
-    case "2": return <span className="px-3 py-1 rounded bg-orange-900 text-orange-200 border border-orange-700 text-xs font-bold">FAIR</span>;
-    case "3": return <span className="px-3 py-1 rounded bg-blue-900 text-blue-200 border border-blue-700 text-xs font-bold">GOOD</span>;
-    case "4": return <span className="px-3 py-1 rounded bg-green-900 text-green-200 border border-green-700 text-xs font-bold">EXCELLENT</span>;
-    default: return <span className="text-gray-500">-</span>;
-  }
-};
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default async function SurveyAnalysisPage({ params }: { params: Promise<{ id: string }> }) {
-  // 1. Get the ID from the URL
+export default async function SurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
-  // 2. Fetch the survey data
-  const survey = await getDetailedAnalysis(id);
 
-  // --- SAFETY CHECK: If survey doesn't exist, show this instead of crashing ---
-  if (!survey) {
+  const survey = await prisma.survey.findUnique({
+    where: { id },
+    include: { questions: true }, 
+  });
+
+  if (!survey) return notFound();
+
+  // 🕒 UTC-SAFE COMPARISON
+  const now = new Date();
+  const deadline = survey.expiresAt ? new Date(survey.expiresAt) : null;
+  const isExpired = deadline ? now.getTime() > deadline.getTime() : false;
+
+  if (isExpired) {
     return (
-      <div className="p-10 text-white max-w-2xl mx-auto mt-10 border border-red-500 bg-red-900/20 rounded-xl">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">⚠️ Assessment Not Found</h1>
-        <p className="mb-4">We looked for ID: <span className="font-mono bg-black p-1 rounded text-yellow-400">{id}</span></p>
-        <Link href="/admin" className="bg-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-blue-500">
-          Return to Admin Dashboard
-        </Link>
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+        <div className="bg-gray-900 p-12 rounded-[2.5rem] border border-red-900/20 text-center max-w-md shadow-2xl relative overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-1 bg-red-600/50" />
+           <div className="bg-red-500/10 text-red-500 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
+             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+           </div>
+           <h1 className="text-4xl font-black mb-4 tracking-tighter uppercase italic">Assessment Closed</h1>
+           <p className="text-gray-400 mb-8 leading-relaxed font-medium">
+             The deadline for <span className="text-white font-bold">"{survey.title}"</span> has passed. 
+           </p>
+           <div className="text-[10px] text-gray-500 bg-black/50 py-3 px-6 rounded-full border border-gray-800 inline-block uppercase tracking-[0.3em] font-black">
+             Closed: {deadline?.toLocaleString()}
+           </div>
+        </div>
       </div>
     );
   }
 
-  // --- MAIN PAGE UI ---
   return (
-    <div className="p-10 text-white min-h-screen max-w-6xl mx-auto">
-      <Link href="/admin" className="text-gray-400 hover:text-white mb-6 inline-block transition-colors">
-        ← Back to Dashboard
-      </Link>
+    <div className="min-h-screen bg-black text-white p-6 flex justify-center">
+      <div className="max-w-2xl w-full">
+        {/* DEBUG BADGE: Delete this once testing is done */}
+        <div className="mb-4 text-center">
+            <span className="text-[10px] bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-800">
+                Server Time: {now.toLocaleTimeString()} | Deadline: {deadline ? deadline.toLocaleTimeString() : "None"}
+            </span>
+        </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        {/* LEFT: Survey Info & Stats */}
-        <div className="md:col-span-2 space-y-6">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">{survey.title}</h1>
-            <p className="text-gray-400">Manage responses and export data.</p>
-          </div>
-          
-          <div className="flex gap-4">
-            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1">
-              <span className="block text-4xl font-bold text-white mb-1">{survey.responses.length}</span>
-              <span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Total Responses</span>
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-black mb-3 tracking-tight">{survey.title}</h1>
+          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em]">Public Assessment Portal</p>
+        </div>
+
+        <form action={submitResponse} className="space-y-8">
+          <input type="hidden" name="surveyId" value={survey.id} />
+          {survey.questions.map((q: any, i: number) => (
+            <div key={q.id} className="bg-gray-900 p-8 rounded-[4xl] border border-gray-800 shadow-xl transition-all hover:border-blue-500/20">
+              <label className="block text-xl mb-6 font-bold leading-tight">
+                <span className="text-blue-600 mr-3 opacity-40 font-mono">#{i + 1}</span>
+                {q.text}
+              </label>
+
+              {q.type === "SCORE" ? (
+                <div className="flex justify-between gap-3">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <label key={num} className="flex-1 cursor-pointer group">
+                      <input type="radio" name={`answer_${q.id}`} value={num} required className="peer hidden" />
+                      <div className="py-5 text-center rounded-2xl bg-gray-800 border border-gray-700 text-xl font-black text-gray-500 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 transition-all hover:bg-gray-750 group-hover:scale-105 active:scale-95">
+                        {num}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <textarea 
+                  name={`answer_${q.id}`} 
+                  required 
+                  rows={4} 
+                  placeholder="Provide detailed feedback..."
+                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl p-5 text-white outline-none focus:border-blue-600 transition-all font-medium" 
+                />
+              )}
             </div>
-            
-            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1">
-               <span className="block text-4xl font-bold text-blue-400 mb-1">{survey.questions.length}</span>
-               <span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Questions</span>
-            </div>
-          </div>
-        </div>
+          ))}
 
-        {/* RIGHT: Share & QR Code Card (Client Component) */}
-        <div>
-          <ShareCard surveyId={id} />
-        </div>
-      </div>
-
-      {/* --- DATA TABLE SECTION --- */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-2xl">
-        
-        {/* HEADER BAR WITH EXPORT BUTTON */}
-        <div className="p-4 border-b border-gray-800 bg-gray-950 flex justify-between items-center">
-          <h3 className="font-bold text-gray-200">Detailed Responses</h3>
-          
-          <div className="flex gap-3 items-center">
-             {/* The Export Button Component */}
-             <ExportButton survey={survey} /> 
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-950 text-left">
-                <th className="p-4 text-gray-400 text-sm font-medium border-b border-gray-800 w-48">Date Submitted</th>
-                {survey.questions.map((q) => (
-                  <th key={q.id} className="p-4 text-gray-300 text-sm font-medium border-b border-gray-800 min-w-[200]">
-                    {q.text}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {survey.responses.map((resp) => (
-                <tr key={resp.id} className="hover:bg-gray-800/50 transition-colors">
-                  <td className="p-4 text-sm text-gray-500 font-mono">
-                    {new Date(resp.createdAt).toLocaleString()}
-                  </td>
-                  {survey.questions.map((q) => {
-                    const answer = resp.answers.find((a) => a.questionId === q.id);
-                    return (
-                      <td key={q.id} className="p-4">
-                        {answer ? (
-                          q.type === "SCORE" ? getRatingBadge(answer.content) : (
-                            <span className="text-gray-300 text-sm block max-w-xs">{answer.content}</span>
-                          )
-                        ) : (
-                          <span className="text-gray-600 italic text-xs">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {survey.responses.length === 0 && (
-            <div className="p-12 text-center flex flex-col items-center justify-center text-gray-500">
-              <p className="mb-2 text-lg">No responses yet</p>
-              <p className="text-sm">Scan the QR code above to submit the first test.</p>
-            </div>
-          )}
-        </div>
+          <button type="submit" className="w-full bg-blue-600 py-6 rounded-2xl font-black text-xl hover:bg-blue-500 shadow-2xl shadow-blue-900/30 transition-all active:scale-[0.98] uppercase tracking-widest">
+            Submit Assessment
+          </button>
+        </form>
       </div>
     </div>
   );
