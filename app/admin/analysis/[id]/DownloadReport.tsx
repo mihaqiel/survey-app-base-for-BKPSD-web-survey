@@ -1,35 +1,54 @@
 "use client";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
-export function DownloadReport({ title }: { title: string }) {
-  const handleDownload = async () => {
-    const element = document.getElementById("analysis-report");
-    if (!element) return;
+export function DownloadReport({ title, survey }: { title: string, survey: any }) {
+  const handleExportExcel = () => {
+    if (!survey) return;
 
-    // 🚀 Logic: Create a high-quality capture of the dashboard [cite: 2026-02-17]
-    const canvas = await html2canvas(element, {
-      scale: 2, // High resolution for professional printing
-      useCORS: true,
-      backgroundColor: "#000000", // Maintain your Command Center theme
+    // 🎨 Label Mapping for Surgical Clarity
+    const labels: Record<string, string> = {
+      "5": "Excellent",
+      "4": "Very Good",
+      "3": "Good",
+      "2": "Fair",
+      "1": "Poor"
+    };
+
+    const dataToExport = survey.responses.map((resp: any) => {
+      const row: any = {
+        "Submission Date": new Date(resp.createdAt).toLocaleDateString(),
+      };
+
+      // ✅ Map individual question scores with labels
+      survey.questions.forEach((q: any) => {
+        const answer = resp.answers.find((a: any) => a.questionId === q.id);
+        const val = answer?.value || answer?.content || "-";
+        
+        row[q.text] = q.type === "SCORE" && labels[val] 
+          ? `${labels[val]} (${val})` 
+          : val;
+      });
+
+      // ✅ Include your "Perfect Mean" and Index math
+      row["Mean Score"] = resp.primaryScore.toFixed(2);
+      row["Index (%)"] = `${resp.globalScore}%`;
+      return row;
     });
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    // Generate and Download Workbook
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Regional Analysis");
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${title.replace(/\s+/g, "_")}_Report.pdf`);
+    XLSX.writeFile(workbook, `${title.replace(/\s+/g, "_")}_Results.xlsx`);
   };
 
   return (
     <button 
-      onClick={handleDownload}
-      className="no-print bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-8 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+      onClick={handleExportExcel}
+      className="no-print bg-green-600 hover:bg-green-500 text-white font-black py-4 px-8 rounded-2xl transition-all active:scale-95 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(34,197,94,0.3)] border-b-4 border-green-800 italic"
     >
-      Download Regional Report
+      ↓ Export to Excel
     </button>
   );
 }

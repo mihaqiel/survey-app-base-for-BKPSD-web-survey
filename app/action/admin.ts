@@ -4,16 +4,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server"; 
 
-// ✅ 1. NEW: CLEAR ALL RESPONSES (WIPE DATA)
-// This safely clears the "Bad Math" from old test runs
+// 1. CLEAR ALL RESPONSES
 export async function clearAllResponses() {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) throw new Error("Unauthorized");
 
   try {
-    // ⚠️ This deletes the scores but keeps your Surveys and Questions intact.
     await prisma.response.deleteMany({});
     revalidatePath("/admin");
   } catch (error) {
@@ -21,14 +19,12 @@ export async function clearAllResponses() {
   }
 }
 
-// 2. CREATE SURVEY (STABLE)
+// 2. CREATE SURVEY (STABLE 1-5 ALIGNMENT)
 export async function createDynamicSurvey(formData: FormData) {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
   
-  if (!userId || userId !== ownerId) {
-    throw new Error("Unauthorized");
-  }
+  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
 
   const title = formData.get("title") as string;
   const deadline = formData.get("deadline") as string; 
@@ -46,8 +42,9 @@ export async function createDynamicSurvey(formData: FormData) {
       questions: {
         create: texts.map((text, i) => {
           const isScore = types[i] === "SCORE";
-          const isKPI = isScore && !kpiFound; // First numeric question is marked as KPI
+          const isKPI = isScore && !kpiFound; 
           if (isKPI) kpiFound = true;
+          
           return { text, type: types[i], isKPI };
         }),
       },
@@ -58,10 +55,10 @@ export async function createDynamicSurvey(formData: FormData) {
   redirect("/admin");
 }
 
-// 3. MANUAL TOGGLE ACTION (STABLE)
+// 3. MANUAL TOGGLE ACTION
 export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) return;
 
@@ -74,10 +71,10 @@ export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
   revalidatePath(`/surveys/${id}`);
 }
 
-// 4. DELETE SURVEY (STABLE)
+// 4. DELETE SURVEY
 export async function deleteSurvey(surveyId: string) {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
 
   if (!surveyId || userId !== ownerId) return;
 
@@ -91,10 +88,10 @@ export async function deleteSurvey(surveyId: string) {
   }
 }
 
-// 5. GET ALL SURVEYS (UPDATED FOR ONE-SURVEY LOGIC)
+// 5. GET ALL SURVEYS (STABLE ONE-SURVEY LOGIC)
 export async function getAllSurveys() {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) return []; 
 
@@ -109,7 +106,6 @@ export async function getAllSurveys() {
         expiresAt: true,
         isActive: true,
         _count: { select: { responses: true } },
-        // ✅ FIX: Ensures the dashboard only pulls the latest scores
         responses: {
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -123,10 +119,10 @@ export async function getAllSurveys() {
   }
 }
 
-// 6. UPDATE SURVEY (STABLE)
+// 6. UPDATE SURVEY
 export async function updateSurvey(formData: FormData) {
   const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+  const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) throw new Error("Unauthorized");
 
@@ -160,11 +156,10 @@ export async function updateSurvey(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath(`/surveys/${id}/results`); 
   revalidatePath(`/surveys/${id}`); 
-  
   redirect("/admin");
 }
 
-// 7. GET DETAILED ANALYSIS (STABLE)
+// 7. GET DETAILED ANALYSIS (FIXED TYPING ERROR)
 export async function getDetailedAnalysis(surveyId: string) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID;
@@ -174,6 +169,7 @@ export async function getDetailedAnalysis(surveyId: string) {
   return await prisma.survey.findUnique({
     where: { id: surveyId },
     include: {
+      // ✅ REMOVED 'orderBy' to fix the Prisma property error
       questions: true,
       responses: {
         include: { answers: true },

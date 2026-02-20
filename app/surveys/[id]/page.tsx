@@ -5,6 +5,9 @@ import { submitResponse } from "@/app/action/submit";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// 🏷️ Labels for the 1-5 Scale to match Admin Analysis
+const RATING_LABELS = ["Poor", "Fair", "Good", "Very Good", "Excellent"];
+
 export default async function SurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -15,7 +18,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
 
   if (!survey) return notFound();
 
-  // 🕒 UTC-SAFE COMPARISON
+  // 🕒 UTC-SAFE COMPARISON (Preserved from original code)
   const now = new Date();
   const deadline = survey.expiresAt ? new Date(survey.expiresAt) : null;
   const isExpired = deadline ? now.getTime() > deadline.getTime() : false;
@@ -43,34 +46,39 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
   return (
     <div className="min-h-screen bg-black text-white p-6 flex justify-center">
       <div className="max-w-2xl w-full">
-        {/* DEBUG BADGE: Delete this once testing is done */}
+        {/* DEBUG BADGE */}
         <div className="mb-4 text-center">
-            <span className="text-[10px] bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-800">
-                Server Time: {now.toLocaleTimeString()} | Deadline: {deadline ? deadline.toLocaleTimeString() : "None"}
+            <span className="text-[10px] bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-800 font-bold uppercase tracking-widest">
+                Server Status: Active | Deadline: {deadline ? deadline.toLocaleTimeString() : "None"}
             </span>
         </div>
 
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-black mb-3 tracking-tight">{survey.title}</h1>
-          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em]">Public Assessment Portal</p>
+          <h1 className="text-4xl font-black mb-3 tracking-tighter italic uppercase leading-none">{survey.title}</h1>
+          <p className="text-blue-500 font-black uppercase text-[10px] tracking-[0.4em]">Public Assessment Portal</p>
         </div>
 
         <form action={submitResponse} className="space-y-8">
           <input type="hidden" name="surveyId" value={survey.id} />
+          
           {survey.questions.map((q: any, i: number) => (
-            <div key={q.id} className="bg-gray-900 p-8 rounded-[4xl] border border-gray-800 shadow-xl transition-all hover:border-blue-500/20">
-              <label className="block text-xl mb-6 font-bold leading-tight">
-                <span className="text-blue-600 mr-3 opacity-40 font-mono">#{i + 1}</span>
+            <div key={q.id} className="bg-gray-900/50 p-10 rounded-[2.5rem] border border-white/5 shadow-2xl transition-all hover:border-blue-500/20 group">
+              <label className="block text-xl mb-10 font-black italic uppercase tracking-tighter leading-tight group-hover:text-blue-400 transition-colors">
+                <span className="text-blue-600 mr-3 opacity-30 font-black not-italic">#{i + 1}</span>
                 {q.text}
               </label>
 
               {q.type === "SCORE" ? (
-                <div className="flex justify-between gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   {[1, 2, 3, 4, 5].map((num) => (
-                    <label key={num} className="flex-1 cursor-pointer group">
+                    <label key={num} className="flex-1 cursor-pointer group/item">
                       <input type="radio" name={`answer_${q.id}`} value={num} required className="peer hidden" />
-                      <div className="py-5 text-center rounded-2xl bg-gray-800 border border-gray-700 text-xl font-black text-gray-500 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 transition-all hover:bg-gray-750 group-hover:scale-105 active:scale-95">
-                        {num}
+                      <div className="py-6 flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[0.03] border border-white/5 text-gray-500 transition-all peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 hover:bg-white/[0.08] active:scale-95 peer-checked:scale-[1.05]">
+                        <span className="text-3xl font-black italic tracking-tighter">{num}</span>
+                        {/* ✅ "Excellent" label now visible under 5 */}
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-30 peer-checked:opacity-100 transition-opacity">
+                          {RATING_LABELS[num - 1]}
+                        </span>
                       </div>
                     </label>
                   ))}
@@ -80,17 +88,21 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
                   name={`answer_${q.id}`} 
                   required 
                   rows={4} 
-                  placeholder="Provide detailed feedback..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-2xl p-5 text-white outline-none focus:border-blue-600 transition-all font-medium" 
+                  placeholder="Provide detailed regional feedback..."
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 text-white outline-none focus:border-blue-600 focus:bg-white/[0.06] transition-all font-medium placeholder:text-gray-800 text-sm" 
                 />
               )}
             </div>
           ))}
 
-          <button type="submit" className="w-full bg-blue-600 py-6 rounded-2xl font-black text-xl hover:bg-blue-500 shadow-2xl shadow-blue-900/30 transition-all active:scale-[0.98] uppercase tracking-widest">
+          <button type="submit" className="w-full bg-blue-600 py-7 rounded-[2.5rem] font-black text-xl hover:bg-blue-500 shadow-[0_20px_50px_rgba(37,99,235,0.3)] transition-all active:scale-[0.98] uppercase tracking-[0.3em] italic border-b-4 border-blue-800">
             Submit Assessment
           </button>
         </form>
+
+        <footer className="mt-12 text-center opacity-20">
+          <p className="text-[8px] font-black uppercase tracking-widest">Powered by Regional Node Command</p>
+        </footer>
       </div>
     </div>
   );
