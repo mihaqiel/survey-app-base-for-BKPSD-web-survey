@@ -6,30 +6,23 @@ import { deleteSurvey } from "@/app/action/admin";
 
 interface SurveyFiltersProps {
   surveys: any[];
-  regionalAvg: number;
 }
 
-export function SurveyFilters({ surveys, regionalAvg }: SurveyFiltersProps) {
+export function SurveyFilters({ surveys }: SurveyFiltersProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [minScore, setMinScore] = useState(0);
 
-  // 🚀 Logic: Filter surveys based on search text and KPI threshold
+  // 🚀 Logic: Filter based on node title.
   const filteredSurveys = useMemo(() => {
-    return surveys.filter((s) => {
-      const titleMatch = s.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const responses = s.responses || [];
-      const avgKPI = responses.length > 0 
-        ? responses.reduce((a: number, b: any) => a + (b.primaryScore || 0), 0) / responses.length 
-        : 0;
-      return titleMatch && avgKPI >= minScore;
-    });
-  }, [surveys, searchTerm, minScore]);
+    return surveys.filter((s) => 
+      s.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [surveys, searchTerm]);
 
   return (
     <div className="space-y-8">
-      {/* 🔍 Search & Filter Control UI */}
+      {/* 🔍 Search UI (Clean & Optimized) */}
       <div className="flex flex-col md:flex-row gap-4 no-print">
-        <div className="flex-1 bg-[#0A0A0A] border border-white/5 rounded-2xl p-2 flex items-center px-4">
+        <div className="flex-1 bg-[#0A0A0A] border border-white/5 rounded-2xl p-2 flex items-center px-4 focus-within:border-blue-500/50 transition-all">
           <span className="opacity-30 mr-3 text-sm">🔍</span>
           <input 
             type="text" 
@@ -38,67 +31,61 @@ export function SurveyFilters({ surveys, regionalAvg }: SurveyFiltersProps) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
-        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-4 flex items-center gap-4 min-w-[280px]">
-          <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-white">Min KPI: {minScore.toFixed(1)}</span>
-          <input 
-            type="range" min="0" max="5" step="0.5" 
-            value={minScore}
-            onChange={(e) => setMinScore(parseFloat(e.target.value))}
-            className="flex-1 accent-blue-600 cursor-pointer"
-          />
-        </div>
+        {/* ✅ DISCARDED: Min KPI Slider removed for a cleaner look */}
       </div>
 
-      {/* 🚀 The Filtered Survey List (Your Original UI Design) */}
       <div className="grid gap-4">
         {filteredSurveys.map((survey: any) => {
-          const totalScore = survey.responses.reduce((a: number, b: any) => a + (b.primaryScore || 0), 0);
-          const avgKPI = totalScore / (survey.responses.length || 1);
-          const isUnderperforming = avgKPI < regionalAvg * 0.8;
+          // ✅ LIKERT LOGIC: Access latest submission data
+          const latestResponse = survey.responses?.[0]; 
+          const meanScore = latestResponse?.primaryScore || 0; // The 1.0 - 5.0 Average
+          const indexScore = latestResponse?.globalScore || 0; // The 0 - 100% Index
 
           return (
             <div 
               key={survey.id} 
-              className={`bg-[#0A0A0A] border p-8 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center transition-all group hover:border-blue-500/20 ${
-                isUnderperforming ? 'border-red-500/40 bg-red-500/5' : 'border-white/5'
-              }`}
+              className="bg-[#0A0A0A] border border-white/5 p-8 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center transition-all group hover:border-blue-500/20"
             >
               <div className="flex flex-col gap-1 w-full md:w-auto mb-4 md:mb-0">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-black tracking-tight uppercase">{survey.title}</h2>
-                  {isUnderperforming && (
-                    <span className="text-[9px] bg-red-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-tighter">
-                      Underperforming
-                    </span>
-                  )}
+                  <h2 className="text-2xl font-black tracking-tight uppercase group-hover:text-blue-400 transition-colors italic">
+                    {survey.title}
+                  </h2>
                 </div>
                 <div className="flex items-center gap-4">
                   <p className="text-[9px] font-black uppercase text-gray-600">
                     Deadline: {survey.expiresAt ? new Date(survey.expiresAt).toLocaleDateString() : "None"}
                   </p>
-                  <p className="text-[9px] opacity-20 uppercase font-black tracking-widest">{survey.id}</p>
+                  <p className="text-[9px] opacity-20 uppercase font-black tracking-widest font-mono">{survey.id}</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between w-full md:w-auto gap-8">
                 <div className="flex gap-10 mr-4">
-                   <div className="text-center">
-                      <p className="text-[8px] font-black uppercase opacity-40 tracking-widest mb-1">KPI Score</p>
-                      <p className={`text-2xl font-black ${isUnderperforming ? 'text-red-500' : 'text-blue-500'}`}>
-                        {avgKPI.toFixed(1)}
+                    {/* 📊 Mean Score (Likert Scale) */}
+                    <div className="text-center">
+                      <p className="text-[8px] font-black uppercase opacity-40 tracking-widest mb-1 text-blue-500">Mean Score</p>
+                      <p className="text-2xl font-black italic">
+                        {meanScore.toFixed(2)}
                       </p>
-                   </div>
-                   <div className="text-center">
-                      <p className="text-[8px] font-black uppercase opacity-40 tracking-widest mb-1">Responses</p>
-                      <p className="text-2xl font-black">{survey.responses.length}</p>
-                   </div>
+                    </div>
+
+                    {/* 📈 Index Score (Performance %) */}
+                    <div className="text-center">
+                      <p className="text-[8px] font-black uppercase opacity-40 tracking-widest mb-1">Index Score</p>
+                      <p className="text-2xl font-black text-white/30 group-hover:text-white transition-colors italic">
+                        {Math.max(0, indexScore).toFixed(0)}%
+                      </p>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <StatusToggle id={survey.id} isActive={survey.isActive} />
                   
-                  <Link href={`/surveys/${survey.id}/results`} className="px-6 py-3 bg-white text-black rounded-xl text-[9px] font-black uppercase tracking-widest">
+                  <Link 
+                    href={`/surveys/${survey.id}/results`} 
+                    className="px-6 py-3 bg-white text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-[0_10px_20px_rgba(255,255,255,0.05)]"
+                  >
                     Analysis
                   </Link>
 

@@ -1,27 +1,24 @@
-// ✅ FIX 1: Named import for prisma (No default export)
+// ✅ Imports
 import { prisma } from "@/lib/prisma"; 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { AutoRefresh } from "./AutoRefresh"; 
-// ✅ FIX 2: Path is singular 'SurveyFilter' in your explorer, not plural
 import { SurveyFilters } from "./SurveyFilter"; 
+import { WipeDataButton } from "./WipeDataButton"; // ✅ Ensure this file exists in the same folder
 
 export default async function AdminDashboard() {
+  // 1. Fetch data from Prisma
   const surveys = await prisma.survey.findMany({
-    include: { responses: true },
+    include: { 
+      responses: {
+        orderBy: { createdAt: 'desc' },
+        take: 1, // Focus on individual scoring
+      } 
+    },
     orderBy: { createdAt: 'desc' }
   });
 
-  // 📈 REGIONAL BASELINE LOGIC
-  // ✅ FIX 3: Explicitly type 's' and 'r' to remove 'implicitly any' errors
-  const allGlobalScores = surveys.flatMap((s: any) => 
-    s.responses.map((r: any) => r.globalScore).filter(Boolean)
-  ) as number[];
-
-  const regionalAvg = allGlobalScores.length > 0 
-    ? allGlobalScores.reduce((a: number, b: number) => a + b, 0) / allGlobalScores.length 
-    : 0;
-
+  // 2. Return the JSX (The React Component)
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
       <div className="max-w-6xl mx-auto">
@@ -33,18 +30,31 @@ export default async function AdminDashboard() {
           
           <div className="flex items-center gap-6">
             <AutoRefresh /> 
-            <Link href="/surveys/new" className="px-8 py-3 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full">+ New Survey</Link>
+
+            {/* ✅ Interactive Wipe Button */}
+            <WipeDataButton />
+
+            <Link 
+              href="/surveys/new" 
+              className="px-8 py-3 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-gray-200 transition-colors"
+            >
+              + New Survey
+            </Link>
             <UserButton afterSignOutUrl="/" />
           </div>
         </header>
 
-        <div className="mb-8 p-8 bg-blue-600/5 border border-blue-500/20 rounded-[2.5rem]">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-1">Regional Performance Baseline</p>
-          <h2 className="text-5xl font-black italic">{regionalAvg.toFixed(2)} <span className="text-sm opacity-30 not-italic">/ 5.0</span></h2>
-        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-8 mb-4">
+             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">
+               Active Regional Nodes
+             </h2>
+             <div className="h-px flex-1 bg-white/5 mx-6" />
+          </div>
 
-        {/* ✅ Logic and UI mapping handled in SurveyFilter.tsx */}
-        <SurveyFilters surveys={surveys} regionalAvg={regionalAvg} />
+          {/* ✅ Survey List and Filters */}
+          <SurveyFilters surveys={surveys} />
+        </div>
       </div>
     </div>
   );

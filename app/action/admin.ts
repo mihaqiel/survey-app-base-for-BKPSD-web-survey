@@ -4,7 +4,24 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@clerk/nextjs/server"; 
 
-// 1. CREATE SURVEY
+// ✅ 1. NEW: CLEAR ALL RESPONSES (WIPE DATA)
+// This safely clears the "Bad Math" from old test runs
+export async function clearAllResponses() {
+  const { userId } = await auth();
+  const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
+
+  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
+
+  try {
+    // ⚠️ This deletes the scores but keeps your Surveys and Questions intact.
+    await prisma.response.deleteMany({});
+    revalidatePath("/admin");
+  } catch (error) {
+    console.error("Failed to clear responses:", error);
+  }
+}
+
+// 2. CREATE SURVEY (STABLE)
 export async function createDynamicSurvey(formData: FormData) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
@@ -20,7 +37,7 @@ export async function createDynamicSurvey(formData: FormData) {
 
   let kpiFound = false;
 
-await prisma.survey.create({
+  await prisma.survey.create({
     data: {
       title,
       ownerId: userId,
@@ -29,7 +46,7 @@ await prisma.survey.create({
       questions: {
         create: texts.map((text, i) => {
           const isScore = types[i] === "SCORE";
-          const isKPI = isScore && !kpiFound;
+          const isKPI = isScore && !kpiFound; // First numeric question is marked as KPI
           if (isKPI) kpiFound = true;
           return { text, type: types[i], isKPI };
         }),
@@ -41,7 +58,7 @@ await prisma.survey.create({
   redirect("/admin");
 }
 
-// 2. MANUAL TOGGLE ACTION (The "Close Survey" Button Engine)
+// 3. MANUAL TOGGLE ACTION (STABLE)
 export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
@@ -50,15 +67,14 @@ export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
 
   await prisma.survey.update({
     where: { id },
-    data: { isActive: !currentStatus }, // Flips true to false, or false to true
+    data: { isActive: !currentStatus },
   });
 
-  // Revalidate both the admin dashboard and the public survey page
   revalidatePath("/admin");
   revalidatePath(`/surveys/${id}`);
 }
 
-// 3. DELETE SURVEY
+// 4. DELETE SURVEY (STABLE)
 export async function deleteSurvey(surveyId: string) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
@@ -75,6 +91,7 @@ export async function deleteSurvey(surveyId: string) {
   }
 }
 
+// 5. GET ALL SURVEYS (UPDATED FOR ONE-SURVEY LOGIC)
 export async function getAllSurveys() {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
@@ -92,8 +109,10 @@ export async function getAllSurveys() {
         expiresAt: true,
         isActive: true,
         _count: { select: { responses: true } },
-        // 🚀 Add this to see scores on dashboard
+        // ✅ FIX: Ensures the dashboard only pulls the latest scores
         responses: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
           select: { primaryScore: true, globalScore: true }
         }
       }
@@ -104,7 +123,7 @@ export async function getAllSurveys() {
   }
 }
 
-// 5. UPDATE SURVEY (Improved with status support)
+// 6. UPDATE SURVEY (STABLE)
 export async function updateSurvey(formData: FormData) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; // [cite: 2026-01-28]
@@ -117,7 +136,6 @@ export async function updateSurvey(formData: FormData) {
   const qIds = formData.getAll("qId") as string[];
   const qTexts = formData.getAll("qText") as string[];
   
-  // Optional: Check if status was toggled in an edit form
   const statusInput = formData.get("isActive");
   const isActive = statusInput === null ? undefined : statusInput === "true";
 
@@ -146,6 +164,7 @@ export async function updateSurvey(formData: FormData) {
   redirect("/admin");
 }
 
+// 7. GET DETAILED ANALYSIS (STABLE)
 export async function getDetailedAnalysis(surveyId: string) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID;
