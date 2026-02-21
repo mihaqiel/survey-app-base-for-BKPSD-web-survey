@@ -4,19 +4,10 @@ import { createDynamicSurvey } from "@/app/action/admin";
 
 export default function NewSurveyPage() {
   const [questions, setQuestions] = useState([{ text: "", type: "TEXT" }]);
-  const [deadline, setDeadline] = useState("");
   const [activeDuration, setActiveDuration] = useState<number | null>(null);
 
   const addQuestion = () => setQuestions([...questions, { text: "", type: "TEXT" }]);
   const removeQuestion = (index: number) => setQuestions(questions.filter((_, i) => i !== index));
-
-  // ✅ AUTOMATION FIX: Generates full ISO string to bypass "dd/mm/yy" browser errors [cite: 2026-02-21]
-  const setDuration = (minutes: number) => {
-    const target = new Date();
-    target.setMinutes(target.getMinutes() + minutes);
-    setDeadline(target.toISOString().slice(0, 19)); // Precise YYYY-MM-DDTHH:MM:SS
-    setActiveDuration(minutes);
-  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-10 font-sans">
@@ -44,7 +35,7 @@ export default function NewSurveyPage() {
             />
           </div>
 
-          {/* 🎯 PROBLEM 3 FIX: Duration-Based UI [cite: 2026-02-21] */}
+          {/* 2. Duration-Based UI */}
           <div className="bg-gray-900/40 border border-white/5 p-8 rounded-[2rem] space-y-6">
             <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] italic">
               Reporting Window (Duration)
@@ -55,7 +46,7 @@ export default function NewSurveyPage() {
                 <button 
                   key={m} 
                   type="button" 
-                  onClick={() => setDuration(m)} 
+                  onClick={() => setActiveDuration(m)} // ✅ SURGICAL FIX: Only sets the integer
                   className={`py-6 border rounded-2xl transition-all flex flex-col items-center gap-1 ${
                     activeDuration === m 
                       ? "bg-blue-600 border-blue-400 shadow-[0_0_30px_rgba(37,99,235,0.3)]" 
@@ -70,16 +61,16 @@ export default function NewSurveyPage() {
               ))}
             </div>
 
-            {/* Hidden field handles the actual data to satisfy the browser [cite: 2026-02-21] */}
-            <input type="hidden" name="deadline" value={deadline} required />
+            {/* ✅ SERVER SYNC: We now just pass the raw integer to the backend */}
+            <input type="hidden" name="duration" value={activeDuration || ""} required />
             
-            {deadline && (
+            {activeDuration && (
               <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                 <p className="text-[9px] text-blue-400 font-black uppercase italic tracking-widest">
                   Auto-Shutdown Sequence Armed
                 </p>
                 <p className="text-[10px] font-mono text-gray-500">
-                  {new Date(deadline).toLocaleTimeString()}
+                  +{activeDuration} Minute{activeDuration > 1 ? 's' : ''}
                 </p>
               </div>
             )}
@@ -123,9 +114,9 @@ export default function NewSurveyPage() {
             </button>
             <button
               type="submit"
-              disabled={!deadline}
+              disabled={!activeDuration}
               className={`flex-1 p-6 rounded-3xl font-black uppercase italic text-sm tracking-[0.2em] transition-all ${
-                deadline 
+                activeDuration 
                   ? "bg-blue-600 hover:bg-blue-500 shadow-[0_20px_40px_rgba(37,99,235,0.2)]" 
                   : "bg-gray-800 text-gray-600 cursor-not-allowed"
               }`}

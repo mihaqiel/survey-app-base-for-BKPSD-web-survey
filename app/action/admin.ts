@@ -19,7 +19,7 @@ export async function clearAllResponses() {
   }
 }
 
-// 2. CREATE SURVEY (STABLE 1-5 ALIGNMENT)
+// 2. CREATE SURVEY (STABLE ALIGNMENT & MASTER CLOCK)
 export async function createDynamicSurvey(formData: FormData) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; 
@@ -27,9 +27,17 @@ export async function createDynamicSurvey(formData: FormData) {
   if (!userId || userId !== ownerId) throw new Error("Unauthorized");
 
   const title = formData.get("title") as string;
-  const deadline = formData.get("deadline") as string; 
+  const durationStr = formData.get("duration") as string; // ✅ Gets the raw minutes
   const texts = formData.getAll("qText") as string[];
   const types = formData.getAll("qType") as any[];
+
+  // ✅ THE MASTER CLOCK: Server calculates the exact future time
+  let expiresAt = null;
+  const durationMinutes = parseInt(durationStr);
+  if (!isNaN(durationMinutes) && durationMinutes > 0) {
+    expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + durationMinutes);
+  }
 
   let kpiFound = false;
 
@@ -37,8 +45,7 @@ export async function createDynamicSurvey(formData: FormData) {
     data: {
       title,
       ownerId: userId,
-      // ✅ AUTOMATION SYNC: Successfully parses the ISO string from your new UI [cite: 2026-02-21]
-      expiresAt: deadline ? new Date(deadline) : null,
+      expiresAt, // Perfect, timezone-proof deadline
       isActive: true,
       questions: {
         create: texts.map((text, i) => {
@@ -56,16 +63,13 @@ export async function createDynamicSurvey(formData: FormData) {
   redirect("/admin");
 }
 
-// 3. MANUAL TOGGLE ACTION (STUTTER FIX)
+// 3. MANUAL TOGGLE ACTION (RECOVERY FIX)
 export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) return;
 
-  // 🎯 FIX 1: Resolves the "didn't work" bug. 
-  // If currentStatus is false (because time ran out), flipping it to true 
-  // now also clears the old deadline so the node can be ACTIVE again [cite: 2026-02-21].
   await prisma.survey.update({
     where: { id },
     data: { 
