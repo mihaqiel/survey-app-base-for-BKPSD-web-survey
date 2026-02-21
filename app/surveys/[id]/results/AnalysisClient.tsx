@@ -2,9 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react"; 
-import * as XLSX from "xlsx-js-style"; // ✅ Excel library imported directly here
+import * as XLSX from "xlsx-js-style"; 
 
-// 🛡️ 1. INLINED EXPORT BUTTON: Next.js can never lose this again
+// 🛡️ 1. INLINED EXPORT BUTTON
 function ExportButton({ survey }: { survey: any }) {
   const downloadExcel = () => {
     const labels: Record<string, { text: string; color: string }> = {
@@ -69,11 +69,11 @@ function ExportButton({ survey }: { survey: any }) {
   );
 }
 
-// 🛡️ 2. MAIN ANALYSIS CLIENT
-export function AnalysisClient({ survey, surveyId }: { survey: any, surveyId: string }) {
+// 🛡️ 2. MAIN ANALYSIS CLIENT (Now using 'export default'!)
+export default function AnalysisClient({ survey, surveyId }: { survey: any, surveyId: string }) {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [mounted, setMounted] = useState(false); // ✅ Hydration Fix
+  const [mounted, setMounted] = useState(false); 
   const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -199,7 +199,6 @@ export function AnalysisClient({ survey, surveyId }: { survey: any, surveyId: st
       <div className="bg-gray-900 rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl">
         <div className="p-6 border-b border-gray-800 bg-gray-950/50 flex justify-between items-center">
           <h3 className="font-black uppercase text-[11px] tracking-widest text-gray-400 italic">Detailed Responses</h3>
-          {/* ✅ The inline button is called here! */}
           <ExportButton survey={survey} />
         </div>
         
@@ -254,7 +253,7 @@ export function AnalysisClient({ survey, surveyId }: { survey: any, surveyId: st
                    {(survey.responses.reduce((acc: number, r: any) => {
                      const v = String(r.answers.find((a: any) => a.questionId === selectedQuestionId)?.value || "0");
                      return acc + (parseInt(v.match(/[1-5]/)?.[0] || "0"));
-                   }, 0) / survey.responses.length).toFixed(2)}
+                   }, 0) / (survey.responses.length || 1)).toFixed(2)}
                 </h3>
               </div>
             </div>
