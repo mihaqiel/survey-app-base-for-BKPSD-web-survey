@@ -37,6 +37,7 @@ export async function createDynamicSurvey(formData: FormData) {
     data: {
       title,
       ownerId: userId,
+      // ✅ AUTOMATION SYNC: Successfully parses the ISO string from your new UI [cite: 2026-02-21]
       expiresAt: deadline ? new Date(deadline) : null,
       isActive: true,
       questions: {
@@ -55,16 +56,22 @@ export async function createDynamicSurvey(formData: FormData) {
   redirect("/admin");
 }
 
-// 3. MANUAL TOGGLE ACTION
+// 3. MANUAL TOGGLE ACTION (STUTTER FIX)
 export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; 
 
   if (!userId || userId !== ownerId) return;
 
+  // 🎯 FIX 1: Resolves the "didn't work" bug. 
+  // If currentStatus is false (because time ran out), flipping it to true 
+  // now also clears the old deadline so the node can be ACTIVE again [cite: 2026-02-21].
   await prisma.survey.update({
     where: { id },
-    data: { isActive: !currentStatus },
+    data: { 
+      isActive: !currentStatus,
+      ...(!currentStatus ? { expiresAt: null } : {}) // Clears deadline if re-activating
+    },
   });
 
   revalidatePath("/admin");
@@ -88,7 +95,7 @@ export async function deleteSurvey(surveyId: string) {
   }
 }
 
-// 5. GET ALL SURVEYS (STABLE ONE-SURVEY LOGIC)
+// 5. GET ALL SURVEYS
 export async function getAllSurveys() {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID; 
@@ -159,7 +166,7 @@ export async function updateSurvey(formData: FormData) {
   redirect("/admin");
 }
 
-// 7. GET DETAILED ANALYSIS (FIXED TYPING ERROR)
+// 7. GET DETAILED ANALYSIS
 export async function getDetailedAnalysis(surveyId: string) {
   const { userId } = await auth();
   const ownerId = process.env.OWNER_ID;
@@ -169,7 +176,6 @@ export async function getDetailedAnalysis(surveyId: string) {
   return await prisma.survey.findUnique({
     where: { id: surveyId },
     include: {
-      // ✅ REMOVED 'orderBy' to fix the Prisma property error
       questions: true,
       responses: {
         include: { answers: true },

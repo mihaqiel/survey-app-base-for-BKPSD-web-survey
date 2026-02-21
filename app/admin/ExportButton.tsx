@@ -1,15 +1,16 @@
 "use client";
 import * as XLSX from "xlsx-js-style";
 
-export default function ExportButton({ survey }: { survey: any }) {
+// ✅ CHANGE: Switched to Named Export to fix your "no exported member" error
+export function ExportButton({ survey }: { survey: any }) {
   const downloadExcel = () => {
     // 🎨 Score Mapping: Aligns Excel colors with your UI badges
     const labels: Record<string, { text: string; color: string }> = {
       "5": { text: "Excellent", color: "C6EFCE" }, // Green
       "4": { text: "Very Good", color: "DDEBF7" }, // Cyan/Blue
-      "3": { text: "Good", color: "FFF2CC" },    // Yellow
-      "2": { text: "Fair", color: "FCE4D6" },    // Orange
-      "1": { text: "Poor", color: "FFC7CE" }     // Red
+      "3": { text: "Good", color: "FFF2CC" },     // Yellow
+      "2": { text: "Fair", color: "FCE4D6" },     // Orange
+      "1": { text: "Poor", color: "FFC7CE" }      // Red
     };
 
     // 1. Prepare Header Row
@@ -28,7 +29,7 @@ export default function ExportButton({ survey }: { survey: any }) {
         const answer = resp.answers.find((a: any) => a.questionId === q.id);
         const val = answer?.value || answer?.content || "-";
         
-        // If it's a score, apply the specific color and "Excellent (5)" format
+        // Applying the specific color and "Excellent (5)" format
         if (q.type === "SCORE" && labels[val]) {
           row.push({
             v: `${labels[val].text} (${val})`,
@@ -47,24 +48,21 @@ export default function ExportButton({ survey }: { survey: any }) {
         }
       });
 
-      // Add the final system math
       row.push(resp.primaryScore.toFixed(2));
-      row.push(`${Math.round(resp.globalScore)}%`); // Round to avoid long decimals
+      row.push(`${Math.round(resp.globalScore)}%`); 
       return row;
     });
 
-    // 3. Build Worksheet
     const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
 
-    // 4. Auto-Width: Prevents the "cut-off" headers seen in your test
+    // 4. Auto-Width: Prevents the "cut-off" headers
     ws["!cols"] = headerRow.map((h, i) => ({
-      wch: Math.max(h.length + 5, 15) // Dynamic width based on text length
+      wch: Math.max(h.length + 5, 15) 
     }));
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Surgical Analysis");
 
-    // 5. Save File
     XLSX.writeFile(wb, `${survey.title.replace(/\s+/g, "_")}_Surgical_Report.xlsx`);
   };
 

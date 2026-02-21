@@ -2,10 +2,25 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
+// ✅ 1. PUBLIC FETCHER: Fetches data for the fill page without Admin Auth blocks
+export async function getPublicSurvey(id: string) {
+  try {
+    return await prisma.survey.findUnique({
+      where: { id },
+      // We only expose questions. We strictly DO NOT expose other people's responses to the public.
+      include: { questions: true } 
+    });
+  } catch (error) {
+    console.error("Failed to fetch public survey:", error);
+    return null;
+  }
+}
+
+// ✅ 2. SECURE SUBMISSION LOGIC
 export async function submitResponse(formData: FormData) {
   const surveyId = formData.get("surveyId") as string;
 
-  // 1. 🛡️ SERVER-SIDE GATEKEEPER
+  // 🛡️ SERVER-SIDE GATEKEEPER
   // Re-fetch survey status on submission to prevent bypass of expired/inactive surveys
   const survey = await prisma.survey.findUnique({ 
     where: { id: surveyId }, 
@@ -14,19 +29,18 @@ export async function submitResponse(formData: FormData) {
 
   const now = new Date();
   const deadline = survey?.expiresAt ? new Date(survey.expiresAt) : null;
-  const isExpired = deadline !== null && now > deadline; // Compare Date objects [cite: 2026-02-18]
+  const isExpired = deadline !== null && now > deadline; 
 
-  // ✅ REDIRECT LOGIC: Plural path fix to avoid 404
+  // 🎯 REDIRECT FIX: Send them back to the public fill route so they see the "Assessment Expired" UI
   if (!survey || !survey.isActive || isExpired) {
-    return redirect(`/surveys/${surveyId}`); 
+    return redirect(`/fill/${surveyId}`); 
   }
 
   const answersArray: { questionId: string; value: string }[] = [];
   let scoreValues: number[] = [];
 
-  // 2. 🔍 PROCESS FORM DATA
+  // 🔍 PROCESS FORM DATA
   for (const [key, val] of formData.entries()) {
-    // ✅ MATCHING FIX: Check for "answer_" to match your Fill Page
     if (key.startsWith("answer_")) {
       const qId = key.replace("answer_", "");
       const question = survey.questions.find(q => q.id === qId);
@@ -46,13 +60,13 @@ export async function submitResponse(formData: FormData) {
     }
   }
 
-  // 3. 📊 INDIVIDUAL TOTAL SUM
-  // This calculates the total points for THIS specific submission (e.g., 5 + 4 + 5 = 14)
+  // 📊 INDIVIDUAL TOTAL SUM
+  // Calculates the total points for THIS specific submission
   const totalSumScore = scoreValues.length > 0 
     ? scoreValues.reduce((a, b) => a + b, 0) 
     : 0;
 
-  // 4. ATOMIC SAVE
+  // ATOMIC SAVE
   await prisma.response.create({
     data: {
       surveyId,
@@ -60,7 +74,7 @@ export async function submitResponse(formData: FormData) {
       answers: {
         create: answersArray.map(a => ({
           questionId: a.questionId,
-          value: a.value // Standardized schema field name
+          value: a.value 
         }))
       }
     }

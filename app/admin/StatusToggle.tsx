@@ -1,11 +1,17 @@
 "use client";
-import { toggleSurveyStatus } from "@/app/action/admin"; //
+import { toggleSurveyStatus } from "@/app/action/admin";
 
-export function StatusToggle({ id, isActive }: { id: string, isActive: boolean }) {
+interface StatusToggleProps {
+  id: string;
+  isActive: boolean; // This is the "Actually Active" status from the parent [cite: 2026-02-21]
+}
+
+export function StatusToggle({ id, isActive }: StatusToggleProps) {
   return (
     <button 
       onClick={async () => {
-        // This manually flips the isActive boolean in the database
+        // ✅ SURGICAL FIX: We toggle the current visual state.
+        // If it's visually CLOSED (due to time or toggle), this flips it to ACTIVE. [cite: 2026-02-21]
         await toggleSurveyStatus(id, isActive);
       }}
       className={`px-4 py-2 rounded-xl font-black text-[10px] tracking-widest transition-all border ${
