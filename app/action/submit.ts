@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 export async function submitResponse(formData: FormData) {
   const surveyId = formData.get("surveyId") as string;
-
   const survey = await prisma.survey.findUnique({
     where: { id: surveyId },
     include: { questions: true }
@@ -14,9 +13,9 @@ export async function submitResponse(formData: FormData) {
   const deadline = survey?.expiresAt ? new Date(survey.expiresAt) : null;
   const isExpired = deadline !== null && now > deadline;
 
-  // ✅ CHANGED: Redirect to the correct assessment path if survey is inaccessible
+  // ✅ FIXED: Redirects to /assessment/ instead of /surveys/
   if (!survey || !survey.isActive || isExpired) {
-    return redirect(`/assessment/${surveyId}`);
+    return redirect(`/assessment/${surveyId}`); 
   }
 
   const answersArray: { questionId: string; value: string }[] = [];
@@ -27,14 +26,10 @@ export async function submitResponse(formData: FormData) {
       const qId = key.replace("answer_", "");
       const question = survey.questions.find(q => q.id === qId);
       const stringValue = String(val);
-
       answersArray.push({ questionId: qId, value: stringValue });
-
       if (question?.type === "SCORE") {
         const numScore = Number(stringValue);
-        if (!isNaN(numScore)) {
-          scoreValues.push(numScore);
-        }
+        if (!isNaN(numScore)) scoreValues.push(numScore);
       }
     }
   }
@@ -49,12 +44,7 @@ export async function submitResponse(formData: FormData) {
       surveyId,
       globalScore: indexScore,      
       primaryScore: meanScore,      
-      answers: {
-        create: answersArray.map(ans => ({
-          value: ans.value,
-          questionId: ans.questionId,
-        })),
-      },
+      answers: { create: answersArray.map(ans => ({ value: ans.value, questionId: ans.questionId })) },
     },
   });
 
