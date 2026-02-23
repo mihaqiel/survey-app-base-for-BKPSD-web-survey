@@ -5,11 +5,12 @@ import { useEffect, useState, useRef } from "react";
 export default function ShareCard({ surveyId }: { surveyId: string }) {
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
-  const qrRef = useRef<HTMLDivElement>(null); // ✅ Targets the QR for the "Surgical" capture
+  const qrRef = useRef<HTMLDivElement>(null); // Targets the QR for the "Surgical" capture
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setShareUrl(`${window.location.origin}/fill/${surveyId}`);
+      // ✅ CHANGED: Replaced '/fill/' with '/assessment/' to match your new route group structure
+      setShareUrl(`${window.location.origin}/assessment/${surveyId}`);
     }
   }, [surveyId]);
 
@@ -21,7 +22,6 @@ export default function ShareCard({ surveyId }: { surveyId: string }) {
     }
   };
 
-  // ✅ NEW: Logic to convert the SVG to a PNG for printing [cite: 2026-02-17]
   const downloadQRCode = () => {
     const svg = qrRef.current?.querySelector("svg");
     if (!svg) return;
@@ -60,7 +60,6 @@ export default function ShareCard({ surveyId }: { surveyId: string }) {
         <p className="text-[11px] font-bold italic uppercase tracking-tighter text-black">Scan to Fill Assessment</p>
       </div>
       
-      {/* ✅ QR Code Container with Ref */}
       <div ref={qrRef} className="bg-gray-50 p-5 rounded-[2rem] border border-gray-100 mb-6">
         {shareUrl ? (
           <QRCode value={shareUrl} size={160} level="H" />
@@ -79,7 +78,6 @@ export default function ShareCard({ surveyId }: { surveyId: string }) {
           {copied ? "Link Copied" : "Copy Portal Link"}
         </button>
 
-        {/* ✅ THE MISSING BUTTON: Now Integrated */}
         <button 
           onClick={downloadQRCode}
           className="w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] border-2 border-black text-black hover:bg-gray-50 transition-all active:scale-[0.98]"
