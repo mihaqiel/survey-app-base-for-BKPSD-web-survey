@@ -112,7 +112,8 @@ export default function AnalysisClient({ survey, surveyId }: { survey: any, surv
   };
 
   const status = getStatus(indexScore);
-  const fillUrl = mounted ? `${window.location.origin}/fill/${surveyId}` : `.../fill/${surveyId}`;
+// ✅ FIXED CODE
+const fillUrl = mounted ? `${window.location.origin}/assessment/${surveyId}` : `.../assessment/${surveyId}`;
 
   const handleCopy = () => {
     if (!mounted) return;

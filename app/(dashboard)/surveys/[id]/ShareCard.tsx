@@ -52,7 +52,8 @@ export default function ShareCard({ surveyId }: { surveyId: string }) {
   };
 
   return (
-    <div className="bg-white text-black p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center text-center h-full">
+// ✅ NEW (Temporary Test)
+<div className="bg-white text-black p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center text-center h-full">
       <div className="mb-6">
         <h3 className="font-black uppercase text-[10px] tracking-[0.3em] text-gray-400 mb-1">Regional Access Portal</h3>
         <p className="text-[11px] font-bold italic uppercase tracking-tighter text-black">Scan to Fill Assessment</p>
