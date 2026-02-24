@@ -4,33 +4,23 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. 🟢 ALLOW PUBLIC ROUTES (Assessment, Login, Static)
-  if (
-    pathname.startsWith("/assessment") || 
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/_next") || 
-    pathname.startsWith("/static") || 
-    pathname === "/success" ||
-    pathname === "/" 
-  ) {
-    return NextResponse.next();
-  }
-
-  // 2. 🔴 PROTECT ADMIN ROUTES
-  if (pathname.startsWith("/admin")) {
-    // Check for the session cookie
-    const adminSession = request.cookies.get("admin_session");
-
-    if (!adminSession) {
-      // 🚫 No cookie? Kick them to Login
-      return NextResponse.redirect(new URL("/login", request.url));
+  // 1. PROTECT SURVEY ROUTES
+  // User must have 'skm_token' cookie to view /assessment/*
+  if (pathname.startsWith("/assessment")) {
+    const tokenCookie = request.cookies.get("skm_token");
+    
+    if (!tokenCookie) {
+      // Redirect to Gatekeeper if missing
+      const url = request.nextUrl.clone();
+      url.pathname = "/enter";
+      return NextResponse.redirect(url);
     }
-    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
+// Apply to these paths
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/assessment/:path*"],
 };

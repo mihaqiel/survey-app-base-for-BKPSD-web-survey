@@ -3,10 +3,8 @@ import { logout } from "@/app/action/auth";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
-  // 1. Fetch the data
   const agency = await getDashboardData();
 
-  // 2. Handle Initial State
   if (!agency) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-400 font-mono text-xs uppercase tracking-widest">
@@ -23,9 +21,17 @@ export default async function AdminDashboard() {
         <div>
           <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2">Secure Admin Portal</h4>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter">{agency.nama}</h1>
+          <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-widest border-l-2 border-gray-200 pl-3">
+            Audit Log Active • Soft Delete Enabled
+          </p>
         </div>
         
         <div className="flex gap-3">
+             {/* VIEW LOGS BUTTON */}
+             <Link href="/admin/logs" className="flex items-center px-4 py-3 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 hover:text-black transition shadow-sm active:scale-95">
+                View Logs
+             </Link>
+
              {/* LOGOUT BUTTON */}
              <form action={logout}>
                 <button className="h-full px-6 py-3 bg-white border border-red-100 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition shadow-sm active:scale-95">
@@ -88,9 +94,9 @@ export default async function AdminDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {svc.periode.map((p) => (
-                    <div key={p.id} className="group relative bg-[#FAFAFA] hover:bg-white hover:shadow-xl transition-all duration-300 p-6 rounded-[2rem] border border-gray-100">
+                    <div key={p.id} className="group relative bg-[#FAFAFA] hover:bg-white hover:shadow-xl transition-all duration-300 p-6 rounded-[2rem] border border-gray-100 flex flex-col justify-between">
                       
-                      {/* Status Badge */}
+                      {/* Top: Status & DELETE BUTTON */}
                       <div className="flex justify-between items-start mb-4">
                         <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
                           p.status === 'AKTIF' 
@@ -100,18 +106,31 @@ export default async function AdminDashboard() {
                           {p.status}
                         </span>
                         
-                        {/* Delete Button */}
+                        {/* 🗑️ FIXED DELETE BUTTON (Now Always Visible) */}
                         <form action={deletePeriode.bind(null, p.id)}>
-                           <button className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                           <button 
+                             className="text-gray-300 hover:text-red-500 transition-colors p-2" 
+                             title="Archive this Period"
+                           >
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                             </svg>
+                           </button>
                         </form>
                       </div>
                       
-                      <h3 className="text-lg font-black italic mb-8">{p.label}</h3>
+                      {/* Middle: Label & Token */}
+                      <div className="mb-8">
+                        <h3 className="text-lg font-black italic mb-1">{p.label}</h3>
+                        <div className="inline-block bg-black text-white px-2 py-1 rounded text-[10px] font-mono tracking-widest uppercase">
+                          Token: {p.token || "GENERATING..."}
+                        </div>
+                      </div>
 
-                      {/* LINK TO ANALYSIS & QR */}
+                      {/* Bottom: Link */}
                       <Link 
                         href={`/admin/periode/${p.id}/analysis`} 
-                        className="block w-full bg-black text-white py-4 rounded-xl text-center hover:bg-gray-800 transition shadow-lg shadow-black/5 active:scale-95"
+                        className="block w-full bg-white border border-gray-200 text-black py-4 rounded-xl text-center hover:bg-black hover:text-white transition shadow-sm active:scale-95"
                       >
                         <span className="text-[9px] font-black uppercase tracking-widest">View Report & QR →</span>
                       </Link>

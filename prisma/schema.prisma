@@ -66,11 +66,13 @@ model Respon {
   u8          Int
   u9          Int
   saran       String?
-
+ipAddress   String?  // 👈 Add this field
+  
   periodeId   String
   periode     Periode  @relation(fields: [periodeId], references: [id])
   createdAt   DateTime @default(now())
 }
+
 
 // 🛡️ AUDIT LOG (New Requirement)
 model LogActivity {

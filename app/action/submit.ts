@@ -1,39 +1,50 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function submitSkmResponse(formData: FormData) {
   const periodeId = formData.get("periodeId") as string;
-  
-  // 1. 🛡️ EXTRACT & VALIDATE (Strict 1-4 Integer)
-  // We explicitly map u1-u9 to ensure type safety.
-  const data = {
-    u1: parseInt(formData.get("u1") as string),
-    u2: parseInt(formData.get("u2") as string),
-    u3: parseInt(formData.get("u3") as string),
-    u4: parseInt(formData.get("u4") as string),
-    u5: parseInt(formData.get("u5") as string),
-    u6: parseInt(formData.get("u6") as string),
-    u7: parseInt(formData.get("u7") as string),
-    u8: parseInt(formData.get("u8") as string),
-    u9: parseInt(formData.get("u9") as string),
-    saran: formData.get("saran") as string,
-    periodeId: periodeId,
-  };
+  const saran = formData.get("saran") as string;
 
-  // 2. 🛡️ SERVER-SIDE CHECK
-  // If any field is NaN (hacker tried to bypass), we reject.
-  if ([data.u1, data.u2, data.u3, data.u4, data.u5, data.u6, data.u7, data.u8, data.u9].some(isNaN)) {
-    throw new Error("Invalid Input: All 9 indicators must be filled.");
+  // 1. Check if Period is actually Open (Security Check)
+  const periode = await prisma.periode.findUnique({ where: { id: periodeId } });
+  if (!periode || periode.status !== "AKTIF") {
+    redirect("/success?status=closed"); // 🔴 Redirect to Closed Page
   }
 
-  // 3. 💾 ATOMIC SAVE
-  // No complex math here. The math happens in the "Report" phase (Aggregate).
-  await prisma.respon.create({
-    data: data
+  // 2. Get IP Address
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for") || "unknown";
+
+  // 3. 🛑 SPAM CHECK
+  const existing = await prisma.respon.findFirst({
+    where: {
+      periodeId: periodeId,
+      ipAddress: ip,
+    }
   });
 
-  // 4. 🎉 REDIRECT
-  redirect("/success");
+  if (existing) {
+    // 🟠 Redirect to Spam/Duplicate Page
+    redirect("/success?status=duplicate"); 
+  }
+
+  // 4. Parse Scores & Save
+  const getInt = (key: string) => parseInt(formData.get(key) as string) || 0;
+
+  await prisma.respon.create({
+    data: {
+      periodeId,
+      u1: getInt("u1"), u2: getInt("u2"), u3: getInt("u3"),
+      u4: getInt("u4"), u5: getInt("u5"), u6: getInt("u6"),
+      u7: getInt("u7"), u8: getInt("u8"), u9: getInt("u9"),
+      saran,
+      ipAddress: ip,
+    },
+  });
+
+  // 🟢 Redirect to Success Page
+  redirect("/success?status=success");
 }
