@@ -1,84 +1,74 @@
-// file: prisma/schema.prisma
+// app/prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql" / "sqlite"
+  provider = "postgresql" // or "mysql"
   url      = env("DATABASE_URL")
 }
 
-// 🏛️ AGENCY
-model PerangkatDaerah {
-  id        String    @id @default(cuid())
-  nama      String
-  alamat    String?
-  layanan   Layanan[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-// 📂 SERVICE (Supports Soft Delete)
-model Layanan {
-  id              String          @id @default(cuid())
-  nama            String
-  deskripsi       String?
-  status          String          @default("AKTIF") // "AKTIF" or "NONAKTIF"
-  
-  perangkatId     String
-  perangkatDaerah PerangkatDaerah @relation(fields: [perangkatId], references: [id])
-  periode         Periode[]
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-}
-
-// 🗓️ PERIOD (The Gatekeeper)
+// 🗓️ GLOBAL PERIOD (The Gatekeeper)
 model Periode {
-  id          String   @id @default(cuid())
-  label       String   // e.g. "Semester 1 2025"
-  tglMulai    DateTime
-  tglSelesai  DateTime
-  status      String   @default("AKTIF") // "AKTIF", "CLOSED", "ARCHIVED"
-  token       String   @unique           // 🔑 THE QR ACCESS KEY
-  
-  layananId   String
-  layanan     Layanan  @relation(fields: [layananId], references: [id])
-  respon      Respon[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  label     String   @default("Global Access")
+  status    String   @default("AKTIF") 
+  token     String   @unique
+  respon    Respon[]
+  createdAt DateTime @default(now())
 }
 
-// 📝 RESPONSE (1-4 Scale Only)
+// 🏢 FIXED SERVICE (22 Layanan) - ⚠️ ENSURE NO 'perangkatId' HERE
+model Layanan {
+  id        String   @id @default(cuid())
+  nama      String
+  respon    Respon[]
+}
+
+// 👨‍💼 EMPLOYEE
+model Pegawai {
+  id        String   @id @default(cuid())
+  nama      String
+  respon    Respon[]
+}
+
+// 📝 RESPONSE
 model Respon {
   id          String   @id @default(cuid())
   
-  // Scoring (Strictly 1-4)
-  u1          Int
-  u2          Int
-  u3          Int
-  u4          Int
-  u5          Int
-  u6          Int
-  u7          Int
-  u8          Int
-  u9          Int
-  saran       String?
-ipAddress   String?  // 👈 Add this field
-  
+  // Relations
   periodeId   String
   periode     Periode  @relation(fields: [periodeId], references: [id])
-  createdAt   DateTime @default(now())
-}
+  
+  layananId   String
+  layanan     Layanan  @relation(fields: [layananId], references: [id])
+  
+  pegawaiId   String
+  pegawai     Pegawai  @relation(fields: [pegawaiId], references: [id])
 
-
-// 🛡️ AUDIT LOG (New Requirement)
-model LogActivity {
-  id        String   @id @default(cuid())
-  action    String   // e.g. "CREATE_PERIODE", "SOFT_DELETE_LAYANAN"
-  target    String   // e.g. "Layanan Kenaikan Pangkat"
-  details   String?
-  timestamp DateTime @default(now())
+  // Demographics
+  nama             String
+  usia             Int
+  jenisKelamin     String
+  pendidikan       String
+  pekerjaan        String
+  isDifabel        String
+  jenisDisabilitas String?
+  tglLayanan       DateTime
+  
+  // Scores
+  u1 Int
+  u2 Int
+  u3 Int
+  u4 Int
+  u5 Int
+  u6 Int
+  u7 Int
+  u8 Int
+  u9 Int
+  
+  saran     String?
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

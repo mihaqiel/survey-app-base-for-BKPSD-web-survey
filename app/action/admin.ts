@@ -1,190 +1,90 @@
 "use server";
+
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server"; 
 
-// 1. CLEAR ALL RESPONSES
-export async function clearAllResponses() {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
+// ... existing code ...
 
-  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
-
-  try {
-    await prisma.response.deleteMany({});
-    revalidatePath("/admin");
-  } catch (error) {
-    console.error("Failed to clear responses:", error);
-  }
-}
-
-// 2. CREATE SURVEY (STABLE ALIGNMENT & MASTER CLOCK)
-export async function createDynamicSurvey(formData: FormData) {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
-  
-  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
-
-  const title = formData.get("title") as string;
-  const durationStr = formData.get("duration") as string; // ✅ Gets the raw minutes
-  const texts = formData.getAll("qText") as string[];
-  const types = formData.getAll("qType") as any[];
-
-  // ✅ THE MASTER CLOCK: Server calculates the exact future time
-  let expiresAt = null;
-  const durationMinutes = parseInt(durationStr);
-  if (!isNaN(durationMinutes) && durationMinutes > 0) {
-    expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + durationMinutes);
-  }
-
-  let kpiFound = false;
-
-  await prisma.survey.create({
-    data: {
-      title,
-      ownerId: userId,
-      expiresAt, // Perfect, timezone-proof deadline
-      isActive: true,
-      questions: {
-        create: texts.map((text, i) => {
-          const isScore = types[i] === "SCORE";
-          const isKPI = isScore && !kpiFound; 
-          if (isKPI) kpiFound = true;
-          
-          return { text, type: types[i], isKPI };
-        }),
-      },
-    },
+export async function getGlobalExportData() {
+  // 1. Get Active Period
+  const activePeriod = await prisma.periode.findFirst({
+    where: { status: "AKTIF" }
   });
 
-  revalidatePath("/admin");
-  redirect("/admin");
-}
+  if (!activePeriod) return null;
 
-// 3. MANUAL TOGGLE ACTION (RECOVERY FIX)
-export async function toggleSurveyStatus(id: string, currentStatus: boolean) {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
-
-  if (!userId || userId !== ownerId) return;
-
-  await prisma.survey.update({
-    where: { id },
-    data: { 
-      isActive: !currentStatus,
-      ...(!currentStatus ? { expiresAt: null } : {}) // Clears deadline if re-activating
-    },
-  });
-
-  revalidatePath("/admin");
-  revalidatePath(`/surveys/${id}`);
-}
-
-// 4. DELETE SURVEY
-export async function deleteSurvey(surveyId: string) {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
-
-  if (!surveyId || userId !== ownerId) return;
-
-  try {
-    await prisma.survey.delete({
-      where: { id: surveyId },
-    });
-    revalidatePath("/admin");
-  } catch (error) {
-    console.error("Failed to delete survey:", error);
-  }
-}
-
-// 5. GET ALL SURVEYS
-export async function getAllSurveys() {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
-
-  if (!userId || userId !== ownerId) return []; 
-
-  try {
-    return await prisma.survey.findMany({
-      where: { ownerId: userId }, 
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        createdAt: true,
-        expiresAt: true,
-        isActive: true,
-        _count: { select: { responses: true } },
-        responses: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { primaryScore: true, globalScore: true }
-        }
-      }
-    });
-  } catch (error) {
-    console.error("Failed to fetch surveys:", error);
-    return [];
-  }
-}
-
-// 6. UPDATE SURVEY
-export async function updateSurvey(formData: FormData) {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID; 
-
-  if (!userId || userId !== ownerId) throw new Error("Unauthorized");
-
-  const id = formData.get("id") as string;
-  const title = formData.get("title") as string;
-  const deadline = formData.get("deadline") as string;
-  const qIds = formData.getAll("qId") as string[];
-  const qTexts = formData.getAll("qText") as string[];
-  
-  const statusInput = formData.get("isActive");
-  const isActive = statusInput === null ? undefined : statusInput === "true";
-
-  await prisma.survey.update({
-    where: { id },
-    data: {
-      title,
-      expiresAt: deadline ? new Date(deadline) : null,
-      ...(isActive !== undefined && { isActive }),
-    },
-  });
-
-  await Promise.all(
-    qIds.map((qId, index) => 
-      prisma.question.update({
-        where: { id: qId },
-        data: { text: qTexts[index] }
-      })
-    )
-  );
-
-  revalidatePath("/admin");
-  revalidatePath(`/surveys/${id}/results`); 
-  revalidatePath(`/surveys/${id}`); 
-  redirect("/admin");
-}
-
-// 7. GET DETAILED ANALYSIS
-export async function getDetailedAnalysis(surveyId: string) {
-  const { userId } = await auth();
-  const ownerId = process.env.OWNER_ID;
-
-  if (!userId || userId !== ownerId) return null;
-
-  return await prisma.survey.findUnique({
-    where: { id: surveyId },
+  // 2. Fetch All Services with their Responses for this Period
+  const services = await prisma.layanan.findMany({
+    orderBy: { nama: 'asc' },
     include: {
-      questions: true,
-      responses: {
-        include: { answers: true },
-        orderBy: { createdAt: 'desc' }
+      respon: {
+        where: { periodeId: activePeriod.id },
+        include: { pegawai: true } // Include Employee Name if needed
       }
     }
   });
+
+  // 3. Process Data for Excel (Pre-calculate stats to save Client CPU)
+  const reportData = services.map(service => {
+    const responses = service.respon;
+    const total = responses.length;
+
+    // A. IKM Calculation
+    let totalScore = 0;
+    const sums = [0, 0, 0, 0, 0, 0, 0, 0, 0]; // U1-U9
+    
+    responses.forEach(r => {
+      totalScore += (r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9);
+      sums[0] += r.u1; sums[1] += r.u2; sums[2] += r.u3;
+      sums[3] += r.u4; sums[4] += r.u5; sums[5] += r.u6;
+      sums[6] += r.u7; sums[7] += r.u8; sums[8] += r.u9;
+    });
+
+    const nrr = total > 0 ? totalScore / (9 * total) : 0;
+    const ikm = nrr * 25;
+
+    // B. Demographics
+    const demographics = {
+      gender: { L: 0, P: 0 },
+      education: {} as Record<string, number>,
+      job: {} as Record<string, number>
+    };
+
+    responses.forEach(r => {
+      // Gender
+      if (r.jenisKelamin === "Laki-laki") demographics.gender.L++;
+      else demographics.gender.P++;
+      
+      // Edu
+      demographics.education[r.pendidikan] = (demographics.education[r.pendidikan] || 0) + 1;
+      
+      // Job
+      demographics.job[r.pekerjaan] = (demographics.job[r.pekerjaan] || 0) + 1;
+    });
+
+    return {
+      serviceName: service.nama,
+      totalRespondents: total,
+      ikm: ikm.toFixed(2),
+      averagePerUnsur: sums.map(s => total > 0 ? (s / total).toFixed(2) : "0"),
+      demographics,
+      rawResponses: responses.map((r, i) => ({
+        No: i + 1,
+        Tanggal: r.createdAt.toISOString().split('T')[0],
+        Nama: r.nama,
+        Umur: r.usia,
+        JK: r.jenisKelamin,
+        Pendidikan: r.pendidikan,
+        Pekerjaan: r.pekerjaan,
+        Pegawai: r.pegawai?.nama || "-",
+        U1: r.u1, U2: r.u2, U3: r.u3, U4: r.u4, U5: r.u5, 
+        U6: r.u6, U7: r.u7, U8: r.u8, U9: r.u9,
+        Saran: r.saran || "-"
+      }))
+    };
+  });
+
+  return {
+    periodLabel: activePeriod.label,
+    data: reportData
+  };
 }
