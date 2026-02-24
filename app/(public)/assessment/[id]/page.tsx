@@ -1,40 +1,56 @@
-import { getPublicSurvey } from "@/app/action/personnel"; 
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import WizardClient from "./WizardClient";
+import SkmForm from "./SkmForm";
 
-export default async function FillSurveyPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AssessmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
-  // 🎯 Fetching publicly available data (No Admin Auth Block required here)
-  const survey = await getPublicSurvey(id);
 
-  if (!survey) return notFound();
+  const periode = await prisma.periode.findUnique({
+    where: { id },
+    include: {
+      layanan: { include: { perangkatDaerah: true } }
+    }
+  });
 
-  // 🛡️ THE SURGICAL CLOCK: Server-side security check
+  if (!periode) return notFound();
+
+  // 🛠️ DATE FIX: Compare dates using start/end of day logic
   const now = new Date();
-  const deadline = survey.expiresAt ? new Date(survey.expiresAt) : null;
-  const isExpired = deadline !== null && now > deadline; 
-  const isClosed = !survey.isActive || isExpired;
+  const start = new Date(periode.tglMulai);
+  start.setHours(0, 0, 0, 0); // Start of day
+  
+  const end = new Date(periode.tglSelesai);
+  end.setHours(23, 59, 59, 999); // End of day
 
-  // 🎯 The "Virtual Wall" - Prevents entry if the node is closed or out of time
+  const isExpired = now < start || now > end;
+  const isClosed = periode.status !== "AKTIF" || isExpired;
+
   if (isClosed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505] text-white p-10">
+      <div className="min-h-screen flex items-center justify-center bg-[#0F172A] text-white p-10">
         <div className="text-center space-y-6">
-          <div className="inline-block px-4 py-1 rounded-full border border-red-500/30 bg-red-500/10 text-red-500 text-[10px] font-black tracking-widest uppercase italic">
-            • Regional Node Closed
+          <div className="inline-block px-4 py-1 rounded-full bg-red-500/20 text-red-400 text-[10px] font-black tracking-widest uppercase border border-red-500/30">
+            • Portal Closed
           </div>
           <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none">
-            Assessment <br/> Expired
+            {periode.label} <br /> <span className="text-red-500">Has Ended</span>
           </h1>
-          <p className="text-gray-600 font-medium text-sm max-w-xs mx-auto">
-            This portal was set for a specific duration and is no longer accepting responses.
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+            Sistem Survei Kepuasan Masyarakat
           </p>
         </div>
       </div>
     );
   }
 
-  // If the node is active, inject the data directly into our new Stateful UI
-  return <WizardClient survey={survey} />;
+  return (
+    <main className="min-h-screen bg-white">
+      <SkmForm 
+        periodeId={periode.id} 
+        layananName={periode.layanan.nama}
+        agencyName={periode.layanan.perangkatDaerah.nama}
+        label={periode.label}
+      />
+    </main>
+  );
 }

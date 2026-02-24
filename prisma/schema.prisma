@@ -1,52 +1,82 @@
+// file: prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or "mysql" / "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum QuestionType {
-  TEXT
-  SCORE
+// 🏛️ AGENCY
+model PerangkatDaerah {
+  id        String    @id @default(cuid())
+  nama      String
+  alamat    String?
+  layanan   Layanan[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
-model Survey {
-  id        String     @id @default(cuid())
-  title     String
-  isActive  Boolean    @default(true)
-  expiresAt DateTime?
-  ownerId   String?    // 🚀 Added to fix admin.ts error
-  createdAt DateTime   @default(now()) // 🚀 Added to fix admin.ts error
-  questions Question[]
-  responses Response[]
+// 📂 SERVICE (Supports Soft Delete)
+model Layanan {
+  id              String          @id @default(cuid())
+  nama            String
+  deskripsi       String?
+  status          String          @default("AKTIF") // "AKTIF" or "NONAKTIF"
+  
+  perangkatId     String
+  perangkatDaerah PerangkatDaerah @relation(fields: [perangkatId], references: [id])
+  periode         Periode[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
-model Question {
+// 🗓️ PERIOD (The Gatekeeper)
+model Periode {
+  id          String   @id @default(cuid())
+  label       String   // e.g. "Semester 1 2025"
+  tglMulai    DateTime
+  tglSelesai  DateTime
+  status      String   @default("AKTIF") // "AKTIF", "CLOSED", "ARCHIVED"
+  token       String   @unique           // 🔑 THE QR ACCESS KEY
+  
+  layananId   String
+  layanan     Layanan  @relation(fields: [layananId], references: [id])
+  respon      Respon[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 📝 RESPONSE (1-4 Scale Only)
+model Respon {
+  id          String   @id @default(cuid())
+  
+  // Scoring (Strictly 1-4)
+  u1          Int
+  u2          Int
+  u3          Int
+  u4          Int
+  u5          Int
+  u6          Int
+  u7          Int
+  u8          Int
+  u9          Int
+  saran       String?
+
+  periodeId   String
+  periode     Periode  @relation(fields: [periodeId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// 🛡️ AUDIT LOG (New Requirement)
+model LogActivity {
   id        String   @id @default(cuid())
-  surveyId  String
-  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  text      String
-  type      String   // "SCORE" or "TEXT"
-  isKPI     Boolean  @default(false) // 🎯 Marks the primary metric
-}
-
-model Response {
-  id           String   @id @default(cuid())
-  surveyId     String
-  survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers      Answer[] 
-  primaryScore Float?   
-  globalScore  Float?   
-  fingerprint  String?  
-  createdAt    DateTime @default(now())
-}
-
-model Answer {
-  id         String   @id @default(cuid())
-  responseId String
-  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  questionId String
-  value      String   // 🚀 code must use 'value', not 'content'
+  action    String   // e.g. "CREATE_PERIODE", "SOFT_DELETE_LAYANAN"
+  target    String   // e.g. "Layanan Kenaikan Pangkat"
+  details   String?
+  timestamp DateTime @default(now())
 }

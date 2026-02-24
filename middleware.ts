@@ -1,22 +1,36 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Define which pages need protection
-const isProtected = createRouteMatcher([
-  '/admin(.*)',       // Lock the dashboard
-  '/surveys/new(.*)', // Lock the creation page
-]);
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtected(req)) {
-    await auth.protect();
+  // 1. 🟢 ALLOW PUBLIC ROUTES (Assessment, Login, Static)
+  if (
+    pathname.startsWith("/assessment") || 
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/_next") || 
+    pathname.startsWith("/static") || 
+    pathname === "/success" ||
+    pathname === "/" 
+  ) {
+    return NextResponse.next();
   }
-});
+
+  // 2. 🔴 PROTECT ADMIN ROUTES
+  if (pathname.startsWith("/admin")) {
+    // Check for the session cookie
+    const adminSession = request.cookies.get("admin_session");
+
+    if (!adminSession) {
+      // 🚫 No cookie? Kick them to Login
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
