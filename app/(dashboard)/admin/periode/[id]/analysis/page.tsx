@@ -4,7 +4,7 @@ import Link from "next/link";
 import ExportButton from "./ExportButton";
 import QrSection from "./QrSection";
 
-// 📊 SKM GRADE STANDARD (Permenpan RB 14/2017)
+// ... (keep getSkmGrade function as is) ...
 function getSkmGrade(ikm: number) {
   if (ikm >= 88.31) return { grade: "A", mutu: "Sangat Baik", color: "text-green-600 bg-green-50 border-green-200" };
   if (ikm >= 76.61) return { grade: "B", mutu: "Baik", color: "text-blue-600 bg-blue-50 border-blue-200" };
@@ -15,7 +15,7 @@ function getSkmGrade(ikm: number) {
 export default async function AnalysisPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // 1. 🛡️ FETCH DATA (Includes Token & Responses)
+  // 1. FETCH DATA
   const periode = await prisma.periode.findUnique({
     where: { id },
     include: {
@@ -26,14 +26,11 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
 
   if (!periode) return notFound();
 
-  // 2. 🧮 CALCULATION ENGINE (1-4 Scale)
+  // 2. CALCULATIONS
   const respondentCount = periode.respon.length;
-  
-  // Count feedbacks (non-empty saran) for the notification badge
   const feedbackCount = periode.respon.filter(r => r.saran && r.saran.trim().length > 0).length;
 
   const sums = { u1: 0, u2: 0, u3: 0, u4: 0, u5: 0, u6: 0, u7: 0, u8: 0, u9: 0 };
-  
   periode.respon.forEach(r => {
     sums.u1 += r.u1; sums.u2 += r.u2; sums.u3 += r.u3;
     sums.u4 += r.u4; sums.u5 += r.u5; sums.u6 += r.u6;
@@ -44,7 +41,6 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
     const sum = sums[key as keyof typeof sums];
     const nrr = respondentCount > 0 ? sum / respondentCount : 0;
     const nrrTertimbang = nrr * 0.111; 
-    
     return {
       id: key.toUpperCase(),
       label: ["Persyaratan", "Prosedur", "Waktu", "Biaya", "Produk", "Kompetensi", "Perilaku", "Penanganan", "Sarana"][idx],
@@ -84,12 +80,21 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
 
         {/* ACTION BUTTONS */}
         <div className="flex gap-2">
-           {/* 🆕 READ FEEDBACK BUTTON */}
+           {/* 🆕 NEW: VIEW ANALYTICS BUTTON */}
+           <Link 
+             href={`/admin/periode/${periode.id}/analytics`}
+             className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition active:scale-95"
+           >
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+             Analytics
+           </Link>
+
+           {/* FEEDBACK BUTTON */}
            <Link 
              href={`/admin/periode/${periode.id}/responses`}
              className="flex items-center gap-2 bg-white border border-gray-200 text-black px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-sm hover:bg-gray-50 transition active:scale-95"
            >
-             Read Feedback
+             Feedback
              {feedbackCount > 0 && (
                <span className="bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full text-[8px] font-bold">
                  {feedbackCount}
@@ -122,7 +127,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
 
-        {/* 🆕 QR CODE SECTION (With Token) */}
+        {/* QR CODE SECTION */}
         <QrSection 
            token={periode.token} 
            label={periode.label} 

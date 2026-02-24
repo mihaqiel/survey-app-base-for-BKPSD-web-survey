@@ -3,9 +3,8 @@
 import { QRCodeSVG } from "qrcode.react";
 import { useState, useRef, useEffect } from "react";
 
-// Update the interface to accept 'token'
 interface QrProps {
-  token: string;       // 👈 This matches what AnalysisPage is passing
+  token: string;
   label: string;
   serviceName: string;
 }
@@ -22,10 +21,49 @@ export default function QrSection({ token, label, serviceName }: QrProps) {
     }
   }, [token]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // 🛡️ ROBUST COPY FUNCTION (Works on HTTP & HTTPS)
+  const handleCopy = async () => {
+    if (!url) return;
+
+    // 1. Try Modern API (HTTPS / Localhost)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        return;
+      } catch (err) {
+        console.warn("Clipboard API failed, switching to fallback...");
+      }
+    }
+
+    // 2. Fallback for HTTP / Older Browsers
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      
+      // Ensure it's not visible
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        alert("Could not copy automatically. Please copy the URL manually.");
+      }
+    } catch (err) {
+      console.error("Fallback copy failed", err);
+      alert("Browser blocked copy. Please copy manually.");
+    }
   };
 
   const handleDownload = () => {
@@ -46,6 +84,8 @@ export default function QrSection({ token, label, serviceName }: QrProps) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 100, 100, 1000, 1000);
+        
+        // Add Text Branding
         ctx.font = "bold 40px Arial";
         ctx.fillStyle = "black";
         ctx.textAlign = "center";
@@ -77,10 +117,10 @@ export default function QrSection({ token, label, serviceName }: QrProps) {
       </div>
 
       <div className="w-full space-y-2 mt-auto">
-        <button onClick={handleCopy} className="w-full py-3 bg-gray-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200">
-          {copied ? "Copied!" : "Copy Link"}
+        <button onClick={handleCopy} className="w-full py-3 bg-gray-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-colors">
+          {copied ? "✅ Copied!" : "Copy Link"}
         </button>
-        <button onClick={handleDownload} className="w-full py-3 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800">
+        <button onClick={handleDownload} className="w-full py-3 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800 transition-colors">
           Download PNG
         </button>
       </div>
