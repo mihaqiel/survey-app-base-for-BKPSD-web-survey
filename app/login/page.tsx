@@ -16,8 +16,8 @@ export default function LoginPage() {
           GOV
         </div>
 
-        <h1 className="text-2xl font-black uppercase tracking-tighter mb-2">Admin Portal</h1>
-        <p className="text-xs text-gray-400 uppercase tracking-widest mb-8">Badan Kepegawaian & PSDM</p>
+        <h1 className="text-2xl font-black uppercase tracking-tighter mb-2">Admin Login</h1>
+        <p className="text-xs text-gray-400 uppercase tracking-widest mb-8">Badan Kepegawaian dan Pengembagan Sumber Daya Manusia</p>
 
         {/* LOGIN FORM */}
         <form action={login} className="space-y-4 text-left">

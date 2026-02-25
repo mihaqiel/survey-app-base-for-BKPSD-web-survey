@@ -1,58 +1,94 @@
 import { prisma } from "@/lib/prisma";
-import QrSection from "@/app/(dashboard)/admin/components/QrSection"; Reusing your component
+import QrSection from "../components/QrSection";
+import Link from "next/link";
 
 export default async function SettingsPage() {
-  // Fetch the Global Active Token
-  const globalPeriod = await prisma.periode.findFirst({
-    where: { status: "AKTIF" }
-  });
-
-  if (!globalPeriod) return <div>No Active Global Period Found. Please seed the database.</div>;
+  const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
+  const totalResponses = activePeriod ? await prisma.respon.count({ where: { periodeId: activePeriod.id } }) : 0;
+  const totalLayanan = await prisma.layanan.count();
+  const totalPegawai = await prisma.pegawai.count();
 
   return (
-    <div className="p-4">
-      <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-8">System Settings</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* 📱 GENERIC QR CODE CARD */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-          <h2 className="text-sm font-black uppercase tracking-widest text-blue-600 mb-6">Global Access QR</h2>
-          <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-            This QR Code is <strong>Generic</strong>. It points to the main portal. 
-            Respondents scan this, then select their service manually.
-            One code for all 22 services.
-          </p>
-          
-          <div className="h-[400px]">
-            <QrSection 
-              token={globalPeriod.token} 
-              label={globalPeriod.label} 
-              serviceName="PORTAL SKM TERPADU" // Generic Name
-            />
-          </div>
+    <div className="min-h-screen p-8 font-sans" style={{ backgroundColor: "#F0F4F8", color: "#132B4F" }}>
+
+      {/* HEADER */}
+      <div className="max-w-6xl mx-auto mb-8">
+        <Link href="/admin" className="text-[10px] font-black uppercase tracking-widest mb-4 block hover:opacity-70 transition-opacity" style={{ color: "#009CC5" }}>
+          ← Dashboard
+        </Link>
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter" style={{ color: "#132B4F" }}>Settings & QR Code</h1>
+        <p className="text-sm font-medium mt-2 text-gray-500">Kelola konfigurasi akses global dan titik masuk survei.</p>
+      </div>
+
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* LEFT: QR */}
+        <div>
+          {activePeriod ? (
+            <QrSection token={activePeriod.token} label={activePeriod.label} />
+          ) : (
+            <div className="p-8 bg-red-50 text-red-600 rounded-2xl font-bold text-center border border-red-100 h-full flex flex-col items-center justify-center gap-2">
+              <p className="font-black">System Error: Tidak Ada Periode Aktif.</p>
+              <p className="text-xs font-normal opacity-70">Jalankan seed script atau buat periode di database.</p>
+            </div>
+          )}
         </div>
 
-        {/* ⚙️ PERIOD MANAGEMENT */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-          <h2 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-6">Active Session</h2>
-          <div className="space-y-4">
-             <div>
-               <label className="text-[10px] font-bold uppercase text-gray-400">Current Token</label>
-               <input readOnly value={globalPeriod.token} className="w-full mt-2 p-4 bg-gray-50 rounded-xl font-mono font-bold text-center border border-gray-200" />
-             </div>
-             <div>
-               <label className="text-[10px] font-bold uppercase text-gray-400">Session Name</label>
-               <input readOnly value={globalPeriod.label} className="w-full mt-2 p-4 bg-gray-50 rounded-xl font-bold border border-gray-200" />
-             </div>
-             <div className="pt-4">
-               <button className="w-full py-4 bg-red-50 text-red-600 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-100 transition-colors">
-                 Reset / Generate New Token
-               </button>
-             </div>
-          </div>
-        </div>
+        {/* RIGHT */}
+        <div className="flex flex-col gap-6">
 
+          {/* STATUS CARD */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="h-1 w-12 rounded-full mb-6" style={{ backgroundColor: "#009CC5" }} />
+            <h3 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: "#009CC5" }}>Status Sistem</h3>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-4 h-4 rounded-full animate-pulse shrink-0" style={{ backgroundColor: "#FAE705" }} />
+              <div>
+                <p className="font-black text-lg" style={{ color: "#132B4F" }}>Sistem Aktif</p>
+                <p className="text-xs text-gray-400 font-medium">Menerima respons untuk {activePeriod?.label || "Unknown"}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { val: totalResponses, label: "Respons" },
+                { val: totalLayanan, label: "Layanan" },
+                { val: totalPegawai, label: "Pegawai" },
+              ].map(({ val, label }, i) => (
+                <div key={label} className="rounded-2xl p-4 text-center" style={{ backgroundColor: i === 0 ? "#132B4F" : "#F0F4F8" }}>
+                  <p className="text-2xl font-black" style={{ color: i === 0 ? "#FAE705" : "#132B4F" }}>{val}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest mt-1" style={{ color: i === 0 ? "#009CC5" : "gray" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* HOW TO USE */}
+          <div className="p-8 rounded-2xl text-white flex-1" style={{ backgroundColor: "#132B4F" }}>
+            <div className="h-1 w-16 rounded-full mb-6" style={{ backgroundColor: "#FAE705" }} />
+            <h3 className="text-[10px] font-black uppercase tracking-widest mb-6" style={{ color: "#009CC5" }}>Cara Penggunaan</h3>
+            <div className="space-y-5">
+              {[
+                "Cetak QR Code di sebelah kiri dan pasang di loket pelayanan Anda.",
+                "Responden memindai kode untuk membuka Portal Pemilihan Layanan.",
+                "Respons otomatis dikategorikan berdasarkan layanan yang dipilih.",
+                "Lihat analitik per layanan atau pegawai dari Dashboard.",
+              ].map((text, i) => (
+                <div key={i} className="flex gap-4 items-start">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5" style={{ backgroundColor: "#009CC5" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <p className="text-sm font-medium text-white/70 leading-relaxed">{text}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 pt-6 border-t border-white/10 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#FAE705" }} />
+              Token: {activePeriod?.token ?? "—"}
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );

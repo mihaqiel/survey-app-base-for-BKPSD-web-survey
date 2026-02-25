@@ -1,14 +1,10 @@
 import Sidebar from "./admin/Sidebar";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen" style={{ backgroundColor: "#F0F4F8" }}>
       <Sidebar />
-      <main className="ml-64 p-8"> {/* ml-64 pushes content right of sidebar */}
+      <main className="ml-64">
         {children}
       </main>
     </div>

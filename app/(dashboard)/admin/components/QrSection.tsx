@@ -1,95 +1,165 @@
 "use client";
 
-import { QRCodeSVG } from "qrcode.react";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
+import QRCode from "react-qr-code";
 
-interface QrProps {
-  token: string;
-  label: string;
-  serviceName: string;
-}
-
-export default function QrSection({ token, label, serviceName }: QrProps) {
-  const [copied, setCopied] = useState(false);
-  const [url, setUrl] = useState("");
+export default function QrSection({ token, label }: { token: string; label: string }) {
   const qrRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [surveyUrl, setSurveyUrl] = useState("");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Points to the MAIN ENTRY PORTAL
-      setUrl(`${window.location.origin}/enter?token=${token}`);
-    }
+    setSurveyUrl(`${window.location.origin}/enter?token=${token}`);
   }, [token]);
 
-  const handleCopy = async () => {
-    if (!url) return;
+  const downloadQr = async () => {
+    if (!surveyUrl) return;
+    setDownloading(true);
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const canvas = document.createElement("canvas");
+      const W = 768;
+      const H = 1050;
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+
+      // Background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+
+      // BK logo box
+      ctx.fillStyle = "#000000";
+      roundRect(ctx, W / 2 - 36, 48, 72, 72, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("BK", W / 2, 48 + 44);
+
+      // Label
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 36px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label.toUpperCase(), W / 2, 175);
+
+      // Subtitle
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("SCAN TO START SURVEY", W / 2, 205);
+
+      // Draw QR from SVG
+      const svgEl = svgRef.current?.querySelector("svg");
+      if (svgEl) {
+        const svgData = new XMLSerializer().serializeToString(svgEl);
+        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, W / 2 - 200, 230, 400, 400);
+            URL.revokeObjectURL(svgUrl);
+            resolve();
+          };
+          img.src = svgUrl;
+        });
+      }
+
+      // Divider
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.setLineDash([8, 6]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(48, 680);
+      ctx.lineTo(W - 48, 680);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Access Token label
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("ACCESS TOKEN", W / 2, 720);
+
+      // Token value
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 42px monospace";
+      ctx.fillText(token, W / 2, 790);
+
+      // Download
+      const url = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `QR-${label.replace(/\s+/g, "-")}.png`;
+      link.click();
     } catch (err) {
-      alert("Please copy manually: " + url);
+      console.error("Failed to download QR", err);
+    } finally {
+      setDownloading(false);
     }
   };
 
-  const handleDownload = () => {
-    const svg = qrRef.current?.querySelector("svg");
-    if (!svg) return;
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-
-    img.onload = () => {
-      canvas.width = 1200;
-      canvas.height = 1200;
-      if (ctx) {
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 100, 100, 1000, 1000);
-        
-        // Add Branding
-        ctx.font = "bold 40px Arial";
-        ctx.fillStyle = "black";
-        ctx.textAlign = "center";
-        ctx.fillText(serviceName.toUpperCase(), 600, 1100);
-        ctx.fillText(`TOKEN: ${token}`, 600, 1150);
-        
-        const pngUrl = canvas.toDataURL("image/png");
-        const a = document.createElement("a");
-        a.href = pngUrl;
-        a.download = `QR_${token}.png`;
-        a.click();
-      }
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-  };
-
-  if (!url) return null;
-
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center justify-between text-center h-full">
-      <div className="mb-2">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Access Token</h3>
-        <p className="text-xl font-black font-mono tracking-widest text-blue-600">{token}</p>
-      </div>
-      
-      <div ref={qrRef} className="bg-white p-4 rounded-3xl border-2 border-black mb-6">
-        <QRCodeSVG value={url} size={160} level="H" includeMargin={true} />
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center text-center">
+
+      {/* QR CARD (display only) */}
+      <div ref={qrRef} className="p-8 bg-white rounded-[2rem] border border-gray-100 mb-6 w-full max-w-sm mx-auto">
+        <div className="mb-4 flex justify-center">
+          <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-black text-xs">BK</div>
+        </div>
+        <h3 className="text-xl font-black uppercase tracking-tighter mb-1 text-black">{label}</h3>
+        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-8">Scan to Start Survey</p>
+
+        <div ref={svgRef} className="bg-white p-4 rounded-xl inline-block">
+          {surveyUrl ? (
+            <QRCode
+              value={surveyUrl}
+              size={200}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+              viewBox="0 0 256 256"
+            />
+          ) : (
+            <div className="w-[200px] h-[200px] bg-gray-100 rounded-lg animate-pulse" />
+          )}
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-dashed border-gray-200">
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Access Token</p>
+          <p className="text-3xl font-black font-mono mt-2 tracking-widest text-black">{token}</p>
+        </div>
       </div>
 
-      <div className="w-full space-y-2 mt-auto">
-        <button onClick={handleCopy} className="w-full py-3 bg-gray-100 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-colors">
-          {copied ? "✅ Copied!" : "Copy Link"}
+      {/* ACTION BUTTONS */}
+      <div className="flex gap-4 w-full max-w-sm">
+        <button
+          onClick={() => navigator.clipboard.writeText(surveyUrl)}
+          className="flex-1 py-4 bg-gray-50 text-gray-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors"
+        >
+          Copy Link
         </button>
-        <button onClick={handleDownload} className="w-full py-3 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800 transition-colors">
-          Download PNG
+        <button
+          onClick={downloadQr}
+          disabled={downloading || !surveyUrl}
+          className="flex-1 py-4 bg-black text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50"
+        >
+          {downloading ? "Saving..." : "Download PNG"}
         </button>
       </div>
     </div>
   );
+}
+
+// Helper to draw rounded rectangles
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
 }

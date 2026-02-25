@@ -104,6 +104,20 @@ async function main() {
   }
 
   console.log("✅ Seeding Complete!");
+
+const existingPeriode = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
+if (!existingPeriode) {
+  await prisma.periode.create({
+    data: {
+      label: "Global Access",
+      status: "AKTIF",
+      token: "global-token-2026",
+    }
+  });
+  console.log("Created active Periode.");
+}
+
+
 }
 
 main()
