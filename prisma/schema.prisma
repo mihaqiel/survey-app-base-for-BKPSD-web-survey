@@ -1,52 +1,83 @@
+// app/prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or "mysql"
   url      = env("DATABASE_URL")
 }
 
-enum QuestionType {
-  TEXT
-  SCORE
-}
-
-model Survey {
-  id        String     @id @default(cuid())
-  title     String
-  isActive  Boolean    @default(true)
-  expiresAt DateTime?
-  ownerId   String?    // 🚀 Added to fix admin.ts error
-  createdAt DateTime   @default(now()) // 🚀 Added to fix admin.ts error
-  questions Question[]
-  responses Response[]
-}
-
-model Question {
+// 🗓️ GLOBAL PERIOD (The Gatekeeper)
+model Periode {
   id        String   @id @default(cuid())
-  surveyId  String
-  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  text      String
-  type      String   // "SCORE" or "TEXT"
-  isKPI     Boolean  @default(false) // 🎯 Marks the primary metric
+  label     String   @default("Global Access")
+  status    String   @default("AKTIF") 
+  token     String   @unique
+  respon    Respon[]
+  createdAt DateTime @default(now())
 }
 
-model Response {
-  id           String   @id @default(cuid())
-  surveyId     String
-  survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers      Answer[] 
-  primaryScore Float?   
-  globalScore  Float?   
-  fingerprint  String?  
-  createdAt    DateTime @default(now())
+// 🏢 FIXED SERVICE (22 Layanan) - ⚠️ ENSURE NO 'perangkatId' HERE
+model Layanan {
+  id        String   @id @default(cuid())
+  nama      String
+  respon    Respon[]
 }
 
-model Answer {
-  id         String   @id @default(cuid())
-  responseId String
-  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  questionId String
-  value      String   // 🚀 code must use 'value', not 'content'
+// 👨‍💼 EMPLOYEE
+model Pegawai {
+  id        String   @id @default(cuid())
+  nama      String
+  respon    Respon[]
+}
+
+// 📝 RESPONSE
+model Respon {
+  id          String   @id @default(cuid())
+  
+  // Relations
+  periodeId   String
+  periode     Periode  @relation(fields: [periodeId], references: [id])
+  
+  layananId   String
+  layanan     Layanan  @relation(fields: [layananId], references: [id])
+  
+  pegawaiId   String
+  pegawai     Pegawai  @relation(fields: [pegawaiId], references: [id])
+
+  // Demographics
+  nama             String
+  usia             Int
+  jenisKelamin     String
+  pendidikan       String
+  pekerjaan        String
+  isDifabel        String
+  jenisDisabilitas String?
+  tglLayanan       DateTime
+  
+  // Scores
+  u1 Int
+  u2 Int
+  u3 Int
+  u4 Int
+  u5 Int
+  u6 Int
+  u7 Int
+  u8 Int
+  u9 Int
+  
+  saran     String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+// 📜 SYSTEM AUDIT LOG
+model LogActivity {
+  id        String   @id @default(cuid())
+  action    String   // e.g., "CREATE", "DELETE", "ARCHIVE"
+  target    String   // e.g., "Periode: SKM Q1 2024"
+  details   String?  // Optional extra information
+  timestamp DateTime @default(now()) // Used for "Newest first" sorting
 }

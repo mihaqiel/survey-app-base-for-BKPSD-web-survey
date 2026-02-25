@@ -1,22 +1,26 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Define which pages need protection
-const isProtected = createRouteMatcher([
-  '/admin(.*)',       // Lock the dashboard
-  '/surveys/new(.*)', // Lock the creation page
-]);
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtected(req)) {
-    await auth.protect();
+  // 1. PROTECT SURVEY ROUTES
+  // User must have 'skm_token' cookie to view /assessment/*
+  if (pathname.startsWith("/assessment")) {
+    const tokenCookie = request.cookies.get("skm_token");
+    
+    if (!tokenCookie) {
+      // Redirect to Gatekeeper if missing
+      const url = request.nextUrl.clone();
+      url.pathname = "/enter";
+      return NextResponse.redirect(url);
+    }
   }
-});
 
+  return NextResponse.next();
+}
+
+// Apply to these paths
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ["/assessment/:path*"],
 };
