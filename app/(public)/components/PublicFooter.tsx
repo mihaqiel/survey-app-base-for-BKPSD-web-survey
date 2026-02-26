@@ -6,75 +6,52 @@ export default function PublicFooter() {
   return (
     <footer className="bg-[#132B4F] text-white mt-auto">
       {/* TOP ACCENT */}
-      <div className="h-1 bg-gradient-to-r from-[#FAE705] via-[#009CC5] to-[#132B4F]" />
+      <div className="h-1" style={{ background: "linear-gradient(to right, #FAE705 33%, #009CC5 33% 66%, #132B4F 66%)" }} />
 
-      {/* MAIN FOOTER CONTENT */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+      {/* MAIN CONTENT */}
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-          {/* LOGOS COLUMN */}
-          <div className="md:col-span-1 flex flex-col gap-5">
+          {/* LEFT: Brand */}
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-              <Image src="/logo-bkpsdm.png" alt="BKPSDM" width={70} height={44} className="object-contain h-10 w-auto brightness-0 invert" />
+              <Image
+                src="/logo-bkpsdm.png"
+                alt="BKPSDM"
+                width={48}
+                height={36}
+                className="object-contain h-9 w-auto brightness-0 invert"
+              />
+              <div className="w-px h-7 bg-white/20" />
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#FAE705]">BKPSDM</p>
+                <p className="text-[10px] font-bold text-white/50">Kab. Kepulauan Anambas</p>
+              </div>
             </div>
-            <p className="text-xs text-white/50 font-medium leading-relaxed">
+            <p className="text-[11px] text-white/40 font-medium leading-relaxed max-w-xs border-l-2 border-[#009CC5] pl-3">
               Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Kabupaten Kepulauan Anambas.
             </p>
           </div>
 
-          {/* TENTANG */}
-          <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#009CC5] mb-4">Tentang</h4>
-            <ul className="space-y-2.5">
-              {["Profil BKPSDM", "Visi & Misi", "Struktur Organisasi", "Dasar Hukum"].map(item => (
-                <li key={item}>
-                  <span className="text-xs text-white/60 font-medium hover:text-white transition-colors cursor-default">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* LAYANAN */}
-          <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#009CC5] mb-4">Layanan SKM</h4>
-            <ul className="space-y-2.5">
-              {["Informasi Survei", "Cara Pengisian", "Hasil Survei", "Laporan IKM"].map(item => (
-                <li key={item}>
-                  <span className="text-xs text-white/60 font-medium hover:text-white transition-colors cursor-default">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* KONTAK */}
-          <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#009CC5] mb-4">Hubungi Kami</h4>
-            <ul className="space-y-3">
-              <li className="flex gap-2.5 items-start">
-                <span className="text-[#FAE705] mt-0.5 shrink-0">📍</span>
-                <span className="text-xs text-white/60 font-medium leading-relaxed">
-                  Jl. [Nama Jalan], Tarempa,<br />Kepulauan Anambas, Riau
-                </span>
-              </li>
-              <li className="flex gap-2.5 items-center">
-                <span className="text-[#FAE705] shrink-0">📞</span>
-                <span className="text-xs text-white/60 font-medium">(0753) xxx-xxxx</span>
-              </li>
-              <li className="flex gap-2.5 items-center">
-                <span className="text-[#FAE705] shrink-0">✉️</span>
-                <span className="text-xs text-white/60 font-medium">bkpsdm@anambaskab.go.id</span>
-              </li>
-            </ul>
-
-            {/* SOCIAL MEDIA */}
-            <div className="mt-5 flex gap-3">
+          {/* RIGHT: Contact */}
+          <div className="space-y-3">
+            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FAE705]">Hubungi Kami</h4>
+            <div className="space-y-2">
+              <p className="text-[11px] text-white/50 font-medium">📍 Jl. [Nama Jalan], Tarempa, Kepulauan Anambas</p>
+              <p className="text-[11px] text-white/50 font-medium">📞 (0753) xxx-xxxx</p>
+              <p className="text-[11px] text-white/50 font-medium">✉️ bkpsdm@anambaskab.go.id</p>
+            </div>
+            <div className="flex gap-2 pt-1">
               {[
                 { label: "IG", title: "Instagram" },
                 { label: "FB", title: "Facebook" },
                 { label: "YT", title: "YouTube" },
-              ].map(s => (
-                <div key={s.label} title={s.title}
-                  className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[9px] font-black text-white/60 hover:bg-[#009CC5] hover:text-white transition-colors cursor-pointer">
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  title={s.title}
+                  className="w-7 h-7 border border-white/20 flex items-center justify-center text-[9px] font-black text-white/40 hover:bg-[#009CC5] hover:border-[#009CC5] hover:text-white transition-all cursor-pointer"
+                >
                   {s.label}
                 </div>
               ))}
@@ -84,15 +61,23 @@ export default function PublicFooter() {
       </div>
 
       {/* BOTTOM BAR */}
-      <div className="border-t border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[10px] text-white/30 font-medium">
-            © {year} BKPSDM Kabupaten Kepulauan Anambas. Sistem Survei Kepuasan Masyarakat.
-          </p>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#FAE705]" />
-            <div className="w-1.5 h-1.5 rounded-full bg-[#009CC5]" />
-            <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+      <div className="border-t border-white/10 bg-black/20">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-[10px] text-white/30 font-medium">
+              © {year} BKPSDM Kabupaten Kepulauan Anambas — Sistem Survei Kepuasan Masyarakat
+            </p>
+            <p className="text-[10px] text-white/30 font-medium">
+              Teks hak cipta kedua di sini
+            </p>
+            <p className="text-[10px] text-white/30 font-medium">
+              Teks hak cipta ketiga di sini
+            </p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <div className="w-4 h-1.5 bg-[#FAE705]" />
+            <div className="w-4 h-1.5 bg-[#009CC5]" />
+            <div className="w-4 h-1.5 bg-white/20" />
           </div>
         </div>
       </div>

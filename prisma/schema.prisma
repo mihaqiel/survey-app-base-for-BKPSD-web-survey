@@ -81,3 +81,4 @@ model LogActivity {
   details   String?  // Optional extra information
   timestamp DateTime @default(now()) // Used for "Newest first" sorting
 }
+

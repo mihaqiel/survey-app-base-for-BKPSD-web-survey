@@ -27,3 +27,10 @@ export async function logout() {
   cookieStore.delete("admin_session");
   redirect("/login");
 }
+
+async function isAdmin(): Promise<boolean> {
+  const c = await cookies();
+  const session = c.get("admin_session");
+  console.log("admin_session cookie:", session); // check terminal
+  return !!session || !!c.get("skm_token");
+}

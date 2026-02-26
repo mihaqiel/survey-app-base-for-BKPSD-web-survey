@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import QrSection from "../components/QrSection";
+import QrSection from "@/app/(dashboard)/admin/components/QrSection";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -9,27 +9,39 @@ export default async function SettingsPage() {
   const totalPegawai = await prisma.pegawai.count();
 
   return (
-    <div className="min-h-screen p-8 font-sans" style={{ backgroundColor: "#F0F4F8", color: "#132B4F" }}>
+    <div className="min-h-screen font-sans bg-[#F0F4F8]">
 
-      {/* HEADER */}
-      <div className="max-w-6xl mx-auto mb-8">
-        <Link href="/admin" className="text-[10px] font-black uppercase tracking-widest mb-4 block hover:opacity-70 transition-opacity" style={{ color: "#009CC5" }}>
+      {/* PAGE HEADER */}
+      <div className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-1 h-7 bg-[#FAE705]" />
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#009CC5]">Admin · Konfigurasi</p>
+            <h1 className="text-xl font-black uppercase tracking-tight text-[#132B4F] leading-none">QR Code & Akses Survei</h1>
+          </div>
+        </div>
+        <Link href="/admin"
+          className="px-4 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] transition-colors">
           ← Dashboard
         </Link>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter" style={{ color: "#132B4F" }}>Settings & QR Code</h1>
-        <p className="text-sm font-medium mt-2 text-gray-500">Kelola konfigurasi akses global dan titik masuk survei.</p>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-6xl mx-auto px-8 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* LEFT: QR */}
-        <div>
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          <div className="h-0.5 bg-gradient-to-r from-[#FAE705] to-[#009CC5]" />
           {activePeriod ? (
             <QrSection token={activePeriod.token} label={activePeriod.label} />
           ) : (
-            <div className="p-8 bg-red-50 text-red-600 rounded-2xl font-bold text-center border border-red-100 h-full flex flex-col items-center justify-center gap-2">
-              <p className="font-black">System Error: Tidak Ada Periode Aktif.</p>
-              <p className="text-xs font-normal opacity-70">Jalankan seed script atau buat periode di database.</p>
+            <div className="p-12 flex flex-col items-center justify-center gap-3 h-64">
+              <div className="w-10 h-10 bg-red-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-red-600">Tidak Ada Periode Aktif</p>
+              <p className="text-xs text-gray-400 font-medium text-center">Jalankan seed script atau buat periode di database.</p>
             </div>
           )}
         </div>
@@ -38,53 +50,60 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-6">
 
           {/* STATUS CARD */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-            <div className="h-1 w-12 rounded-full mb-6" style={{ backgroundColor: "#009CC5" }} />
-            <h3 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: "#009CC5" }}>Status Sistem</h3>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-4 h-4 rounded-full animate-pulse shrink-0" style={{ backgroundColor: "#FAE705" }} />
-              <div>
-                <p className="font-black text-lg" style={{ color: "#132B4F" }}>Sistem Aktif</p>
-                <p className="text-xs text-gray-400 font-medium">Menerima respons untuk {activePeriod?.label || "Unknown"}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { val: totalResponses, label: "Respons" },
-                { val: totalLayanan, label: "Layanan" },
-                { val: totalPegawai, label: "Pegawai" },
-              ].map(({ val, label }, i) => (
-                <div key={label} className="rounded-2xl p-4 text-center" style={{ backgroundColor: i === 0 ? "#132B4F" : "#F0F4F8" }}>
-                  <p className="text-2xl font-black" style={{ color: i === 0 ? "#FAE705" : "#132B4F" }}>{val}</p>
-                  <p className="text-[10px] font-black uppercase tracking-widest mt-1" style={{ color: i === 0 ? "#009CC5" : "gray" }}>{label}</p>
+          <div className="bg-white border border-gray-200 overflow-hidden">
+            <div className="h-0.5 bg-[#009CC5]" />
+            <div className="p-6">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#009CC5] mb-5">Status Sistem</p>
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                <div className="w-3 h-3 rounded-full bg-[#FAE705] animate-pulse shrink-0" />
+                <div>
+                  <p className="font-black text-[#132B4F]">Sistem Aktif</p>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">
+                    Menerima respons untuk <span className="text-[#132B4F] font-bold">{activePeriod?.label || "—"}</span>
+                  </p>
                 </div>
-              ))}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { val: totalResponses, label: "Respons", highlight: true },
+                  { val: totalLayanan, label: "Layanan", highlight: false },
+                  { val: totalPegawai, label: "Pegawai", highlight: false },
+                ].map(({ val, label, highlight }) => (
+                  <div key={label} className={`p-4 text-center border border-gray-100 ${highlight ? "bg-[#132B4F]" : "bg-[#F0F4F8]"}`}>
+                    <p className={`text-2xl font-black ${highlight ? "text-[#FAE705]" : "text-[#132B4F]"}`}>{val}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${highlight ? "text-[#009CC5]" : "text-gray-400"}`}>{label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* HOW TO USE */}
-          <div className="p-8 rounded-2xl text-white flex-1" style={{ backgroundColor: "#132B4F" }}>
-            <div className="h-1 w-16 rounded-full mb-6" style={{ backgroundColor: "#FAE705" }} />
-            <h3 className="text-[10px] font-black uppercase tracking-widest mb-6" style={{ color: "#009CC5" }}>Cara Penggunaan</h3>
-            <div className="space-y-5">
-              {[
-                "Cetak QR Code di sebelah kiri dan pasang di loket pelayanan Anda.",
-                "Responden memindai kode untuk membuka Portal Pemilihan Layanan.",
-                "Respons otomatis dikategorikan berdasarkan layanan yang dipilih.",
-                "Lihat analitik per layanan atau pegawai dari Dashboard.",
-              ].map((text, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5" style={{ backgroundColor: "#009CC5" }}>
-                    {String(i + 1).padStart(2, "0")}
+          <div className="bg-[#132B4F] border border-gray-200 overflow-hidden flex-1">
+            <div className="h-0.5 bg-gradient-to-r from-[#FAE705] to-[#009CC5]" />
+            <div className="p-6 space-y-5">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#009CC5]">Cara Penggunaan</p>
+              <div className="space-y-4">
+                {[
+                  "Cetak QR Code di sebelah kiri dan pasang di loket pelayanan Anda.",
+                  "Responden memindai kode untuk membuka Portal Pemilihan Layanan.",
+                  "Respons otomatis dikategorikan berdasarkan layanan yang dipilih.",
+                  "Lihat analitik per layanan atau pegawai dari Dashboard.",
+                ].map((text, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="w-6 h-6 bg-[#009CC5] flex items-center justify-center text-[9px] font-black text-white shrink-0 mt-0.5">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm font-medium text-white/60 leading-relaxed">{text}</p>
                   </div>
-                  <p className="text-sm font-medium text-white/70 leading-relaxed">{text}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#FAE705" }} />
-              Token: {activePeriod?.token ?? "—"}
+                ))}
+              </div>
+              <div className="pt-4 border-t border-white/10 flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#FAE705]" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                  Token: {activePeriod?.token ?? "—"}
+                </p>
+              </div>
             </div>
           </div>
 

@@ -22,7 +22,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
       <SkmForm
         layananId={service.id}
         layananName={service.nama}
-        agencyName="Badan Kepegawaian & Pengembangan SDM"
+        agencyName="Badan Kepegawaian dan Pengembangan Sumber Daya Manusia"
       />
     </div>
   );

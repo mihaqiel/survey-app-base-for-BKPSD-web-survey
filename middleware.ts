@@ -1,26 +1,14 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+// middleware.ts — project root (next to /app)
+import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// NOTE: Middleware runs in Edge Runtime — cannot import from lib/ipStore
+// (Node.js global not available in edge). Manual block is checked inside
+// the server action instead. This middleware is kept minimal.
 
-  // 1. PROTECT SURVEY ROUTES
-  // User must have 'skm_token' cookie to view /assessment/*
-  if (pathname.startsWith("/assessment")) {
-    const tokenCookie = request.cookies.get("skm_token");
-    
-    if (!tokenCookie) {
-      // Redirect to Gatekeeper if missing
-      const url = request.nextUrl.clone();
-      url.pathname = "/enter";
-      return NextResponse.redirect(url);
-    }
-  }
-
+export function middleware(_req: NextRequest) {
   return NextResponse.next();
 }
 
-// Apply to these paths
 export const config = {
-  matcher: ["/assessment/:path*"],
+  matcher: [], // disabled — duplicate/spam logic is in the server action
 };

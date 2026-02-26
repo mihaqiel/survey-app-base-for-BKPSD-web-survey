@@ -6,50 +6,44 @@ import { prisma } from "@/lib/prisma";
 const getWhereClause = (periodeId: string, layananId?: string) => {
   return {
     periodeId,
-    ...(layananId ? { layananId } : {}) // Only add if layananId exists
+    ...(layananId ? { layananId } : {})
   };
 };
 
 // 📊 1. EXECUTIVE OVERVIEW
 export async function getAnalyticsOverview(periodeId: string, layananId?: string) {
-  // A. Fetch Responses for the Target Scope
   const responses = await prisma.respon.findMany({
     where: getWhereClause(periodeId, layananId),
-    select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true } 
+    select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
   });
 
   const totalRespon = responses.length;
-  
-  // Calculate Current Score
+
   let totalScore = 0;
-  responses.forEach(r => {
+  responses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
     totalScore += (r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9);
   });
 
   const currentNRR = totalRespon > 0 ? totalScore / (9 * totalRespon) : 0;
   const currentIKM = currentNRR * 25;
 
-  // B. Comparison Logic (Previous Period)
-  // 1. Find the current period's creation date to find older ones
   const currentPeriodDef = await prisma.periode.findUnique({ where: { id: periodeId } });
-  
+
   let prevIKM = 0;
   let comparison = 0;
   let hasPrevious = false;
 
   if (currentPeriodDef) {
-    // 2. Find the most recent "older" period
     const prevPeriod = await prisma.periode.findFirst({
       where: {
         createdAt: { lt: currentPeriodDef.createdAt },
-        respon: { some: {} } // Optimization: Only periods with data
+        respon: { some: {} }
       },
       orderBy: { createdAt: "desc" }
     });
 
     if (prevPeriod) {
       hasPrevious = true;
-      // 3. Calculate Prev IKM (Filtered by same Service if applicable)
       const prevResponses = await prisma.respon.findMany({
         where: getWhereClause(prevPeriod.id, layananId),
         select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
@@ -57,7 +51,7 @@ export async function getAnalyticsOverview(periodeId: string, layananId?: string
 
       if (prevResponses.length > 0) {
         let prevTotal = 0;
-        prevResponses.forEach(r => {
+        prevResponses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
           prevTotal += (r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9);
         });
         const prevNRR = prevTotal / (9 * prevResponses.length);
@@ -87,21 +81,21 @@ export async function getQuestionDistribution(periodeId: string, layananId?: str
   if (count === 0) return [];
 
   const sums = [0,0,0,0,0,0,0,0,0];
-  responses.forEach(r => {
+  responses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
     sums[0] += r.u1; sums[1] += r.u2; sums[2] += r.u3;
     sums[3] += r.u4; sums[4] += r.u5; sums[5] += r.u6;
     sums[6] += r.u7; sums[7] += r.u8; sums[8] += r.u9;
   });
 
   const labels = [
-    "Persyaratan", "Prosedur", "Waktu", 
-    "Biaya/Tarif", "Produk", "Kompetensi", 
+    "Persyaratan", "Prosedur", "Waktu",
+    "Biaya/Tarif", "Produk", "Kompetensi",
     "Perilaku", "Penanganan", "Sarana"
   ];
 
   return labels.map((label, idx) => ({
     label: `U${idx+1}`,
-    tooltip: label, // Full label for tooltip
+    tooltip: label,
     value: parseFloat((sums[idx] / count).toFixed(2)),
     code: `U${idx+1}`
   }));
@@ -116,7 +110,7 @@ export async function getTrendData(periodeId: string, layananId?: string) {
   });
 
   const grouped = new Map<string, number>();
-  responses.forEach(r => {
+  responses.forEach((r: { createdAt: Date }) => {
     const dateKey = r.createdAt.toISOString().split('T')[0];
     grouped.set(dateKey, (grouped.get(dateKey) || 0) + 1);
   });
@@ -131,9 +125,9 @@ export async function getSatisfactionComposition(periodeId: string, layananId?: 
     select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
   });
 
-  let counts = { sangatBaik: 0, baik: 0, kurang: 0, buruk: 0 };
+  const counts = { sangatBaik: 0, baik: 0, kurang: 0, buruk: 0 };
 
-  responses.forEach(r => {
+  responses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
     const total = r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9;
     const avg = total / 9;
     if (avg >= 3.5) counts.sangatBaik++;
@@ -157,10 +151,12 @@ export async function getDemographicStats(periodeId: string, layananId?: string)
     select: { jenisKelamin: true, pendidikan: true, pekerjaan: true, isDifabel: true }
   });
 
-  const groupBy = (key: keyof typeof responses[0]) => {
+  type ResponRow = typeof responses[0];
+
+  const groupBy = (key: keyof ResponRow) => {
     const counts: Record<string, number> = {};
-    responses.forEach(r => {
-      const val = r[key] as string || "Unknown";
+    responses.forEach((r: ResponRow) => {
+      const val = (r[key] as string) || "Unknown";
       counts[val] = (counts[val] || 0) + 1;
     });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
