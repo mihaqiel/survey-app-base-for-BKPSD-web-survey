@@ -23,7 +23,7 @@ const OPTIONS = [
 ];
 
 const PENDIDIKAN = ["SD", "SMP", "SMA/SMK", "D1/D2/D3", "S1/D4", "S2", "S3"];
-const PEKERJAAN = ["PNS","PPPK", "Outsourcing", "TNI/Polri", "Swasta", "Wirausaha", "Pelajar/Mahasiswa", "Lainnya"];
+const PEKERJAAN = ["PNS", "PPPK", "Outsourcing", "TNI/Polri", "Swasta", "Wirausaha", "Pelajar/Mahasiswa", "Lainnya"];
 
 const TOTAL_STEPS = 13;
 const STEP_LABELS = [
@@ -89,9 +89,10 @@ export default function PortalForm() {
     ? layananList.filter((l) => l.nama.toLowerCase().includes(layananSearch.toLowerCase()))
     : layananList;
 
-  const filteredPegawai = pegawaiSearch.length > 1
+  // Show all when no search, filter when typing
+  const filteredPegawai = pegawaiSearch.length > 0
     ? pegawaiList.filter((p) => p.nama.toLowerCase().includes(pegawaiSearch.toLowerCase()))
-    : [];
+    : pegawaiList;
 
   const canProceed = () => {
     if (step === 0) return !!selectedLayanan;
@@ -322,22 +323,32 @@ export default function PortalForm() {
                 </div>
               )}
 
-              {/* STEP 2: PEGAWAI */}
+              {/* STEP 2: PEGAWAI — same pattern as layanan */}
               {step === 2 && (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-500 font-medium">Siapa pegawai yang melayani Anda hari ini?</p>
+
+                  {/* Search box */}
                   <div className="relative">
                     <div className="flex items-center gap-3 bg-[#F0F4F8] border-2 border-transparent focus-within:border-[#009CC5] px-4 py-3 transition-colors">
                       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
                       </svg>
-                      <input type="text" placeholder="Ketik nama pegawai (min. 2 huruf)..."
+                      <input
+                        type="text"
+                        placeholder="Cari nama pegawai..."
                         value={selectedPegawai ? selectedPegawai.nama : pegawaiSearch}
                         onChange={(e) => { setPegawaiSearch(e.target.value); setSelectedPegawai(null); }}
                         className="flex-1 text-sm font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
                       />
+                      {pegawaiSearch.length > 0 && !selectedPegawai && (
+                        <button type="button" onClick={() => setPegawaiSearch("")}
+                          className="text-gray-300 hover:text-gray-500 font-black text-xs">✕</button>
+                      )}
                     </div>
-                    {!selectedPegawai && pegawaiSearch.length > 1 && (
+
+                    {/* Dropdown while typing */}
+                    {!selectedPegawai && pegawaiSearch.length > 0 && (
                       <div className="absolute z-10 w-full bg-white border border-gray-200 border-t-0 shadow-lg">
                         {filteredPegawai.length === 0 ? (
                           <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Tidak ditemukan</p>
@@ -352,6 +363,31 @@ export default function PortalForm() {
                       </div>
                     )}
                   </div>
+
+                  {/* Full scrollable list (shown when nothing selected and not searching) */}
+                  {!selectedPegawai && pegawaiSearch.length === 0 && (
+                    <div className="border border-gray-200 overflow-hidden">
+                      <div className="bg-[#132B4F] px-4 py-2.5 flex items-center justify-between">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white">Semua Pegawai</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[#FAE705]">{pegawaiList.length} Pegawai</p>
+                      </div>
+                      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                        {pegawaiList.length === 0 ? (
+                          <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Memuat data...</p>
+                        ) : pegawaiList.map((p, i) => (
+                          <button key={p.id} type="button" onClick={() => setSelectedPegawai(p)}
+                            className="w-full text-left px-5 py-3.5 text-sm font-bold text-[#132B4F] hover:bg-[#F0F4F8] flex items-center gap-4 transition-colors group"
+                          >
+                            <span className="text-[10px] font-black text-gray-300 w-5 shrink-0">{i + 1}</span>
+                            <div className="w-1 h-4 bg-gray-200 group-hover:bg-[#009CC5] shrink-0 transition-colors" />
+                            {p.nama}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected state */}
                   {selectedPegawai && (
                     <div className="flex items-center justify-between bg-[#132B4F] px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -396,7 +432,6 @@ export default function PortalForm() {
                       );
                     })}
                   </div>
-                  {/* Progress dots */}
                   <div className="flex items-center gap-1.5 justify-center pt-2">
                     {SKM_QUESTIONS.map((_, i) => (
                       <div key={i} className={`h-1.5 transition-all ${

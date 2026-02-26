@@ -43,24 +43,27 @@ export default function LayananExportButton({ layananNama, periodLabel, response
       // ── SHEET 1: DATA ───────────────────────────────────────────────
       const wsData = wb.addWorksheet("Data");
       wsData.columns = [
-        { header: "Silahkan Pilih Perangkat Daerah Yang Anda Terima Layanannya", key: "opd", width: 55 },
-        { header: "Jenis Layanan Yang Anda Terima", key: "layanan", width: 35 },
-        { header: "Tanggal Menerima Layanan", key: "tgl", width: 22 },
-        { header: "Jenis Kelamin", key: "jk", width: 14 },
-        { header: "Pendidikan Terakhir", key: "pend", width: 22 },
-        { header: "Usia", key: "usia", width: 16 },
-        { header: "Pekerjaan", key: "kerja", width: 18 },
-        { header: "Apakah Anda merupakan penyandang disabilitas/pendamping penyandang disabilitas?", key: "difabel", width: 20 },
+        { header: "Silahkan Pilih Perangkat Daerah Yang Anda Terima Layanannya", key: "opd",          width: 55 },
+        { header: "Jenis Layanan Yang Anda Terima",                               key: "layanan",      width: 35 },
+        { header: "Nama Responden",                                                key: "nama",         width: 25 },
+        { header: "Nama Pegawai Yang Melayani",                                   key: "pegawai",      width: 25 },
+        { header: "Tanggal Menerima Layanan",                                     key: "tgl",          width: 22 },
+        { header: "Jenis Kelamin",                                                 key: "jk",           width: 14 },
+        { header: "Pendidikan Terakhir",                                           key: "pend",         width: 22 },
+        { header: "Usia",                                                          key: "usia",         width: 10 },
+        { header: "Pekerjaan",                                                     key: "kerja",        width: 18 },
+        { header: "Apakah Anda merupakan penyandang disabilitas/pendamping penyandang disabilitas?", key: "difabel",      width: 20 },
         { header: "Jika ya, jenis disabilitas apa yang Anda miliki/dampingi? (Jika tidak, lewati)", key: "jenisDifabel", width: 22 },
-        { header: "Persyaratan", key: "u1", width: 14 },
-        { header: "Prosedur", key: "u2", width: 12 },
+        { header: "Persyaratan",  key: "u1", width: 14 },
+        { header: "Prosedur",     key: "u2", width: 12 },
         { header: "Jangka Waktu", key: "u3", width: 14 },
-        { header: "Tarif", key: "u4", width: 10 },
-        { header: "Produk", key: "u5", width: 12 },
-        { header: "Kompetensi", key: "u6", width: 14 },
-        { header: "Perilaku", key: "u7", width: 12 },
-        { header: "Pengaduan", key: "u8", width: 12 },
-        { header: "Sarpras", key: "u9", width: 12 },
+        { header: "Tarif",        key: "u4", width: 10 },
+        { header: "Produk",       key: "u5", width: 12 },
+        { header: "Kompetensi",   key: "u6", width: 14 },
+        { header: "Perilaku",     key: "u7", width: 12 },
+        { header: "Pengaduan",    key: "u8", width: 12 },
+        { header: "Sarpras",      key: "u9", width: 12 },
+        { header: "Saran",        key: "saran", width: 35 },
       ];
 
       const dataHeaderRow = wsData.getRow(1);
@@ -83,10 +86,14 @@ export default function LayananExportButton({ layananNama, periodLabel, response
           : new Date(r.createdAt).toLocaleDateString("id-ID");
         const row = wsData.addRow([
           "Badan Kepegawaian dan Pengembangan Sumber Daya Manusia",
-          layananNama, tgl,
+          layananNama,
+          r.nama,
+          r.pegawai?.nama ?? "-",
+          tgl,
           r.jenisKelamin, r.pendidikan, r.usia, r.pekerjaan,
           r.isDifabel ?? "Tidak", r.jenisDisabilitas ?? "-",
           r.u1, r.u2, r.u3, r.u4, r.u5, r.u6, r.u7, r.u8, r.u9,
+          r.saran ?? "-",
         ]);
         const isEven = (idx % 2 === 0);
         row.eachCell(cell => {
@@ -101,10 +108,12 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         });
       });
 
-      wsData.autoFilter = { from: "A1", to: "R1" };
+      // autoFilter spans A-U (21 cols)
+      wsData.autoFilter = { from: "A1", to: "U1" };
       wsData.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
       // ── SHEET 2: REKAP ──────────────────────────────────────────────
+      // U scores shifted: U1=L, U2=M, U3=N, U4=O, U5=P, U6=Q, U7=R, U8=S, U9=T
       const wsRekap = wb.addWorksheet("Rekap");
       wsRekap.columns = [
         { key: "a", width: 35 }, { key: "b", width: 16 },
@@ -139,8 +148,6 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         const dataRow = wsRekap.addRow([
           layananNama,
           { formula: "COUNTIFS(Data!B:B,A2)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!J:J,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!K:K,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR((AVERAGEIFS(Data!L:L,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR((AVERAGEIFS(Data!M:M,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR((AVERAGEIFS(Data!N:N,Data!$B:$B,$A2))*25,0)" },
@@ -148,6 +155,8 @@ export default function LayananExportButton({ layananNama, periodLabel, response
           { formula: "IFERROR((AVERAGEIFS(Data!P:P,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR((AVERAGEIFS(Data!Q:Q,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR((AVERAGEIFS(Data!R:R,Data!$B:$B,$A2))*25,0)" },
+          { formula: "IFERROR((AVERAGEIFS(Data!S:S,Data!$B:$B,$A2))*25,0)" },
+          { formula: "IFERROR((AVERAGEIFS(Data!T:T,Data!$B:$B,$A2))*25,0)" },
           { formula: "IFERROR(AVERAGE(C2:K2),0)" },
           { formula: 'IFERROR(IF(L2>=88.31,"A",IF(L2>=76.61,"B",IF(L2>=65,"C","D"))),"-")' },
           { formula: 'IFERROR(IF(L2>=88.31,"Sangat Baik",IF(L2>=76.61,"Baik",IF(L2>=65,"Kurang Baik","Tidak Baik"))),"-")' },
@@ -170,12 +179,11 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         dataRow.getCell(14).font = { bold: true, size: 10, name: "Arial" };
       }
 
-      // Summary rows — yellow
       const summaryDefs = [
         ["Rerata IKM Per Unsur", "", { formula: "IFERROR(AVERAGE(C2:C2),0)" }, { formula: "IFERROR(AVERAGE(D2:D2),0)" }, { formula: "IFERROR(AVERAGE(E2:E2),0)" }, { formula: "IFERROR(AVERAGE(F2:F2),0)" }, { formula: "IFERROR(AVERAGE(G2:G2),0)" }, { formula: "IFERROR(AVERAGE(H2:H2),0)" }, { formula: "IFERROR(AVERAGE(I2:I2),0)" }, { formula: "IFERROR(AVERAGE(J2:J2),0)" }, { formula: "IFERROR(AVERAGE(K2:K2),0)" }, { formula: "IFERROR(AVERAGE(L2:L2),0)" }, "", ""],
-        ["IKM Unit Layanan", "", { formula: "IFERROR(AVERAGE(C3:K3),0)" }, "", "", "", "", "", "", "", "", "", "", ""],
-        ["Mutu Unit Layanan", "", { formula: 'IFERROR(IF(C4>=88.31,"A",IF(C4>=76.61,"B",IF(C4>=65,"C","D"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
-        ["Predikat", "", { formula: 'IFERROR(IF(C4>=88.31,"Sangat Baik",IF(C4>=76.61,"Baik",IF(C4>=65,"Kurang Baik","Tidak Baik"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["IKM Unit Layanan",    "", { formula: "IFERROR(AVERAGE(C3:K3),0)" }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Mutu Unit Layanan",   "", { formula: 'IFERROR(IF(C4>=88.31,"A",IF(C4>=76.61,"B",IF(C4>=65,"C","D"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Predikat",            "", { formula: 'IFERROR(IF(C4>=88.31,"Sangat Baik",IF(C4>=76.61,"Baik",IF(C4>=65,"Kurang Baik","Tidak Baik"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
       ];
 
       summaryDefs.forEach(rowData => {

@@ -1,26 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import * as XLSX from "xlsx";
 import { getGlobalExportData } from "@/app/action/admin";
 
-// Color constants matching reference
-const NAVY  = "FF132B4F";
-const CYAN  = "FF009CC5";
-const YELLOW = "FFFAE705";
-const WHITE  = "FFFFFFFF";
-const LIGHT_BLUE = "FFD6EAF8";  // alternating row bg
-const HEADER_BG  = "FF1F4E79";  // dark blue header like reference
-
-function cell(s: XLSX.CellObject): XLSX.CellObject { return s; }
-
-function styleSheet(ws: XLSX.WorkSheet, dataLen: number, serviceCount: number) {
-  // We can't do cell styling with xlsx-js alone (needs xlsx-style or SheetJS Pro)
-  // But we CAN set column widths, freeze panes, and autofilter
-  ws["!freeze"] = { xSplit: 0, ySplit: 1 };
-  ws["!autofilter"] = { ref: `A1:T1` };
-  return ws;
-}
+const WHITE      = "FFFFFFFF";
+const YELLOW     = "FFFAE705";
+const LIGHT_BLUE = "FFD6EAF8";
+const NAVY_HDR   = "FF1F4E79";
 
 export default function GlobalExportButton() {
   const [loading, setLoading] = useState(false);
@@ -33,7 +19,6 @@ export default function GlobalExportButton() {
 
       const { periodLabel, data } = result;
 
-      // ── Use ExcelJS for proper styling ──────────────────────────────
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();
       wb.creator = "BKPSDM Anambas";
@@ -42,30 +27,33 @@ export default function GlobalExportButton() {
       // ── SHEET 1: DATA ───────────────────────────────────────────────
       const wsData = wb.addWorksheet("Data");
       wsData.columns = [
-        { header: "Silahkan Pilih Perangkat Daerah Yang Anda Terima Layanannya", key: "opd", width: 55 },
-        { header: "Jenis Layanan Yang Anda Terima", key: "layanan", width: 35 },
-        { header: "Tanggal Menerima Layanan", key: "tgl", width: 22 },
-        { header: "Jenis Kelamin", key: "jk", width: 14 },
-        { header: "Pendidikan Terakhir", key: "pend", width: 22 },
-        { header: "Usia", key: "usia", width: 16 },
-        { header: "Pekerjaan", key: "kerja", width: 18 },
-        { header: "Apakah Anda merupakan penyandang disabilitas/pendamping penyandang disabilitas?", key: "difabel", width: 20 },
+        { header: "Silahkan Pilih Perangkat Daerah Yang Anda Terima Layanannya", key: "opd",          width: 55 },
+        { header: "Jenis Layanan Yang Anda Terima",                               key: "layanan",      width: 35 },
+        { header: "Nama Responden",                                                key: "nama",         width: 25 },
+        { header: "Nama Pegawai Yang Melayani",                                   key: "pegawai",      width: 25 },
+        { header: "Tanggal Menerima Layanan",                                     key: "tgl",          width: 22 },
+        { header: "Jenis Kelamin",                                                 key: "jk",           width: 14 },
+        { header: "Pendidikan Terakhir",                                           key: "pend",         width: 22 },
+        { header: "Usia",                                                          key: "usia",         width: 10 },
+        { header: "Pekerjaan",                                                     key: "kerja",        width: 18 },
+        { header: "Apakah Anda merupakan penyandang disabilitas/pendamping penyandang disabilitas?", key: "difabel",      width: 20 },
         { header: "Jika ya, jenis disabilitas apa yang Anda miliki/dampingi? (Jika tidak, lewati)", key: "jenisDifabel", width: 22 },
-        { header: "Persyaratan", key: "u1", width: 14 },
-        { header: "Prosedur", key: "u2", width: 12 },
+        { header: "Persyaratan",  key: "u1", width: 14 },
+        { header: "Prosedur",     key: "u2", width: 12 },
         { header: "Jangka Waktu", key: "u3", width: 14 },
-        { header: "Tarif", key: "u4", width: 10 },
-        { header: "Produk", key: "u5", width: 12 },
-        { header: "Kompetensi", key: "u6", width: 14 },
-        { header: "Perilaku", key: "u7", width: 12 },
-        { header: "Pengaduan", key: "u8", width: 12 },
-        { header: "Sarpras", key: "u9", width: 12 },
+        { header: "Tarif",        key: "u4", width: 10 },
+        { header: "Produk",       key: "u5", width: 12 },
+        { header: "Kompetensi",   key: "u6", width: 14 },
+        { header: "Perilaku",     key: "u7", width: 12 },
+        { header: "Pengaduan",    key: "u8", width: 12 },
+        { header: "Sarpras",      key: "u9", width: 12 },
+        { header: "Saran",        key: "saran", width: 35 },
       ];
 
-      // Style header row
       const dataHeaderRow = wsData.getRow(1);
+      dataHeaderRow.height = 40;
       dataHeaderRow.eachCell(cell => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY_HDR } };
         cell.font = { bold: true, color: { argb: WHITE }, size: 10, name: "Arial" };
         cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
         cell.border = {
@@ -75,15 +63,15 @@ export default function GlobalExportButton() {
           right: { style: "thin", color: { argb: WHITE } },
         };
       });
-      dataHeaderRow.height = 40;
 
-      // Add data rows
       let rowIdx = 2;
       data.forEach((svc: (typeof data)[number]) => {
         svc.rawResponses.forEach((r: (typeof svc.rawResponses)[number]) => {
           const row = wsData.addRow([
             "Badan Kepegawaian dan Pengembangan Sumber Daya Manusia",
             svc.serviceName,
+            r.Nama,
+            r.Pegawai,
             r.Tanggal,
             r.JK,
             r.Pendidikan,
@@ -92,6 +80,7 @@ export default function GlobalExportButton() {
             r.Difabel ?? "Tidak",
             r.JenisDisabilitas ?? "-",
             r.U1, r.U2, r.U3, r.U4, r.U5, r.U6, r.U7, r.U8, r.U9,
+            r.Saran ?? "-",
           ]);
           const isEven = (rowIdx % 2 === 0);
           row.eachCell(cell => {
@@ -108,10 +97,13 @@ export default function GlobalExportButton() {
         });
       });
 
-      wsData.autoFilter = { from: "A1", to: "R1" };
+      // autoFilter now spans A-U (21 cols)
+      wsData.autoFilter = { from: "A1", to: "U1" };
       wsData.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
       // ── SHEET 2: REKAP ──────────────────────────────────────────────
+      // NOTE: U scores shifted right by 2 cols (Nama + Pegawai added)
+      // Data!L:L = U1, M=U2, N=U3, O=U4, P=U5, Q=U6, R=U7, S=U8, T=U9
       const wsRekap = wb.addWorksheet("Rekap");
       wsRekap.columns = [
         { key: "a", width: 35 }, { key: "b", width: 16 },
@@ -123,7 +115,6 @@ export default function GlobalExportButton() {
         { key: "m", width: 10 }, { key: "n", width: 16 },
       ];
 
-      // Header row
       const rekapHeader = wsRekap.addRow([
         "Jenis Layanan", "Total Responden",
         "Persyaratan", "Prosedur", "Jangka Waktu", "Tarif", "Produk",
@@ -132,7 +123,7 @@ export default function GlobalExportButton() {
       ]);
       rekapHeader.height = 36;
       rekapHeader.eachCell(cell => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY_HDR } };
         cell.font = { bold: true, color: { argb: WHITE }, size: 10, name: "Arial" };
         cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
         cell.border = {
@@ -144,18 +135,13 @@ export default function GlobalExportButton() {
       });
 
       const serviceNames = data.map((s: (typeof data)[number]) => s.serviceName);
-      const unsurCols = ["C","D","E","F","G","H","I","J","K"];
 
       serviceNames.forEach((name: string, idx: number) => {
         const row = idx + 2;
-        const unsurFormulas = unsurCols.map(col =>
-          `=(AVERAGEIFS(Data!${col === "C" ? "J" : col === "D" ? "K" : col === "E" ? "L" : col === "F" ? "M" : col === "G" ? "N" : col === "H" ? "O" : col === "I" ? "P" : col === "J" ? "Q" : "R"}:${col === "C" ? "J" : col === "D" ? "K" : col === "E" ? "L" : col === "F" ? "M" : col === "G" ? "N" : col === "H" ? "O" : col === "I" ? "P" : col === "J" ? "Q" : "R"},Data!$B:$B,$A${row}))*25`
-        );
         const dataRow = wsRekap.addRow([
           name,
           { formula: `COUNTIFS(Data!B:B,A${row})` },
-          { formula: `IFERROR((AVERAGEIFS(Data!J:J,Data!$B:$B,$A${row}))*25,0)` },
-          { formula: `IFERROR((AVERAGEIFS(Data!K:K,Data!$B:$B,$A${row}))*25,0)` },
+          // U scores now in cols L–T (shifted +2)
           { formula: `IFERROR((AVERAGEIFS(Data!L:L,Data!$B:$B,$A${row}))*25,0)` },
           { formula: `IFERROR((AVERAGEIFS(Data!M:M,Data!$B:$B,$A${row}))*25,0)` },
           { formula: `IFERROR((AVERAGEIFS(Data!N:N,Data!$B:$B,$A${row}))*25,0)` },
@@ -163,6 +149,8 @@ export default function GlobalExportButton() {
           { formula: `IFERROR((AVERAGEIFS(Data!P:P,Data!$B:$B,$A${row}))*25,0)` },
           { formula: `IFERROR((AVERAGEIFS(Data!Q:Q,Data!$B:$B,$A${row}))*25,0)` },
           { formula: `IFERROR((AVERAGEIFS(Data!R:R,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!S:S,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!T:T,Data!$B:$B,$A${row}))*25,0)` },
           { formula: `IFERROR(AVERAGE(C${row}:K${row}),0)` },
           { formula: `IFERROR(IF(L${row}>=88.31,"A",IF(L${row}>=76.61,"B",IF(L${row}>=65,"C","D"))),"-")` },
           { formula: `IFERROR(IF(L${row}>=88.31,"Sangat Baik",IF(L${row}>=76.61,"Baik",IF(L${row}>=65,"Kurang Baik","Tidak Baik"))),"-")` },
@@ -180,10 +168,8 @@ export default function GlobalExportButton() {
             right: { style: "hair", color: { argb: "FFBDC3C7" } },
           };
         });
-        // Service name left-aligned
         dataRow.getCell(1).alignment = { horizontal: "left" };
-        dataRow.getCell(1).font = { size: 10, name: "Arial", bold: false };
-        // Bold IKM
+        dataRow.getCell(1).font = { size: 10, name: "Arial" };
         dataRow.getCell(12).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(13).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(14).font = { bold: true, size: 10, name: "Arial" };
@@ -191,25 +177,28 @@ export default function GlobalExportButton() {
 
       const lastDataRow = serviceNames.length + 1;
 
-      // Summary rows — yellow background like reference
       const summaryRows = [
-        {
-          label: "Rerata IKM Per Unsur",
-          cols: unsurCols.map((col, i) => ({
-            formula: `IFERROR(AVERAGE(${col}2:${col}${lastDataRow}),0)`
-          })),
-          extra: [
-            { formula: `IFERROR(AVERAGE(L2:L${lastDataRow}),0)` }, "", ""
-          ]
-        },
-        { label: "IKM Unit Layanan", cols: Array(9).fill(""), extra: [{ formula: `IFERROR(AVERAGE(C${lastDataRow+1}:K${lastDataRow+1}),0)` }, "", ""] },
-        { label: "Mutu Unit Layanan", cols: Array(9).fill(""), extra: [{ formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"A",IF(C${lastDataRow+2}>=76.61,"B",IF(C${lastDataRow+2}>=65,"C","D"))),"-")` }, "", ""] },
-        { label: "Predikat", cols: Array(9).fill(""), extra: [{ formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"Sangat Baik",IF(C${lastDataRow+2}>=76.61,"Baik",IF(C${lastDataRow+2}>=65,"Kurang Baik","Tidak Baik"))),"-")` }, "", ""] },
+        ["Rerata IKM Per Unsur", "",
+          { formula: `IFERROR(AVERAGE(C2:C${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(D2:D${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(E2:E${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(F2:F${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(G2:G${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(H2:H${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(I2:I${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(J2:J${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(K2:K${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(L2:L${lastDataRow}),0)` },
+          "", "",
+        ],
+        ["IKM Unit Layanan", "", { formula: `IFERROR(AVERAGE(C${lastDataRow+1}:K${lastDataRow+1}),0)` }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Mutu Unit Layanan", "", { formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"A",IF(C${lastDataRow+2}>=76.61,"B",IF(C${lastDataRow+2}>=65,"C","D"))),"-")` }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Predikat", "", { formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"Sangat Baik",IF(C${lastDataRow+2}>=76.61,"Baik",IF(C${lastDataRow+2}>=65,"Kurang Baik","Tidak Baik"))),"-")` }, "", "", "", "", "", "", "", "", "", "", ""],
       ];
 
-      summaryRows.forEach((sr, si) => {
-        const rowData: unknown[] = [sr.label, "", ...sr.cols.map((c: any) => (typeof c === "object" ? c : "")), ...sr.extra];
+      summaryRows.forEach(rowData => {
         const sumRow = wsRekap.addRow(rowData);
+        sumRow.height = 20;
         sumRow.eachCell(cell => {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW } };
           cell.font = { bold: true, size: 10, name: "Arial", color: { argb: "FF000000" } };
@@ -223,7 +212,6 @@ export default function GlobalExportButton() {
           };
         });
         sumRow.getCell(1).alignment = { horizontal: "left" };
-        sumRow.height = 20;
       });
 
       wsRekap.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];

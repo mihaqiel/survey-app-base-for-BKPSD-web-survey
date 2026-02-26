@@ -1,7 +1,6 @@
-
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface ChartData {
   name: string;
@@ -14,48 +13,55 @@ function CustomTooltip({ active, payload }: any) {
     const d = payload[0];
     return (
       <div className="bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-lg">
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{d.payload.name}</p>
-        <p className="text-lg font-black" style={{ color: d.fill }}>IKM {d.value}</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{d.name}</p>
+        <p className="text-lg font-black" style={{ color: d.payload.fill }}>IKM {d.value}</p>
       </div>
     );
   }
   return null;
 }
 
+function CustomLegend({ payload }: any) {
+  return (
+    <div className="flex flex-col gap-1.5 mt-2 max-h-40 overflow-y-auto pr-1">
+      {payload?.map((entry: any, i: number) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.payload.fill }} />
+          <span className="text-[10px] font-bold text-gray-500 truncate">{entry.value}</span>
+          <span className="text-[10px] font-black ml-auto shrink-0" style={{ color: entry.payload.fill }}>
+            {entry.payload.ikm}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardCharts({ data }: { data: ChartData[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
-        barSize={10}
-      >
-        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
-        <XAxis
-          type="number"
-          domain={[0, 100]}
-          tick={{ fontSize: 9, fontWeight: 700, fill: "#9CA3AF" }}
-          tickLine={false}
-          axisLine={false}
-          ticks={[0, 25, 50, 65, 76.61, 88.31, 100]}
-          tickFormatter={(v) => v === 76.61 ? "76.6" : v === 88.31 ? "88.3" : String(v)}
-        />
-        <YAxis
-          type="category"
-          dataKey="name"
-          width={140}
-          tick={{ fontSize: 10, fontWeight: 700, fill: "#6B7280" }}
-          tickLine={false}
-          axisLine={false}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F9FAFB" }} />
-        <Bar dataKey="ikm" radius={[0, 4, 4, 0]}>
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="45%"
+          innerRadius="35%"
+          outerRadius="65%"
+          paddingAngle={3}
+          dataKey="ikm"
+          nameKey="name"
+        >
           {data.map((entry, index) => (
-            <Cell key={index} fill={entry.fill} />
+            <Cell key={index} fill={entry.fill} strokeWidth={0} />
           ))}
-        </Bar>
-      </BarChart>
+        </Pie>
+        <Tooltip content={<CustomTooltip />} />
+        <Legend
+          content={<CustomLegend />}
+          verticalAlign="bottom"
+          align="center"
+        />
+      </PieChart>
     </ResponsiveContainer>
   );
 }
