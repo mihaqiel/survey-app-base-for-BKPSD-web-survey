@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
 const prisma = new PrismaClient()
 
 const LAYANAN_LIST = [
@@ -77,13 +79,25 @@ const PEGAWAI_LIST = [
   "PUTRI DEWI"
 ];
 
+// ── Admin credentials — change these before going to production ──────────
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "bkpsd2026";
+
 async function main() {
   console.log("🌱 Seeding Database...");
 
-  // 1. Clear existing data (Optional: helps avoid duplicates during dev)
-  // await prisma.respon.deleteMany({});
-  // await prisma.layanan.deleteMany({});
-  // await prisma.pegawai.deleteMany({});
+  // 1. Seed Admin
+  console.log("Creating admin user...");
+  const existingAdmin = await prisma.admin.findUnique({ where: { username: ADMIN_USERNAME } });
+  if (!existingAdmin) {
+    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
+    await prisma.admin.create({
+      data: { username: ADMIN_USERNAME, password: hashed },
+    });
+    console.log(`✅ Admin created: ${ADMIN_USERNAME}`);
+  } else {
+    console.log(`ℹ️  Admin already exists: ${ADMIN_USERNAME}`);
+  }
 
   // 2. Seed Services
   console.log(`Creating ${LAYANAN_LIST.length} Services...`);
@@ -103,21 +117,20 @@ async function main() {
     }
   }
 
+  // 4. Seed active Periode
+  const existingPeriode = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
+  if (!existingPeriode) {
+    await prisma.periode.create({
+      data: {
+        label: "Global Access",
+        status: "AKTIF",
+        token: "global-token-2026",
+      }
+    });
+    console.log("✅ Created active Periode.");
+  }
+
   console.log("✅ Seeding Complete!");
-
-const existingPeriode = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
-if (!existingPeriode) {
-  await prisma.periode.create({
-    data: {
-      label: "Global Access",
-      status: "AKTIF",
-      token: "global-token-2026",
-    }
-  });
-  console.log("Created active Periode.");
-}
-
-
 }
 
 main()

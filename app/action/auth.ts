@@ -2,13 +2,17 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function login(formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
-  // Simple hardcoded check
-  if (username === "admin" && password === "bkpsd2026") {
+  // Look up admin in database
+  const admin = await prisma.admin.findUnique({ where: { username } });
+
+  if (admin && await bcrypt.compare(password, admin.password)) {
     const cookieStore = await cookies();
     cookieStore.set("admin_session", "true", {
       httpOnly: true,
@@ -28,9 +32,7 @@ export async function logout() {
   redirect("/login");
 }
 
-async function isAdmin(): Promise<boolean> {
+export async function isAdmin(): Promise<boolean> {
   const c = await cookies();
-  const session = c.get("admin_session");
-  console.log("admin_session cookie:", session); // check terminal
-  return !!session || !!c.get("skm_token");
+  return c.get("admin_session")?.value === "true";
 }

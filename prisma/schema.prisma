@@ -5,8 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // 🗓️ GLOBAL PERIOD (The Gatekeeper)
@@ -82,3 +83,9 @@ model LogActivity {
   timestamp DateTime @default(now()) // Used for "Newest first" sorting
 }
 
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
