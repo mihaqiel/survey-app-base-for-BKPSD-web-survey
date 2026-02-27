@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getAllLayanan, createLayanan, deleteLayanan } from "@/app/action/admin";
 import Link from "next/link";
 

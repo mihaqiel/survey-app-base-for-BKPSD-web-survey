@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/(dashboard)/admin/logs/page.tsx
 "use client";
 

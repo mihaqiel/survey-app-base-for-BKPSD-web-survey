@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import QrSection from "@/app/(dashboard)/admin/components/QrSection";
 import Link from "next/link";

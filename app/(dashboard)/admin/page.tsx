@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getAdminDashboardStats } from "@/app/action/admin";
 import { logout } from "@/app/action/auth";
 import Link from "next/link";

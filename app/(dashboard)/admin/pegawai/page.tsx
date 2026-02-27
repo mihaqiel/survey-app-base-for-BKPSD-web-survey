@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 "use client";
 
 import { createPegawai, deletePegawai } from "@/app/action/admin";
