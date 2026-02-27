@@ -1,12 +1,26 @@
 "use client";
 
+import { Suspense } from "react";
 import { login } from "@/app/action/auth";
 import { useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function ErrorMessage() {
   const searchParams = useSearchParams();
   const isError = searchParams.get("error");
 
+  if (!isError) return null;
+
+  return (
+    <div className="flex items-center gap-3 bg-red-50 border border-red-200 px-4 py-3 mb-6">
+      <div className="w-1 h-full min-h-[20px] bg-red-500 shrink-0" />
+      <p className="text-red-600 text-xs font-bold uppercase tracking-widest">
+        Username atau password salah
+      </p>
+    </div>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col bg-[#F0F4F8]">
       <div className="flex-1 flex items-center justify-center px-4 py-16">
@@ -37,14 +51,9 @@ export default function LoginPage() {
             {/* FORM */}
             <div className="px-8 py-8">
 
-              {isError && (
-                <div className="flex items-center gap-3 bg-red-50 border border-red-200 px-4 py-3 mb-6">
-                  <div className="w-1 h-full min-h-[20px] bg-red-500 shrink-0" />
-                  <p className="text-red-600 text-xs font-bold uppercase tracking-widest">
-                    Username atau password salah
-                  </p>
-                </div>
-              )}
+              <Suspense fallback={null}>
+                <ErrorMessage />
+              </Suspense>
 
               <form action={login} className="space-y-5">
 
