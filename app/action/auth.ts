@@ -9,21 +9,33 @@ export async function login(formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
-  // Look up admin in database
-  const admin = await prisma.admin.findUnique({ where: { username } });
+  try {
+    console.log("[AUTH] Attempting login for:", username);
+    console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL);
 
-  if (admin && await bcrypt.compare(password, admin.password)) {
-    const cookieStore = await cookies();
-    cookieStore.set("admin_session", "true", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24, // 24 hours
-      path: "/",
-    });
-    redirect("/admin");
-  } else {
-    redirect("/login?error=InvalidCredentials");
+    const admin = await prisma.admin.findUnique({ where: { username } });
+    console.log("[AUTH] Admin found:", !!admin);
+
+    if (admin) {
+      const match = await bcrypt.compare(password, admin.password);
+      console.log("[AUTH] Password match:", match);
+
+      if (match) {
+        const cookieStore = await cookies();
+        cookieStore.set("admin_session", "true", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 60 * 60 * 24,
+          path: "/",
+        });
+        redirect("/admin");
+      }
+    }
+  } catch (err) {
+    console.error("[AUTH] Error:", err);
   }
+
+  redirect("/login?error=InvalidCredentials");
 }
 
 export async function logout() {
