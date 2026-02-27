@@ -1,7 +1,6 @@
-export const dynamic = "force-dynamic";
-
-// app/(dashboard)/admin/logs/page.tsx
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -238,4 +237,5 @@ export default function IpLogsPage() {
     </div>
   );
 }
+
 
