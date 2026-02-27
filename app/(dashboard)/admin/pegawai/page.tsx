@@ -1,6 +1,6 @@
-export const dynamic = "force-dynamic";
-
 "use client";
+
+export const dynamic = "force-dynamic";
 
 import { createPegawai, deletePegawai } from "@/app/action/admin";
 import Link from "next/link";
