@@ -1,7 +1,37 @@
-import { PrismaClient } from '@prisma/client'
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
+export async function login(formData: FormData) {
+  const username = formData.get("username") as string;
+  const password = formData.get("password") as string;
 
-export const prisma = globalForPrisma.prisma || new PrismaClient()
+  if (username === "admin" && password === "bkpsd2026") {
+    const cookieStore = await cookies();
+    cookieStore.set("admin_session", "true", {
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 60 * 24,
+      path: "/",
+      sameSite: "lax",
+    });
+    revalidatePath("/admin");
+    redirect("/admin");
+  } else {
+    redirect("/login?error=InvalidCredentials");
+  }
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete("admin_session");
+  redirect("/login");
+}
+
+async function isAdmin(): Promise<boolean> {
+  const c = await cookies();
+  const session = c.get("admin_session");
+  return !!session || !!c.get("skm_token");
+}
+
+export { isAdmin };
