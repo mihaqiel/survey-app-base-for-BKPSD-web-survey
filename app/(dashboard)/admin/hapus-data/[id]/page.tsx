@@ -126,7 +126,6 @@ export default async function HapusDataPage({
 
             {/* Search bar */}
 <DangerSearchInput placeholder={`Cari ${entityLabel.toLowerCase()}...`} />
-
             {/* Column headers */}
             <div className="shrink-0">
               <table className="w-full text-xs">
