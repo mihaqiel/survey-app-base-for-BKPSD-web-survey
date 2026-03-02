@@ -40,7 +40,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/enter"
+                href="/enter?token=global-token-2026"
                 className="px-8 py-4 bg-[#FAE705] text-[#132B4F] text-sm font-black uppercase tracking-widest hover:bg-yellow-300 transition-colors"
               >
                 Isi Survei Sekarang →
@@ -160,7 +160,7 @@ export default function LandingPage() {
               </p>
             </div>
             <Link
-              href="/enter"
+              href="/enter?token=global-token-2026"
               className="px-7 py-3.5 bg-[#f2f2ef] text-[#132B4F] text-[11px] font-black uppercase tracking-widest hover:bg-yellow-300 transition-colors shrink-0"
             >
               Isi Survei →
