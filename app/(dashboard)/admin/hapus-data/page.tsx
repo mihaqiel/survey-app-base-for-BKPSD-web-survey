@@ -1,7 +1,7 @@
 import { getLayananWithResponseCount, getPegawaiWithResponseCount } from "@/app/action/delete";
 import Link from "next/link";
 import EntityDeleteModal from "@/app/(dashboard)/admin/components/EntityDeleteModal";
-import DeleteConfirmModal from "@/app/(dashboard)/admin/components/DeleteConfirmModal";
+import DangerSearchInput from "@/app/(dashboard)/admin/components/DangerSearchInput";
 
 export default async function HapusDataPage({
   searchParams,
