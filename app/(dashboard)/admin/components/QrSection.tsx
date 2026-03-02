@@ -10,7 +10,7 @@ export default function QrSection({ token, label }: { token: string; label: stri
   const [surveyUrl, setSurveyUrl] = useState("");
 
   useEffect(() => {
-    setSurveyUrl(`${window.location.origin}/enter?token=global-token-2026${token}`);
+    setSurveyUrl(`${window.location.origin}/enter?token=${token}`);
   }, [token]);
 
   // Draw QR with logo overlay onto any canvas
