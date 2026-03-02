@@ -9,17 +9,12 @@ export async function login(formData: FormData) {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
 
+  let success = false;
+
   try {
-    console.log("[AUTH] Attempting login for:", username);
-    console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL);
-
     const admin = await prisma.admin.findUnique({ where: { username } });
-    console.log("[AUTH] Admin found:", !!admin);
-
     if (admin) {
       const match = await bcrypt.compare(password, admin.password);
-      console.log("[AUTH] Password match:", match);
-
       if (match) {
         const cookieStore = await cookies();
         cookieStore.set("admin_session", "true", {
@@ -28,13 +23,14 @@ export async function login(formData: FormData) {
           maxAge: 60 * 60 * 24,
           path: "/",
         });
-        redirect("/admin");
+        success = true;
       }
     }
   } catch (err) {
     console.error("[AUTH] Error:", err);
   }
 
+  if (success) redirect("/admin");
   redirect("/login?error=InvalidCredentials");
 }
 
