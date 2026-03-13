@@ -1,77 +1,179 @@
 "use client";
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useEffect, useRef, useState } from "react";
 
 export interface ChartData {
   name: string;
   ikm: number;
-  value?: number; // slice size (use count if available, else ikm)
+  value?: number;
   fill: string;
 }
 
-function CustomTooltip({ active, payload }: any) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload as ChartData;
-  return (
-    <div className="bg-white border border-gray-200 px-3 py-2 shadow-lg" style={{ borderRadius: 0 }}>
-      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 max-w-[160px] leading-tight">
-        {d.name}
-      </p>
-      <p className="text-base font-black" style={{ color: d.fill }}>
-        IKM {d.ikm}
-      </p>
-      {d.value !== undefined && d.value !== d.ikm && (
-        <p className="text-[9px] font-bold text-gray-400 mt-0.5">{d.value} responden</p>
-      )}
-    </div>
-  );
-}
-
-function Legend({ data }: { data: ChartData[] }) {
-  return (
-    <div className="flex flex-col gap-1.5 px-4 pb-4 overflow-y-auto" style={{ maxHeight: 120 }}>
-      {data.map((entry, i) => (
-        <div key={i} className="flex items-center gap-2 min-w-0">
-          <div className="w-2 h-2 shrink-0" style={{ backgroundColor: entry.fill }} />
-          <span className="text-[10px] font-bold text-gray-500 truncate flex-1">{entry.name}</span>
-          <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: entry.fill }}>
-            {entry.ikm}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function DashboardCharts({ data }: { data: ChartData[] }) {
-  // Slice size: prefer explicit `value` field, fall back to ikm score
-  const pieData = data.map(d => ({ ...d, _size: d.value ?? d.ikm }));
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<any>(null);
+  const [hovered, setHovered] = useState<ChartData | null>(null);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || data.length === 0) return;
+
+    let Chart: any;
+    import("chart.js").then((mod) => {
+      Chart = mod.Chart;
+      mod.Chart.register(
+        mod.DoughnutController, // ← add this line
+        mod.ArcElement,
+        mod.Tooltip,
+        mod.Legend,
+      );
+
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+
+      const pieData = data.map((d) => d.value ?? d.ikm);
+      const total = pieData.reduce((a, b) => a + b, 0);
+
+      chartRef.current = new Chart(canvasRef.current!, {
+        type: "doughnut",
+        data: {
+          labels: data.map((d) => d.name),
+          datasets: [
+            {
+              data: pieData,
+              backgroundColor: data.map((d) => d.fill),
+              borderColor: "#ffffff",
+              borderWidth: 2,
+              hoverBorderWidth: 3,
+              hoverOffset: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "62%",
+          animation: {
+            animateRotate: true,
+            duration: 700,
+            easing: "easeOutQuart",
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+          onHover: (_: any, elements: any[]) => {
+            if (elements.length > 0) {
+              const i = elements[0].index;
+              setHovered(data[i]);
+              setActiveIdx(i);
+            } else {
+              setHovered(null);
+              setActiveIdx(null);
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [data]);
+
+  const total = data.reduce((s, d) => s + (d.value ?? d.ikm), 0);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={pieData}
-              cx="50%"
-              cy="50%"
-              innerRadius="30%"
-              outerRadius="60%"
-              paddingAngle={2}
-              dataKey="_size"
-              nameKey="name"
-              strokeWidth={0}
-            >
-              {pieData.map((entry, i) => (
-                <Cell key={i} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+      {/* Donut + center label */}
+      <div className="flex-1 relative min-h-0" style={{ minHeight: 160 }}>
+        <canvas ref={canvasRef} />
+        {/* Center overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          {hovered ? (
+            <div className="text-center px-2 animate-fade-in">
+              <p
+                className="text-xl font-black leading-none"
+                style={{ color: hovered.fill }}
+              >
+                {hovered.ikm > 0 ? hovered.ikm : hovered.value}
+              </p>
+              <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-0.5 max-w-[80px] leading-tight text-center">
+                {hovered.name.length > 14
+                  ? hovered.name.substring(0, 14) + "…"
+                  : hovered.name}
+              </p>
+            </div>
+          ) : (
+            <div className="text-center animate-fade-in">
+              <p className="text-lg font-black text-[#132B4F] leading-none">
+                {total}
+              </p>
+              <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-0.5">
+                Total
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-      <Legend data={data} />
+
+      {/* Custom legend */}
+      <div
+        className="px-4 pb-3 space-y-1 overflow-y-auto"
+        style={{ maxHeight: 110 }}
+      >
+        {data.map((entry, i) => {
+          const pct =
+            total > 0
+              ? Math.round(((entry.value ?? entry.ikm) / total) * 100)
+              : 0;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-2 px-2 py-1 transition-all duration-150 cursor-default ${
+                activeIdx === i ? "bg-gray-50 rounded" : ""
+              }`}
+              onMouseEnter={() => {
+                setHovered(entry);
+                setActiveIdx(i);
+              }}
+              onMouseLeave={() => {
+                setHovered(null);
+                setActiveIdx(null);
+              }}
+            >
+              {/* Color swatch */}
+              <div
+                className="w-2 h-2 shrink-0 rounded-sm"
+                style={{ backgroundColor: entry.fill }}
+              />
+              {/* Name */}
+              <span className="text-[10px] font-bold text-gray-500 truncate flex-1 leading-tight">
+                {entry.name}
+              </span>
+              {/* Percentage bar */}
+              <div className="w-12 h-1 bg-gray-100 overflow-hidden rounded-full shrink-0">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${pct}%`, backgroundColor: entry.fill }}
+                />
+              </div>
+              {/* Value */}
+              <span
+                className="text-[10px] font-black tabular-nums shrink-0 w-8 text-right"
+                style={{ color: entry.fill }}
+              >
+                {entry.ikm > 0 ? entry.ikm : entry.value}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -61,54 +61,75 @@ export default async function SuccessPage({
 
   const ui = config[currentStatus as keyof typeof config] || config.success;
 
+  const subtitleColor =
+    ui.accentColor === "#16a34a" ? "#FAE705"
+    : ui.accentColor === "#d97706" ? "#FAE705"
+    : "#fca5a5";
+
+  const labelColor =
+    ui.accentColor === "#16a34a" ? "#009CC5"
+    : ui.accentColor === "#d97706" ? "#FAE705"
+    : "#f87171";
+
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col bg-[#F0F4F8]">
       <div className="flex-1 flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-fade-up">
 
           {/* CARD */}
           <div className="bg-white border border-gray-200 shadow-lg overflow-hidden">
 
             {/* CARD HEADER */}
-            <div className={`${ui.headerBg} px-8 py-7`}>
-              <div className="flex items-center gap-4">
-                {/* Icon box */}
+            <div className={`${ui.headerBg} px-8 py-7 relative overflow-hidden`}>
+              <div
+                className="absolute -right-8 -top-8 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-20"
+                style={{ backgroundColor: ui.accentColor }}
+              />
+              <div className="relative flex items-center gap-4">
+                {/* Icon — bounce in */}
                 <div
-                  className="w-14 h-14 flex items-center justify-center shrink-0"
+                  className="animate-bounce-in w-14 h-14 flex items-center justify-center shrink-0 delay-150"
                   style={{ backgroundColor: ui.accentColor }}
                 >
                   {ui.icon}
                 </div>
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.3em] mb-0.5" style={{ color: ui.accentColor === "#16a34a" ? "#009CC5" : ui.accentColor === "#d97706" ? "#FAE705" : "#f87171" }}>
+                <div className="animate-fade-up delay-225">
+                  <p
+                    className="text-[9px] font-black uppercase tracking-[0.3em] mb-0.5"
+                    style={{ color: labelColor }}
+                  >
                     {ui.statusLabel}
                   </p>
                   <h1 className="text-2xl font-black uppercase tracking-tight text-white leading-tight">
                     {ui.title}<br />
-                    <span style={{ color: ui.accentColor === "#16a34a" ? "#FAE705" : ui.accentColor === "#d97706" ? "#FAE705" : "#fca5a5" }}>
-                      {ui.subtitle}
-                    </span>
+                    <span style={{ color: subtitleColor }}>{ui.subtitle}</span>
                   </h1>
                 </div>
               </div>
             </div>
 
-            {/* ACCENT LINE */}
-            <div className="h-1" style={{ backgroundColor: ui.accentColor }} />
+            {/* ACCENT LINE — draws in */}
+            <div
+              className="h-1 animate-draw-line"
+              style={{ backgroundColor: ui.accentColor }}
+            />
 
             {/* BODY */}
             <div className="px-8 py-8">
 
               {/* Message box */}
-              <div className={`flex items-start gap-3 border px-4 py-4 mb-7 ${ui.badgeBg}`}>
-                <div className="w-1 min-h-[20px] shrink-0 mt-0.5" style={{ backgroundColor: ui.accentColor }} />
+              <div className={`animate-fade-up delay-75 flex items-start gap-3 border px-4 py-4 mb-7 ${ui.badgeBg}`}>
+                <div
+                  className="w-1 min-h-[20px] shrink-0 mt-0.5"
+                  style={{ backgroundColor: ui.accentColor }}
+                />
                 <p className="text-sm font-medium leading-relaxed">{ui.message}</p>
               </div>
 
               {/* Info strip */}
-              <div className="bg-[#F0F4F8] px-4 py-3 flex items-center gap-3 mb-7">
+              <div className="animate-fade-up delay-150 bg-[#F0F4F8] px-4 py-3 flex items-center gap-3 mb-7">
                 <div className="w-6 h-6 bg-[#132B4F] flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5   text-[#FAE705]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-[#FAE705]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -117,19 +138,24 @@ export default async function SuccessPage({
                 </p>
               </div>
 
-              {/* Button */}
-              <Link
-                href={ui.buttonLink}
-                className="block w-full py-4 text-center text-sm font-black uppercase tracking-widest text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: "#132B4F" }}
-              >
-                {ui.buttonText} →
-              </Link>
+              {/* Button — pulse glow on hover */}
+              <div className="animate-fade-up delay-225">
+                <Link
+                  href={ui.buttonLink}
+                  className="btn-shimmer group block w-full py-4 text-center text-sm font-black uppercase tracking-widest text-white hover:opacity-90 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(19,43,79,0.25)] transition-all duration-200 active:scale-[0.98]"
+                  style={{ backgroundColor: "#132B4F" }}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    {ui.buttonText}
+                    <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                  </span>
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* LEGAL NOTE */}
-          <p className="text-center text-[10px] text-gray-400 font-medium mt-5 uppercase tracking-widest">
+          <p className="animate-fade-in delay-450 text-center text-[10px] text-gray-400 font-medium mt-5 uppercase tracking-widest">
             Survei Kepuasan Masyarakat — Permenpan RB No. 14/2017
           </p>
         </div>

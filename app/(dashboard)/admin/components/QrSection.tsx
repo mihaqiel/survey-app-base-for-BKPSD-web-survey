@@ -5,44 +5,30 @@ import QRCode from "qrcode";
 import Image from "next/image";
 
 export default function QrSection({ token, label }: { token: string; label: string }) {
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const qrCanvasRef             = useRef<HTMLCanvasElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied]     = useState(false);
   const [surveyUrl, setSurveyUrl] = useState("");
 
   useEffect(() => {
     setSurveyUrl(`${window.location.origin}/enter?token=${token}`);
   }, [token]);
 
-  // Draw QR with logo overlay onto any canvas
-  const drawQrWithLogo = useCallback(async (
-    canvas: HTMLCanvasElement,
-    url: string,
-    size: number
-  ) => {
-    // Generate QR with error correction H (30% recovery — needed for logo overlay)
+  const drawQrWithLogo = useCallback(async (canvas: HTMLCanvasElement, url: string, size: number) => {
     await QRCode.toCanvas(canvas, url, {
-      width: size,
-      margin: 1,
-      errorCorrectionLevel: "H",
+      width: size, margin: 1, errorCorrectionLevel: "H",
       color: { dark: "#132B4F", light: "#ffffff" },
     });
 
     const ctx = canvas.getContext("2d")!;
     const centerX = size / 2;
     const centerY = size / 2;
-    const overlaySize = Math.floor(size * 0.22); // 22% of QR size
+    const overlaySize = Math.floor(size * 0.22);
 
-    // White background behind logo
     ctx.fillStyle = "#ffffff";
     const padding = 6;
-    ctx.fillRect(
-      centerX - overlaySize / 2 - padding,
-      centerY - overlaySize / 2 - padding,
-      overlaySize + padding * 2,
-      overlaySize + padding * 2
-    );
+    ctx.fillRect(centerX - overlaySize / 2 - padding, centerY - overlaySize / 2 - padding, overlaySize + padding * 2, overlaySize + padding * 2);
 
-    // Draw logo
     const logo = new window.Image();
     logo.crossOrigin = "anonymous";
     await new Promise<void>((resolve) => {
@@ -57,104 +43,69 @@ export default function QrSection({ token, label }: { token: string; label: stri
     }
   }, []);
 
-  // Render preview QR on mount / url change
   useEffect(() => {
     if (!surveyUrl || !qrCanvasRef.current) return;
     drawQrWithLogo(qrCanvasRef.current, surveyUrl, 220);
   }, [surveyUrl, drawQrWithLogo]);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(surveyUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const downloadQr = async () => {
     if (!surveyUrl) return;
     setDownloading(true);
     try {
       const canvas = document.createElement("canvas");
-      const W = 768;
-      const H = 1050;
-      canvas.width = W;
-      canvas.height = H;
+      const W = 768; const H = 1050;
+      canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
-      // Background
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, W, H);
 
-      // Top accent stripe (tricolor)
-      ctx.fillStyle = "#FAE705";
-      ctx.fillRect(0, 0, W / 3, 8);
-      ctx.fillStyle = "#009CC5";
-      ctx.fillRect(W / 3, 0, W / 3, 8);
-      ctx.fillStyle = "#132B4F";
-      ctx.fillRect((W / 3) * 2, 0, W / 3, 8);
+      ctx.fillStyle = "#FAE705"; ctx.fillRect(0, 0, W / 3, 8);
+      ctx.fillStyle = "#009CC5"; ctx.fillRect(W / 3, 0, W / 3, 8);
+      ctx.fillStyle = "#132B4F"; ctx.fillRect((W / 3) * 2, 0, W / 3, 8);
 
-      // BKPSDM Logo (top center)
       const logo = new window.Image();
       logo.crossOrigin = "anonymous";
       await new Promise<void>((resolve) => {
-        logo.onload = () => resolve();
-        logo.onerror = () => resolve();
-        logo.src = "/logo-bkpsdm.png";
+        logo.onload = () => resolve(); logo.onerror = () => resolve(); logo.src = "/logo-bkpsdm.png";
       });
       if (logo.complete && logo.naturalWidth > 0) {
-        const logoH = 80;
-        const logoW = (logo.naturalWidth / logo.naturalHeight) * logoH;
+        const logoH = 80; const logoW = (logo.naturalWidth / logo.naturalHeight) * logoH;
         ctx.drawImage(logo, W / 2 - logoW / 2, 32, logoW, logoH);
       } else {
-        ctx.fillStyle = "#132B4F";
-        ctx.fillRect(W / 2 - 40, 32, 80, 80);
-        ctx.fillStyle = "#FAE705";
-        ctx.font = "bold 14px sans-serif";
-        ctx.textAlign = "center";
+        ctx.fillStyle = "#132B4F"; ctx.fillRect(W / 2 - 40, 32, 80, 80);
+        ctx.fillStyle = "#FAE705"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
         ctx.fillText("BKPSDM", W / 2, 80);
       }
 
-      // Agency name
-      ctx.fillStyle = "#009CC5";
-      ctx.font = "bold 13px sans-serif";
-      ctx.textAlign = "center";
+      ctx.fillStyle = "#009CC5"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
       ctx.fillText("BADAN KEPEGAWAIAN DAN PENGEMBANGAN SDM", W / 2, 140);
-
-      // Label
-      ctx.fillStyle = "#132B4F";
-      ctx.font = "bold 32px sans-serif";
+      ctx.fillStyle = "#132B4F"; ctx.font = "bold 32px sans-serif";
       ctx.fillText(label.toUpperCase(), W / 2, 185);
-
-      // Subtitle
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "bold 13px sans-serif";
+      ctx.fillStyle = "#9ca3af"; ctx.font = "bold 13px sans-serif";
       ctx.fillText("SCAN UNTUK MENGISI SURVEI KEPUASAN MASYARAKAT", W / 2, 212);
 
-      // QR Code with logo — render to temp canvas then copy
       const qrSize = 400;
       const qrCanvas = document.createElement("canvas");
-      qrCanvas.width = qrSize;
-      qrCanvas.height = qrSize;
+      qrCanvas.width = qrSize; qrCanvas.height = qrSize;
       await drawQrWithLogo(qrCanvas, surveyUrl, qrSize);
       ctx.drawImage(qrCanvas, W / 2 - qrSize / 2, 235, qrSize, qrSize);
 
-      // Divider
-      ctx.strokeStyle = "#e5e7eb";
-      ctx.setLineDash([8, 6]);
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(48, 688);
-      ctx.lineTo(W - 48, 688);
-      ctx.stroke();
+      ctx.strokeStyle = "#e5e7eb"; ctx.setLineDash([8, 6]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(48, 688); ctx.lineTo(W - 48, 688); ctx.stroke();
       ctx.setLineDash([]);
 
-      // Token label
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "bold 13px sans-serif";
-      ctx.textAlign = "center";
+      ctx.fillStyle = "#9ca3af"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
       ctx.fillText("ACCESS TOKEN", W / 2, 724);
-
-      // Token value
-      ctx.fillStyle = "#132B4F";
-      ctx.font = "bold 42px monospace";
+      ctx.fillStyle = "#132B4F"; ctx.font = "bold 42px monospace";
       ctx.fillText(token, W / 2, 790);
-
-      // Bottom legal
-      ctx.fillStyle = "#d1d5db";
-      ctx.font = "12px sans-serif";
+      ctx.fillStyle = "#d1d5db"; ctx.font = "12px sans-serif";
       ctx.fillText("Permenpan RB No. 14 Tahun 2017 · Kab. Kepulauan Anambas", W / 2, 840);
 
       const url = canvas.toDataURL("image/png");
@@ -170,22 +121,17 @@ export default function QrSection({ token, label }: { token: string; label: stri
   };
 
   return (
-    <div className="p-8 flex flex-col items-center text-center">
+    <div className="p-8 flex flex-col items-center text-center animate-fade-up">
 
       {/* QR DISPLAY CARD */}
-      <div className="bg-white border border-gray-200 overflow-hidden w-full max-w-sm mx-auto mb-6">
-        {/* Tricolor top stripe */}
-        <div className="h-1" style={{ background: "linear-gradient(to right, #FAE705 33%, #009CC5 33% 66%, #132B4F 66%)" }} />
+      <div className="bg-white border border-gray-200 overflow-hidden w-full max-w-sm mx-auto mb-6 card-hover animate-fade-up delay-75">
+        <div className="h-1 animate-draw-line" style={{ background: "linear-gradient(to right, #FAE705 33%, #009CC5 33% 66%, #132B4F 66%)" }} />
 
         <div className="p-8">
-          {/* BKPSDM Logo */}
           <div className="flex justify-center mb-3">
             <Image
-              src="/logo-bkpsdm.png"
-              alt="BKPSDM"
-              width={80}
-              height={60}
-              className="object-contain h-14 w-auto"
+              src="/logo-bkpsdm.png" alt="BKPSDM" width={80} height={60}
+              className="object-contain h-14 w-auto transition-transform duration-300 hover:scale-105"
             />
           </div>
 
@@ -197,37 +143,58 @@ export default function QrSection({ token, label }: { token: string; label: stri
             Scan untuk Isi Survei Kepuasan
           </p>
 
-          {/* QR Canvas preview */}
-          <div className="inline-block bg-white p-3 border border-gray-100">
+          {/* QR Canvas */}
+          <div className="inline-block bg-white p-3 border border-gray-100 transition-transform duration-300 hover:scale-[1.02]">
             {surveyUrl ? (
               <canvas ref={qrCanvasRef} width={220} height={220} />
             ) : (
-              <div className="w-[220px] h-[220px] bg-gray-100 animate-pulse" />
+              <div className="w-[220px] h-[220px] skeleton" />
             )}
           </div>
 
           {/* Token */}
           <div className="mt-6 pt-5 border-t border-dashed border-gray-200">
             <p className="text-[9px] text-gray-400 font-black uppercase tracking-[0.25em] mb-2">Access Token</p>
-            <p className="text-2xl font-black font-mono tracking-widest text-[#132B4F]">{token}</p>
+            <p className="text-2xl font-black font-mono tracking-widest text-[#132B4F] animate-count-up">{token}</p>
           </div>
         </div>
       </div>
 
       {/* ACTION BUTTONS */}
-      <div className="flex gap-3 w-full max-w-sm">
+      <div className="flex gap-3 w-full max-w-sm animate-fade-up delay-150">
         <button
-          onClick={() => navigator.clipboard.writeText(surveyUrl)}
-          className="flex-1 py-3.5 bg-[#F0F4F8] text-[#132B4F] font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-colors border border-gray-200"
+          onClick={handleCopy}
+          className={`btn-shimmer flex-1 py-3.5 font-black text-[10px] uppercase tracking-widest transition-all duration-200 border hover:scale-[1.02] active:scale-[0.98] ${
+            copied
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-[#F0F4F8] border-gray-200 text-[#132B4F] hover:bg-gray-200"
+          }`}
         >
-          Copy Link
+          {copied ? (
+            <span className="flex items-center justify-center gap-1.5 animate-bounce-in">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              Tersalin!
+            </span>
+          ) : "Copy Link"}
         </button>
         <button
           onClick={downloadQr}
           disabled={downloading || !surveyUrl}
-          className="flex-1 py-3.5 bg-[#132B4F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#009CC5] transition-colors disabled:opacity-50"
+          className="btn-shimmer group flex-1 py-3.5 bg-[#132B4F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#009CC5] hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(19,43,79,0.25)] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
-          {downloading ? "Menyimpan..." : "Download PNG"}
+          {downloading ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Menyimpan...
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PNG
+            </>
+          )}
         </button>
       </div>
     </div>

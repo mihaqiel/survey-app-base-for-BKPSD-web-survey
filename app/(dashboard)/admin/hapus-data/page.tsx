@@ -56,45 +56,65 @@ export default async function HapusDataPage({
   };
 
   const activeInstructions = instructions[tab];
-  const listData = tab === "pegawai" ? pegawaiList : layananList;
+  const listData    = tab === "pegawai" ? pegawaiList : layananList;
   const entityLabel = tab === "pegawai" ? "Pegawai" : "Layanan";
 
   return (
     <div className="min-h-screen bg-[#F0F4F8] font-sans flex flex-col">
 
       {/* ── TOP NAV ── */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 shrink-0">
-        <div className="w-1 h-7 bg-red-500" />
-        <div>
+      <div className="animate-fade-down bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 shrink-0 shadow-sm">
+        <div className="w-1 h-7 bg-red-500 animate-pulse" />
+        <div className="animate-slide-left">
           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-red-400">Admin · Danger Zone</p>
-          <h1 className="text-xl font-black uppercase tracking-tight text-[#132B4F] leading-none">Pusat Penghapusan Data</h1>
+          <h1 className="text-xl font-black uppercase tracking-tight text-[#132B4F] leading-none">
+            Pusat Penghapusan Data
+          </h1>
         </div>
-        <div className="ml-auto flex items-center gap-3">
-          <Link href="/admin"
-            className="px-4 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] transition-colors">
-            ← Dashboard
+        <div className="ml-auto flex items-center gap-3 animate-fade-in delay-150">
+          <Link
+            href="/admin"
+            className="btn-shimmer group px-4 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+          >
+            <span className="flex items-center gap-1">
+              <span className="inline-block transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
+              Dashboard
+            </span>
           </Link>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-8 py-6 gap-4">
 
-        {/* SUCCESS */}
+        {/* SUCCESS BANNER */}
         {success === "1" && (
-          <div className="bg-green-50 border border-green-200 px-5 py-3 flex items-center gap-3">
-            <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="animate-fade-down bg-green-50 border border-green-200 px-5 py-3 flex items-center gap-3">
+            <svg className="w-4 h-4 text-green-600 shrink-0 animate-bounce-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <p className="text-[10px] font-black uppercase tracking-widest text-green-700">Data berhasil dihapus secara permanen.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-green-700">
+              Data berhasil dihapus secara permanen.
+            </p>
           </div>
         )}
 
-        {/* WARNING BANNER */}
-        <div className="bg-red-50 border border-red-200 p-4 flex items-start gap-3">
-          <div className="w-1 self-stretch bg-red-500 shrink-0" />
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">
-              ⚠ Danger Zone — Semua Tindakan Bersifat Permanen
+        {/* WARNING BANNER — animated pulse border */}
+        <div className="animate-fade-up delay-75 relative bg-red-50 border border-red-200 p-4 flex items-start gap-3 overflow-hidden">
+          {/* animated left accent */}
+          <div className="w-1 self-stretch bg-red-500 shrink-0 animate-pulse" />
+          {/* subtle shimmer overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "linear-gradient(105deg, transparent 40%, rgba(239,68,68,0.04) 50%, transparent 60%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 3s ease infinite",
+            }}
+          />
+          <div className="relative">
+            <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1 flex items-center gap-2">
+              <span className="animate-pulse">⚠</span>
+              Danger Zone — Semua Tindakan Bersifat Permanen
             </p>
             <p className="text-xs text-red-500 font-medium leading-relaxed">
               Data yang dihapus tidak dapat dipulihkan. Pastikan Anda sudah melakukan ekspor data sebelum melanjutkan.
@@ -103,16 +123,25 @@ export default async function HapusDataPage({
         </div>
 
         {/* ── TABS ── */}
-        <div className="flex border-b border-gray-200 bg-white">
+        <div className="animate-fade-up delay-150 flex border-b border-gray-200 bg-white">
           {tabs.map((t) => (
-            <Link key={t.key} href={`/admin/hapus-data?tab=${t.key}`}
-              className={`px-6 py-3.5 text-[10px] font-black uppercase tracking-widest border-b-2 transition-colors whitespace-nowrap ${
+            <Link
+              key={t.key}
+              href={`/admin/hapus-data?tab=${t.key}`}
+              className={`relative px-6 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap overflow-hidden group ${
                 tab === t.key
-                  ? "border-red-500 text-red-600 bg-red-50"
-                  : "border-transparent text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
+                  ? "border-b-2 border-red-500 text-red-600 bg-red-50"
+                  : "border-b-2 border-transparent text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
               }`}
             >
-              {t.label}
+              {/* tab hover fill */}
+              {tab !== t.key && (
+                <span className="absolute inset-0 bg-gray-100 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-200" />
+              )}
+              <span className="relative">{t.label}</span>
+              {tab === t.key && (
+                <span className="absolute bottom-0 left-0 h-0.5 w-full bg-red-500 animate-draw-line" />
+              )}
             </Link>
           ))}
         </div>
@@ -121,10 +150,10 @@ export default async function HapusDataPage({
         <div className="flex gap-5 flex-1 min-h-0" style={{ height: "calc(100vh - 320px)" }}>
 
           {/* ── LEFT: LIST ── */}
-          <div className="w-[55%] flex flex-col bg-white border border-gray-200 overflow-hidden">
+          <div className="animate-slide-left w-[55%] flex flex-col bg-white border border-gray-200 overflow-hidden">
             <div className="h-0.5 bg-gradient-to-r from-red-500 via-[#132B4F] to-[#009CC5]" />
 
-            {/* Search bar */}
+            {/* Search */}
             <div className="px-4 py-3 border-b border-gray-100 bg-[#F0F4F8]">
               <DangerSearch placeholder={`Cari ${entityLabel.toLowerCase()}...`} />
             </div>
@@ -138,12 +167,8 @@ export default async function HapusDataPage({
                     <th className="text-left px-2 py-2.5 text-[9px] font-black uppercase tracking-widest text-white">
                       Nama {entityLabel}
                     </th>
-                    <th className="text-left px-2 py-2.5 text-[9px] font-black uppercase tracking-widest text-white w-28">
-                      Respon
-                    </th>
-                    <th className="text-left px-2 pr-4 py-2.5 text-[9px] font-black uppercase tracking-widest text-white w-36">
-                      Aksi
-                    </th>
+                    <th className="text-left px-2 py-2.5 text-[9px] font-black uppercase tracking-widest text-white w-28">Respon</th>
+                    <th className="text-left px-2 pr-4 py-2.5 text-[9px] font-black uppercase tracking-widest text-white w-36">Aksi</th>
                   </tr>
                 </thead>
               </table>
@@ -158,7 +183,8 @@ export default async function HapusDataPage({
                       key={item.id}
                       data-entity-row
                       data-name={item.nama.toLowerCase()}
-                      className={i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}
+                      className={`transition-colors duration-150 hover:bg-red-50/40 animate-fade-up ${i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}
+                      style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}
                     >
                       <td className="pl-5 pr-2 py-3 text-[10px] font-black text-gray-300 w-8">{i + 1}</td>
                       <td className="px-2 py-3 font-bold text-[#132B4F] text-xs">{item.nama}</td>
@@ -171,8 +197,10 @@ export default async function HapusDataPage({
                       <td className="px-2 pr-4 py-3 w-36">
                         {tab === "respon" ? (
                           item.count > 0
-                            ? <Link href={`/admin/hapus-data/${item.id}`}
-                                className="px-3 py-1.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors inline-block">
+                            ? <Link
+                                href={`/admin/hapus-data/${item.id}`}
+                                className="btn-shimmer inline-block px-3 py-1.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-700 hover:scale-[1.04] transition-all duration-200 active:scale-[0.97]"
+                              >
                                 Hapus Respon →
                               </Link>
                             : <span className="px-3 py-1.5 bg-gray-100 text-gray-300 text-[9px] font-black uppercase tracking-widest inline-block cursor-not-allowed">
@@ -194,7 +222,7 @@ export default async function HapusDataPage({
               </table>
             </div>
 
-            {/* Footer count */}
+            {/* Footer */}
             <div className="px-5 py-2.5 border-t border-gray-100 bg-[#F0F4F8] shrink-0">
               <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
                 {listData.length} {entityLabel.toLowerCase()} terdaftar
@@ -203,27 +231,31 @@ export default async function HapusDataPage({
           </div>
 
           {/* ── RIGHT: INSTRUCTIONS ── */}
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="animate-slide-right flex-1 flex flex-col gap-4">
 
             {/* How to use */}
             <div className="bg-[#132B4F] border border-gray-200 overflow-hidden flex flex-col flex-1">
-              <div className="h-0.5 bg-gradient-to-r from-[#FAE705] to-[#009CC5]" />
+              <div className="h-0.5 bg-gradient-to-r from-[#FAE705] to-[#009CC5] animate-draw-line" />
               <div className="px-6 py-5 border-b border-white/10 flex items-center gap-2">
                 <div className="w-0.5 h-4 bg-[#FAE705]" />
                 <p className="text-[10px] font-black uppercase tracking-widest text-white">Cara Menggunakan</p>
               </div>
               <div className="px-6 py-5 flex flex-col gap-5 flex-1">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#009CC5] mb-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#009CC5] mb-3">
                     {activeInstructions.title}
                   </p>
                   <div className="space-y-3">
-                    {activeInstructions.steps.map((step, i) => (
-                      <div key={i} className="flex gap-3 items-start">
-                        <div className="w-6 h-6 bg-[#009CC5] flex items-center justify-center text-[9px] font-black text-white shrink-0 mt-0.5">
+                    {activeInstructions.steps.map((s, i) => (
+                      <div
+                        key={i}
+                        className="flex gap-3 items-start animate-fade-up"
+                        style={{ animationDelay: `${i * 80}ms` }}
+                      >
+                        <div className="w-6 h-6 bg-[#009CC5] flex items-center justify-center text-[9px] font-black text-white shrink-0 mt-0.5 transition-transform duration-200 hover:scale-110">
                           {String(i + 1).padStart(2, "0")}
                         </div>
-                        <p className="text-xs font-medium text-white/70 leading-relaxed">{step}</p>
+                        <p className="text-xs font-medium text-white/70 leading-relaxed">{s}</p>
                       </div>
                     ))}
                   </div>
@@ -231,26 +263,32 @@ export default async function HapusDataPage({
 
                 {/* Note */}
                 <div className="mt-auto border-t border-white/10 pt-4">
-                  <div className="flex items-start gap-3 bg-red-900/30 border border-red-500/30 p-3">
-                    <div className="w-1 self-stretch bg-red-400 shrink-0" />
+                  <div className="animate-fade-up flex items-start gap-3 bg-red-900/30 border border-red-500/30 p-3">
+                    <div className="w-1 self-stretch bg-red-400 shrink-0 animate-pulse" />
                     <p className="text-[10px] font-medium text-red-300 leading-relaxed">
                       {activeInstructions.note}
                     </p>
                   </div>
                 </div>
 
-                {/* Confirmation flow diagram */}
+                {/* Confirmation flow */}
                 <div className="border-t border-white/10 pt-4">
                   <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-3">Alur Konfirmasi</p>
                   <div className="flex items-center gap-2">
                     {[
-                      { label: "Admin PIN", color: "#009CC5" },
+                      { label: "Admin PIN",   color: "#009CC5" },
                       { label: "Ketik HAPUS", color: "#d97706" },
-                      { label: "Eksekusi", color: "#dc2626" },
+                      { label: "Eksekusi",    color: "#dc2626" },
                     ].map((s, i) => (
-                      <div key={i} className="flex items-center gap-2 flex-1">
-                        <div className="flex-1 px-2 py-2 text-center border"
-                          style={{ borderColor: s.color + "40", backgroundColor: s.color + "15" }}>
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 flex-1 animate-fade-up"
+                        style={{ animationDelay: `${i * 100}ms` }}
+                      >
+                        <div
+                          className="flex-1 px-2 py-2 text-center border transition-all duration-200 hover:scale-[1.04] cursor-default"
+                          style={{ borderColor: s.color + "40", backgroundColor: s.color + "15" }}
+                        >
                           <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: s.color }}>
                             {s.label}
                           </p>
@@ -263,27 +301,24 @@ export default async function HapusDataPage({
               </div>
             </div>
 
-            {/* Stats summary card */}
-            <div className="bg-white border border-gray-200 overflow-hidden">
+            {/* Stats summary */}
+            <div className="animate-fade-up delay-300 bg-white border border-gray-200 overflow-hidden">
               <div className="h-0.5 bg-[#009CC5]" />
               <div className="px-5 py-4 grid grid-cols-3 divide-x divide-gray-100">
-                <div className="pr-4">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Layanan</p>
-                  <p className="text-2xl font-black text-[#132B4F]">{layananList.length}</p>
-                </div>
-                <div className="px-4">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Pegawai</p>
-                  <p className="text-2xl font-black text-[#132B4F]">{pegawaiList.length}</p>
-                </div>
-                <div className="pl-4">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-red-400 mb-1">Total Respon</p>
-                  <p className="text-2xl font-black text-red-600">
-                    {layananList.reduce((s, l) => s + l.count, 0)}
-                  </p>
-                </div>
+                {[
+                  { label: "Total Layanan", val: layananList.length,                               color: "text-[#132B4F]", accent: "" },
+                  { label: "Total Pegawai", val: pegawaiList.length,                               color: "text-[#132B4F]", accent: "" },
+                  { label: "Total Respon",  val: layananList.reduce((s, l) => s + l.count, 0),     color: "text-red-600",   accent: "text-red-400" },
+                ].map((stat, i) => (
+                  <div key={stat.label} className={`animate-count-up ${i === 0 ? "pr-4" : i === 1 ? "px-4" : "pl-4"}`} style={{ animationDelay: `${i * 80}ms` }}>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${stat.accent || "text-gray-400"}`}>
+                      {stat.label}
+                    </p>
+                    <p className={`text-2xl font-black ${stat.color}`}>{stat.val}</p>
+                  </div>
+                ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
