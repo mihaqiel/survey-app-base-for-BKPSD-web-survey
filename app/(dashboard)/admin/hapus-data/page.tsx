@@ -1,7 +1,8 @@
 import { getLayananWithResponseCount, getPegawaiWithResponseCount } from "@/app/action/delete";
 import Link from "next/link";
 import EntityDeleteModal from "@/app/(dashboard)/admin/components/EntityDeleteModal";
-import DangerSearchInput from "@/app/(dashboard)/admin/components/DangerSearchInput";
+import DeleteConfirmModal from "@/app/(dashboard)/admin/components/DeleteConfirmModal";
+import DangerSearch from "@/app/(dashboard)/admin/components/DangerSearchInput";
 
 export default async function HapusDataPage({
   searchParams,
@@ -125,8 +126,8 @@ export default async function HapusDataPage({
 
             {/* Search bar */}
             <div className="px-4 py-3 border-b border-gray-100 bg-[#F0F4F8]">
-              <DangerSearchInput placeholder={`Cari ${entityLabel.toLowerCase()}...`} />
-              </div>
+              <DangerSearch placeholder={`Cari ${entityLabel.toLowerCase()}...`} />
+            </div>
 
             {/* Column headers */}
             <div className="shrink-0">

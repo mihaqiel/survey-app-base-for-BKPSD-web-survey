@@ -326,32 +326,57 @@ export default function PortalForm() {
               {step === 2 && (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-500 font-medium">Siapa pegawai yang melayani Anda hari ini?</p>
-                  <div className="relative">
-                    <div className="flex items-center gap-3 bg-[#F0F4F8] border-2 border-transparent focus-within:border-[#009CC5] px-4 py-3 transition-colors">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-                      </svg>
-                      <input type="text" placeholder="Ketik nama pegawai (min. 2 huruf)..."
-                        value={selectedPegawai ? selectedPegawai.nama : pegawaiSearch}
-                        onChange={(e) => { setPegawaiSearch(e.target.value); setSelectedPegawai(null); }}
-                        className="flex-1 text-sm font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
-                      />
-                    </div>
-                    {!selectedPegawai && pegawaiSearch.length > 1 && (
-                      <div className="absolute z-10 w-full bg-white border border-gray-200 border-t-0 shadow-lg">
-                        {filteredPegawai.length === 0 ? (
-                          <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Tidak ditemukan</p>
-                        ) : filteredPegawai.map((p) => (
-                          <button key={p.id} type="button"
-                            onClick={() => { setSelectedPegawai(p); setPegawaiSearch(""); }}
-                            className="w-full text-left px-5 py-3.5 text-sm font-bold text-[#132B4F] hover:bg-[#F0F4F8] border-b border-gray-50 last:border-0 flex items-center gap-3 transition-colors"
-                          >
-                            <div className="w-1 h-4 bg-[#009CC5] shrink-0" />{p.nama}
-                          </button>
-                        ))}
-                      </div>
+
+                  {/* Search bar */}
+                  <div className="flex items-center gap-3 bg-[#F0F4F8] border-2 border-transparent focus-within:border-[#009CC5] px-4 py-3 transition-colors">
+                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+                    </svg>
+                    <input type="text" placeholder="Cari nama pegawai..."
+                      value={pegawaiSearch}
+                      onChange={(e) => { setPegawaiSearch(e.target.value); setSelectedPegawai(null); }}
+                      className="flex-1 text-sm font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
+                    />
+                    {pegawaiSearch.length > 0 && (
+                      <button type="button" onClick={() => setPegawaiSearch("")}
+                        className="text-gray-300 hover:text-gray-500 text-xs font-black transition-colors">✕</button>
                     )}
                   </div>
+
+                  {/* Full scrollable list — always visible until one is selected */}
+                  {!selectedPegawai && (() => {
+                    const list = pegawaiSearch.length > 0
+                      ? pegawaiList.filter(p => p.nama.toLowerCase().includes(pegawaiSearch.toLowerCase()))
+                      : pegawaiList;
+                    return (
+                      <div className="border border-gray-200 overflow-hidden">
+                        <div className="bg-[#132B4F] px-4 py-2.5 flex items-center justify-between">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-white">
+                            {pegawaiSearch.length > 0 ? "Hasil Pencarian" : "Semua Pegawai"}
+                          </p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-[#FAE705]">
+                            {list.length} Pegawai
+                          </p>
+                        </div>
+                        <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                          {list.length === 0 ? (
+                            <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Tidak ditemukan</p>
+                          ) : list.map((p, i) => (
+                            <button key={p.id} type="button"
+                              onClick={() => { setSelectedPegawai(p); setPegawaiSearch(""); }}
+                              className="w-full text-left px-5 py-3.5 text-sm font-bold text-[#132B4F] hover:bg-[#F0F4F8] flex items-center gap-4 transition-colors group"
+                            >
+                              <span className="text-[10px] font-black text-gray-300 w-5 shrink-0">{i + 1}</span>
+                              <div className="w-1 h-4 bg-gray-200 group-hover:bg-[#009CC5] shrink-0 transition-colors" />
+                              {p.nama}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Selected state */}
                   {selectedPegawai && (
                     <div className="flex items-center justify-between bg-[#132B4F] px-5 py-4">
                       <div className="flex items-center gap-3">

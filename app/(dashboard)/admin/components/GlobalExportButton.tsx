@@ -1,44 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { getGlobalExportData } from "@/app/action/admin";
 
 const WHITE      = "FFFFFFFF";
 const YELLOW     = "FFFAE705";
 const LIGHT_BLUE = "FFD6EAF8";
 const NAVY_HDR   = "FF1F4E79";
 
-interface Response {
-  id: string;
-  nama: string;
-  tglLayanan?: Date | string | null;
-  createdAt: Date | string;
-  jenisKelamin: string;
-  pendidikan: string;
-  usia: number;
-  pekerjaan: string;
-  isDifabel?: string | null;
-  jenisDisabilitas?: string | null;
-  u1: number; u2: number; u3: number; u4: number; u5: number;
-  u6: number; u7: number; u8: number; u9: number;
-  saran?: string | null;
-  pegawai?: { nama: string } | null;
-}
-
-interface Props {
-  layananNama: string;
-  periodLabel: string;
-  responses: Response[];
-}
-
-export default function LayananExportButton({ layananNama, periodLabel, responses }: Props) {
+export default function GlobalExportButton() {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
     setLoading(true);
     try {
+      const result = await getGlobalExportData();
+      if (!result) { alert("Tidak ada periode aktif."); return; }
+
+      const { periodLabel, data } = result;
+
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();
       wb.creator = "BKPSDM Anambas";
+      wb.created = new Date();
 
       // ── SHEET 1: DATA ───────────────────────────────────────────────
       const wsData = wb.addWorksheet("Data");
@@ -80,40 +64,46 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         };
       });
 
-      responses.forEach((r, idx) => {
-        const tgl = r.tglLayanan
-          ? new Date(r.tglLayanan).toLocaleDateString("id-ID")
-          : new Date(r.createdAt).toLocaleDateString("id-ID");
-        const row = wsData.addRow([
-          "Badan Kepegawaian dan Pengembangan Sumber Daya Manusia",
-          layananNama,
-          r.nama,
-          r.pegawai?.nama ?? "-",
-          tgl,
-          r.jenisKelamin, r.pendidikan, r.usia, r.pekerjaan,
-          r.isDifabel ?? "Tidak", r.jenisDisabilitas ?? "-",
-          r.u1, r.u2, r.u3, r.u4, r.u5, r.u6, r.u7, r.u8, r.u9,
-          r.saran ?? "-",
-        ]);
-        const isEven = (idx % 2 === 0);
-        row.eachCell(cell => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: isEven ? LIGHT_BLUE : WHITE } };
-          cell.font = { size: 10, name: "Arial" };
-          cell.border = {
-            top: { style: "hair", color: { argb: "FFBDC3C7" } },
-            bottom: { style: "hair", color: { argb: "FFBDC3C7" } },
-            left: { style: "hair", color: { argb: "FFBDC3C7" } },
-            right: { style: "hair", color: { argb: "FFBDC3C7" } },
-          };
+      let rowIdx = 2;
+      data.forEach((svc: (typeof data)[number]) => {
+        svc.rawResponses.forEach((r: (typeof svc.rawResponses)[number]) => {
+          const row = wsData.addRow([
+            "Badan Kepegawaian dan Pengembangan Sumber Daya Manusia",
+            svc.serviceName,
+            r.Nama,
+            r.Pegawai,
+            r.Tanggal,
+            r.JK,
+            r.Pendidikan,
+            r.Umur,
+            r.Pekerjaan,
+            r.Difabel ?? "Tidak",
+            r.JenisDisabilitas ?? "-",
+            r.U1, r.U2, r.U3, r.U4, r.U5, r.U6, r.U7, r.U8, r.U9,
+            r.Saran ?? "-",
+          ]);
+          const isEven = (rowIdx % 2 === 0);
+          row.eachCell(cell => {
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: isEven ? LIGHT_BLUE : WHITE } };
+            cell.font = { size: 10, name: "Arial" };
+            cell.border = {
+              top: { style: "hair", color: { argb: "FFBDC3C7" } },
+              bottom: { style: "hair", color: { argb: "FFBDC3C7" } },
+              left: { style: "hair", color: { argb: "FFBDC3C7" } },
+              right: { style: "hair", color: { argb: "FFBDC3C7" } },
+            };
+          });
+          rowIdx++;
         });
       });
 
-      // autoFilter spans A-U (21 cols)
+      // autoFilter now spans A-U (21 cols)
       wsData.autoFilter = { from: "A1", to: "U1" };
       wsData.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
       // ── SHEET 2: REKAP ──────────────────────────────────────────────
-      // U scores shifted: U1=L, U2=M, U3=N, U4=O, U5=P, U6=Q, U7=R, U8=S, U9=T
+      // NOTE: U scores shifted right by 2 cols (Nama + Pegawai added)
+      // Data!L:L = U1, M=U2, N=U3, O=U4, P=U5, Q=U6, R=U7, S=U8, T=U9
       const wsRekap = wb.addWorksheet("Rekap");
       wsRekap.columns = [
         { key: "a", width: 35 }, { key: "b", width: 16 },
@@ -144,25 +134,30 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         };
       });
 
-      if (responses.length > 0) {
+      const serviceNames = data.map((s: (typeof data)[number]) => s.serviceName);
+
+      serviceNames.forEach((name: string, idx: number) => {
+        const row = idx + 2;
         const dataRow = wsRekap.addRow([
-          layananNama,
-          { formula: "COUNTIFS(Data!B:B,A2)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!L:L,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!M:M,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!N:N,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!O:O,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!P:P,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!Q:Q,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!R:R,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!S:S,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR((AVERAGEIFS(Data!T:T,Data!$B:$B,$A2))*25,0)" },
-          { formula: "IFERROR(AVERAGE(C2:K2),0)" },
-          { formula: 'IFERROR(IF(L2>=88.31,"A",IF(L2>=76.61,"B",IF(L2>=65,"C","D"))),"-")' },
-          { formula: 'IFERROR(IF(L2>=88.31,"Sangat Baik",IF(L2>=76.61,"Baik",IF(L2>=65,"Kurang Baik","Tidak Baik"))),"-")' },
+          name,
+          { formula: `COUNTIFS(Data!B:B,A${row})` },
+          // U scores now in cols L–T (shifted +2)
+          { formula: `IFERROR((AVERAGEIFS(Data!L:L,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!M:M,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!N:N,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!O:O,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!P:P,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!Q:Q,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!R:R,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!S:S,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR((AVERAGEIFS(Data!T:T,Data!$B:$B,$A${row}))*25,0)` },
+          { formula: `IFERROR(AVERAGE(C${row}:K${row}),0)` },
+          { formula: `IFERROR(IF(L${row}>=88.31,"A",IF(L${row}>=76.61,"B",IF(L${row}>=65,"C","D"))),"-")` },
+          { formula: `IFERROR(IF(L${row}>=88.31,"Sangat Baik",IF(L${row}>=76.61,"Baik",IF(L${row}>=65,"Kurang Baik","Tidak Baik"))),"-")` },
         ]);
+        const isEven = (row % 2 === 0);
         dataRow.eachCell(cell => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LIGHT_BLUE } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: isEven ? LIGHT_BLUE : WHITE } };
           cell.font = { size: 10, name: "Arial" };
           cell.alignment = { horizontal: "center" };
           cell.numFmt = '#,##0.00';
@@ -174,19 +169,34 @@ export default function LayananExportButton({ layananNama, periodLabel, response
           };
         });
         dataRow.getCell(1).alignment = { horizontal: "left" };
+        dataRow.getCell(1).font = { size: 10, name: "Arial" };
         dataRow.getCell(12).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(13).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(14).font = { bold: true, size: 10, name: "Arial" };
-      }
+      });
 
-      const summaryDefs = [
-        ["Rerata IKM Per Unsur", "", { formula: "IFERROR(AVERAGE(C2:C2),0)" }, { formula: "IFERROR(AVERAGE(D2:D2),0)" }, { formula: "IFERROR(AVERAGE(E2:E2),0)" }, { formula: "IFERROR(AVERAGE(F2:F2),0)" }, { formula: "IFERROR(AVERAGE(G2:G2),0)" }, { formula: "IFERROR(AVERAGE(H2:H2),0)" }, { formula: "IFERROR(AVERAGE(I2:I2),0)" }, { formula: "IFERROR(AVERAGE(J2:J2),0)" }, { formula: "IFERROR(AVERAGE(K2:K2),0)" }, { formula: "IFERROR(AVERAGE(L2:L2),0)" }, "", ""],
-        ["IKM Unit Layanan",    "", { formula: "IFERROR(AVERAGE(C3:K3),0)" }, "", "", "", "", "", "", "", "", "", "", ""],
-        ["Mutu Unit Layanan",   "", { formula: 'IFERROR(IF(C4>=88.31,"A",IF(C4>=76.61,"B",IF(C4>=65,"C","D"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
-        ["Predikat",            "", { formula: 'IFERROR(IF(C4>=88.31,"Sangat Baik",IF(C4>=76.61,"Baik",IF(C4>=65,"Kurang Baik","Tidak Baik"))),"-")' }, "", "", "", "", "", "", "", "", "", "", ""],
+      const lastDataRow = serviceNames.length + 1;
+
+      const summaryRows = [
+        ["Rerata IKM Per Unsur", "",
+          { formula: `IFERROR(AVERAGE(C2:C${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(D2:D${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(E2:E${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(F2:F${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(G2:G${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(H2:H${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(I2:I${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(J2:J${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(K2:K${lastDataRow}),0)` },
+          { formula: `IFERROR(AVERAGE(L2:L${lastDataRow}),0)` },
+          "", "",
+        ],
+        ["IKM Unit Layanan", "", { formula: `IFERROR(AVERAGE(C${lastDataRow+1}:K${lastDataRow+1}),0)` }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Mutu Unit Layanan", "", { formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"A",IF(C${lastDataRow+2}>=76.61,"B",IF(C${lastDataRow+2}>=65,"C","D"))),"-")` }, "", "", "", "", "", "", "", "", "", "", ""],
+        ["Predikat", "", { formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"Sangat Baik",IF(C${lastDataRow+2}>=76.61,"Baik",IF(C${lastDataRow+2}>=65,"Kurang Baik","Tidak Baik"))),"-")` }, "", "", "", "", "", "", "", "", "", "", ""],
       ];
 
-      summaryDefs.forEach(rowData => {
+      summaryRows.forEach(rowData => {
         const sumRow = wsRekap.addRow(rowData);
         sumRow.height = 20;
         sumRow.eachCell(cell => {
@@ -206,15 +216,16 @@ export default function LayananExportButton({ layananNama, periodLabel, response
 
       wsRekap.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
+      // ── DOWNLOAD ────────────────────────────────────────────────────
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      const safeName = layananNama.replace(/[:\/\\?*\[\]\s]/g, "_").substring(0, 40);
-      link.download = `SKM_${safeName}_${periodLabel.replace(/\s/g, "_")}.xlsx`;
+      link.download = `Laporan_SKM_${periodLabel.replace(/\s/g, "_")}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
+
     } catch (err) {
       console.error(err);
       alert("Gagal menghasilkan laporan.");
@@ -225,13 +236,13 @@ export default function LayananExportButton({ layananNama, periodLabel, response
 
   return (
     <button onClick={handleDownload} disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 hover:opacity-90"
-      style={{ backgroundColor: "#132B4F" }}
+      className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 hover:opacity-90 shadow-lg"
+      style={{ backgroundColor: "#009CC5" }}
     >
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
-      {loading ? "Generating..." : "Export Excel"}
+      {loading ? "Generating..." : "Export Semua Layanan"}
     </button>
   );
 }

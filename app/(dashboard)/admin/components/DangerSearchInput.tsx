@@ -1,10 +1,10 @@
 "use client";
 
-interface Props {
-  placeholder: string;
-}
+import { useState } from "react";
 
-export default function DangerSearchInput({ placeholder }: Props) {
+export default function DangerSearch({ placeholder }: { placeholder: string }) {
+  const [query, setQuery] = useState("");
+
   return (
     <div className="flex items-center gap-3 bg-white border border-gray-200 px-3 py-2 focus-within:border-[#009CC5] transition-colors">
       <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -12,16 +12,31 @@ export default function DangerSearchInput({ placeholder }: Props) {
       </svg>
       <input
         type="text"
+        value={query}
         placeholder={placeholder}
-        className="flex-1 text-xs font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
         onChange={(e) => {
           const q = e.target.value.toLowerCase();
+          setQuery(e.target.value);
           document.querySelectorAll<HTMLTableRowElement>("[data-entity-row]").forEach(row => {
             const name = row.dataset.name ?? "";
             row.style.display = name.includes(q) ? "" : "none";
           });
         }}
+        className="flex-1 text-xs font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
       />
+      {query && (
+        <button
+          onClick={() => {
+            setQuery("");
+            document.querySelectorAll<HTMLTableRowElement>("[data-entity-row]").forEach(row => {
+              row.style.display = "";
+            });
+          }}
+          className="text-[10px] font-black text-gray-300 hover:text-[#132B4F] transition-colors"
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }

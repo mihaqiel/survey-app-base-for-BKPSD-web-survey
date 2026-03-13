@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { verifyDeletePin, deleteLayananWithRespon, deletePegawaiWithRespon } from "@/app/action/delete";
 
-export interface EntityDeleteModalProps {
+interface Props {
   entityId: string;
   entityNama: string;
   entityType: "layanan" | "pegawai";
@@ -13,7 +13,7 @@ export interface EntityDeleteModalProps {
 
 type Step = "idle" | "pin" | "confirm" | "final";
 
-export default function EntityDeleteModal({ entityId, entityNama, entityType, linkedCount, linkedLabel }: EntityDeleteModalProps) {
+export default function EntityDeleteModal({ entityId, entityNama, entityType, linkedCount, linkedLabel }: Props) {
   const [step, setStep] = useState<Step>("idle");
   const [pin, setPin] = useState("");
   const [verifiedPin, setVerifiedPin] = useState("");
@@ -64,7 +64,7 @@ export default function EntityDeleteModal({ entityId, entityNama, entityType, li
 
             {/* Progress bar */}
             <div className="flex h-1.5">
-              <div className={`flex-1 transition-colors duration-300 bg-red-400`} />
+              <div className={`flex-1 transition-colors duration-300 ${step === "pin" || step === "confirm" || step === "final" ? "bg-red-400" : "bg-gray-200"}`} />
               <div className={`flex-1 transition-colors duration-300 ${step === "confirm" || step === "final" ? "bg-red-500" : "bg-gray-200"}`} />
               <div className={`flex-1 transition-colors duration-300 ${step === "final" ? "bg-red-600" : "bg-gray-200"}`} />
             </div>
