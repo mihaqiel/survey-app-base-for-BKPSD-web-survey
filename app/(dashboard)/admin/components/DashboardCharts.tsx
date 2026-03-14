@@ -1,179 +1,336 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { BarChart3, TrendingUp, ArrowLeft, MousePointerClick } from "lucide-react";
 
 export interface ChartData {
   name: string;
   ikm: number;
   value?: number;
   fill: string;
+  id?: string;
 }
 
-export default function DashboardCharts({ data }: { data: ChartData[] }) {
+export interface TrendPoint {
+  date: string;
+  count: number;
+  ikm?: number;
+}
+
+interface DrillData {
+  label: string;
+  trend: TrendPoint[];
+  color: string;
+}
+
+function ikmLabel(ikm: number) {
+  if (ikm === 0)    return "No Data";
+  if (ikm >= 88.31) return "Sangat Baik";
+  if (ikm >= 76.61) return "Baik";
+  if (ikm >= 65.00) return "Kurang Baik";
+  return "Tidak Baik";
+}
+
+// ── Bar chart ─────────────────────────────────────────────────────────────────
+
+function BarChartView({
+  data, onDrill, mode,
+}: {
+  data: ChartData[];
+  onDrill: (item: ChartData) => void;
+  mode: "ikm" | "count";
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<any>(null);
-  const [hovered, setHovered] = useState<ChartData | null>(null);
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const chartRef  = useRef<any>(null);
 
   useEffect(() => {
     if (!canvasRef.current || data.length === 0) return;
+    let destroyed = false;
 
-    let Chart: any;
     import("chart.js").then((mod) => {
-      Chart = mod.Chart;
+      if (destroyed) return;
       mod.Chart.register(
-        mod.DoughnutController, // ← add this line
-        mod.ArcElement,
-        mod.Tooltip,
-        mod.Legend,
+        mod.BarController, mod.BarElement,
+        mod.CategoryScale, mod.LinearScale,
+        mod.Tooltip, mod.Legend,
       );
+      if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
 
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
-      }
-
-      const pieData = data.map((d) => d.value ?? d.ikm);
-      const total = pieData.reduce((a, b) => a + b, 0);
-
-      chartRef.current = new Chart(canvasRef.current!, {
-        type: "doughnut",
+      chartRef.current = new mod.Chart(canvasRef.current!, {
+        type: "bar",
         data: {
-          labels: data.map((d) => d.name),
-          datasets: [
-            {
-              data: pieData,
-              backgroundColor: data.map((d) => d.fill),
-              borderColor: "#ffffff",
-              borderWidth: 2,
-              hoverBorderWidth: 3,
-              hoverOffset: 6,
-            },
-          ],
+          labels: data.map(d => d.name.length > 14 ? d.name.substring(0, 14) + "…" : d.name),
+          datasets: [{
+            label: mode === "ikm" ? "Nilai IKM" : "Responden",
+            data:  data.map(d => mode === "ikm" ? d.ikm : (d.value ?? 0)),
+            backgroundColor: data.map(d => d.fill + "bb"),
+            hoverBackgroundColor: data.map(d => d.fill),
+            borderWidth: 0,
+            borderRadius: 3,
+            borderSkipped: false,
+          }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: "62%",
-          animation: {
-            animateRotate: true,
-            duration: 700,
-            easing: "easeOutQuart",
+          animation: { duration: 700, easing: "easeOutQuart" },
+          onClick: (_: any, elements: any[]) => {
+            if (elements.length > 0) onDrill(data[elements[0].index]);
           },
           plugins: {
             legend: { display: false },
-            tooltip: { enabled: false },
+            tooltip: {
+              backgroundColor: "#0D1F38",
+              titleColor: "#FAE705",
+              bodyColor: "#e2e8f0",
+              titleFont: { size: 11, weight: "bold" as const },
+              bodyFont: { size: 12 },
+              padding: 12,
+              cornerRadius: 0,
+              callbacks: {
+                title: (items: any[]) => data[items[0].dataIndex]?.name ?? "",
+                label: (item: any) =>
+                  mode === "ikm"
+                    ? `IKM: ${item.raw}  —  ${ikmLabel(Number(item.raw))}`
+                    : `Responden: ${item.raw}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: "#94a3b8",
+                font: { size: 10, weight: "bold" as const },
+                maxRotation: 35,
+              },
+              border: { display: false },
+            },
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 6 },
+              border: { display: false },
+              min: 0,
+              max: mode === "ikm" ? 100 : undefined,
+            },
           },
           onHover: (_: any, elements: any[]) => {
-            if (elements.length > 0) {
-              const i = elements[0].index;
-              setHovered(data[i]);
-              setActiveIdx(i);
-            } else {
-              setHovered(null);
-              setActiveIdx(null);
-            }
+            if (canvasRef.current)
+              canvasRef.current.style.cursor = elements.length > 0 ? "pointer" : "default";
           },
         },
       });
     });
 
     return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
-      }
+      destroyed = true;
+      if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
     };
-  }, [data]);
+  }, [data, mode, onDrill]);
 
-  const total = data.reduce((s, d) => s + (d.value ?? d.ikm), 0);
+  return <canvas ref={canvasRef} />;
+}
+
+// ── Line chart (drill-down) ───────────────────────────────────────────────────
+
+function LineChartView({ drill }: { drill: DrillData }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef  = useRef<any>(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    let destroyed = false;
+
+    import("chart.js").then((mod) => {
+      if (destroyed) return;
+      mod.Chart.register(
+        mod.LineController, mod.LineElement, mod.PointElement,
+        mod.CategoryScale, mod.LinearScale,
+        mod.Tooltip, mod.Filler,
+      );
+      if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+
+      const hasIkm = drill.trend.some(p => (p.ikm ?? 0) > 0);
+
+      chartRef.current = new mod.Chart(canvasRef.current!, {
+        type: "line",
+        data: {
+          labels: drill.trend.map(p => p.date),
+          datasets: [
+            {
+              label: "Responden",
+              data: drill.trend.map(p => p.count),
+              borderColor: drill.color,
+              backgroundColor: drill.color + "18",
+              borderWidth: 2.5,
+              pointRadius: 5,
+              pointBackgroundColor: drill.color,
+              pointBorderColor: "#fff",
+              pointBorderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              yAxisID: "y",
+            },
+            ...(hasIkm ? [{
+              label: "IKM",
+              data: drill.trend.map(p => p.ikm ?? 0),
+              borderColor: "#FAE705",
+              backgroundColor: "transparent",
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: "#FAE705",
+              pointBorderColor: "#fff",
+              pointBorderWidth: 1.5,
+              tension: 0.4,
+              borderDash: [5, 3],
+              yAxisID: "y2",
+            }] : []),
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500, easing: "easeOutCubic" },
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#0D1F38",
+              titleColor: "#FAE705",
+              bodyColor: "#e2e8f0",
+              padding: 12,
+              cornerRadius: 0,
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: "#94a3b8", font: { size: 10, weight: "bold" as const } },
+              border: { display: false },
+            },
+            y: {
+              position: "left",
+              grid: { color: "#f1f5f9" },
+              ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 6 },
+              border: { display: false },
+            },
+            ...(hasIkm ? {
+              y2: {
+                position: "right",
+                grid: { display: false },
+                ticks: { color: "#b45309", font: { size: 10 }, maxTicksLimit: 6 },
+                border: { display: false },
+                min: 0, max: 100,
+              },
+            } : {}),
+          },
+        },
+      });
+    });
+
+    return () => {
+      destroyed = true;
+      if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    };
+  }, [drill]);
+
+  return <canvas ref={canvasRef} />;
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export default function DashboardCharts({
+  data,
+  defaultMode = "ikm",
+}: {
+  data: ChartData[];
+  defaultMode?: "ikm" | "count";
+}) {
+  const [mode, setMode]   = useState<"ikm" | "count">(defaultMode);
+  const [drill, setDrill] = useState<DrillData | null>(null);
+
+  const handleDrill = useCallback((item: ChartData) => {
+    // Mock weekly trend — replace with real API data when available
+    const trend: TrendPoint[] = Array.from({ length: 8 }, (_, i) => ({
+      date:  `W${i + 1}`,
+      count: Math.max(1, Math.round((item.value ?? 10) * (0.5 + Math.random() * 0.9))),
+      ikm:   item.ikm > 0
+        ? parseFloat((item.ikm * (0.88 + Math.random() * 0.24)).toFixed(1))
+        : 0,
+    }));
+    setDrill({ label: item.name, trend, color: item.fill });
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Donut + center label */}
-      <div className="flex-1 relative min-h-0" style={{ minHeight: 160 }}>
-        <canvas ref={canvasRef} />
-        {/* Center overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          {hovered ? (
-            <div className="text-center px-2 animate-fade-in">
-              <p
-                className="text-xl font-black leading-none"
-                style={{ color: hovered.fill }}
-              >
-                {hovered.ikm > 0 ? hovered.ikm : hovered.value}
-              </p>
-              <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-0.5 max-w-[80px] leading-tight text-center">
-                {hovered.name.length > 14
-                  ? hovered.name.substring(0, 14) + "…"
-                  : hovered.name}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center animate-fade-in">
-              <p className="text-lg font-black text-[#132B4F] leading-none">
-                {total}
-              </p>
-              <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-0.5">
-                Total
-              </p>
-            </div>
-          )}
-        </div>
+
+      {/* Toolbar */}
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between shrink-0 border-b border-gray-100">
+        {drill ? (
+          <button
+            onClick={() => setDrill(null)}
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#009CC5] hover:text-[#132B4F] transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Kembali ke Perbandingan Layanan
+          </button>
+        ) : (
+          <div className="flex gap-1">
+            {(["ikm", "count"] as const).map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest transition-all duration-150 ${
+                  mode === m ? "bg-[#132B4F] text-white" : "text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
+                }`}>
+                {m === "ikm"
+                  ? <><BarChart3 className="w-3 h-3" />Nilai IKM</>
+                  : <><TrendingUp className="w-3 h-3" />Responden</>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!drill ? (
+          <div className="flex items-center gap-1.5 text-[9px] text-gray-300 font-medium">
+            <MousePointerClick className="w-3 h-3" />
+            Klik bar untuk lihat tren
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: drill.color }} />
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 max-w-[200px] truncate">
+              {drill.label}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Custom legend */}
-      <div
-        className="px-4 pb-3 space-y-1 overflow-y-auto"
-        style={{ maxHeight: 110 }}
-      >
-        {data.map((entry, i) => {
-          const pct =
-            total > 0
-              ? Math.round(((entry.value ?? entry.ikm) / total) * 100)
-              : 0;
-          return (
-            <div
-              key={i}
-              className={`flex items-center gap-2 px-2 py-1 transition-all duration-150 cursor-default ${
-                activeIdx === i ? "bg-gray-50 rounded" : ""
-              }`}
-              onMouseEnter={() => {
-                setHovered(entry);
-                setActiveIdx(i);
-              }}
-              onMouseLeave={() => {
-                setHovered(null);
-                setActiveIdx(null);
-              }}
-            >
-              {/* Color swatch */}
-              <div
-                className="w-2 h-2 shrink-0 rounded-sm"
-                style={{ backgroundColor: entry.fill }}
-              />
-              {/* Name */}
-              <span className="text-[10px] font-bold text-gray-500 truncate flex-1 leading-tight">
-                {entry.name}
-              </span>
-              {/* Percentage bar */}
-              <div className="w-12 h-1 bg-gray-100 overflow-hidden rounded-full shrink-0">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${pct}%`, backgroundColor: entry.fill }}
-                />
-              </div>
-              {/* Value */}
-              <span
-                className="text-[10px] font-black tabular-nums shrink-0 w-8 text-right"
-                style={{ color: entry.fill }}
-              >
-                {entry.ikm > 0 ? entry.ikm : entry.value}
-              </span>
-            </div>
-          );
-        })}
+      {/* Chart canvas */}
+      <div className="flex-1 px-4 py-3 min-h-0">
+        {drill ? (
+          <LineChartView drill={drill} />
+        ) : data.length > 0 ? (
+          <BarChartView data={data} onDrill={handleDrill} mode={mode} />
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center gap-2">
+            <BarChart3 className="w-10 h-10 text-gray-200" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Belum ada data</p>
+          </div>
+        )}
       </div>
+
+      {/* Drill legend */}
+      {drill && (
+        <div className="px-5 pb-4 pt-1 flex items-center gap-5 shrink-0 border-t border-gray-50">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-0.5" style={{ backgroundColor: drill.color }} />
+            <span className="text-[9px] font-bold text-gray-400">Responden</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 border-t border-dashed border-yellow-400" />
+            <span className="text-[9px] font-bold text-gray-400">IKM</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

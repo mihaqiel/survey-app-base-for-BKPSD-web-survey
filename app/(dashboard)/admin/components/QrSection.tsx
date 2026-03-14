@@ -3,12 +3,13 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import QRCode from "qrcode";
 import Image from "next/image";
+import { Check, Copy, Download, Loader2 } from "lucide-react";
 
 export default function QrSection({ token, label }: { token: string; label: string }) {
-  const qrCanvasRef             = useRef<HTMLCanvasElement>(null);
+  const qrCanvasRef                   = useRef<HTMLCanvasElement>(null);
   const [downloading, setDownloading] = useState(false);
-  const [copied, setCopied]     = useState(false);
-  const [surveyUrl, setSurveyUrl] = useState("");
+  const [copied, setCopied]           = useState(false);
+  const [surveyUrl, setSurveyUrl]     = useState("");
 
   useEffect(() => {
     setSurveyUrl(`${window.location.origin}/enter?token=${token}`);
@@ -49,9 +50,26 @@ export default function QrSection({ token, label }: { token: string; label: stri
   }, [surveyUrl, drawQrWithLogo]);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(surveyUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(surveyUrl);
+      } else {
+        // Fallback for HTTP / non-secure context
+        const el = document.createElement("textarea");
+        el.value = surveyUrl;
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const downloadQr = async () => {
@@ -164,19 +182,25 @@ export default function QrSection({ token, label }: { token: string; label: stri
       <div className="flex gap-3 w-full max-w-sm animate-fade-up delay-150">
         <button
           onClick={handleCopy}
-          className={`btn-shimmer flex-1 py-3.5 font-black text-[10px] uppercase tracking-widest transition-all duration-200 border hover:scale-[1.02] active:scale-[0.98] ${
+          className={`btn-shimmer flex-1 py-3.5 font-black text-[10px] uppercase tracking-widest transition-all duration-200 border hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 ${
             copied
               ? "bg-green-50 border-green-200 text-green-700"
               : "bg-[#F0F4F8] border-gray-200 text-[#132B4F] hover:bg-gray-200"
           }`}
         >
           {copied ? (
-            <span className="flex items-center justify-center gap-1.5 animate-bounce-in">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            <span className="flex items-center gap-1.5 animate-bounce-in">
+              <Check className="w-3.5 h-3.5" />
               Tersalin!
             </span>
-          ) : "Copy Link"}
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Copy className="w-3.5 h-3.5" />
+              Copy Link
+            </span>
+          )}
         </button>
+
         <button
           onClick={downloadQr}
           disabled={downloading || !surveyUrl}
@@ -184,14 +208,12 @@ export default function QrSection({ token, label }: { token: string; label: stri
         >
           {downloading ? (
             <>
-              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Menyimpan...
             </>
           ) : (
             <>
-              <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <Download className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" />
               Download PNG
             </>
           )}

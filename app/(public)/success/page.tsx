@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircle2, AlertTriangle, Lock, Info, ArrowLeft } from "lucide-react";
 
 export default async function SuccessPage({
   searchParams,
@@ -13,11 +14,7 @@ export default async function SuccessPage({
       accentColor: "#16a34a",
       headerBg: "bg-[#132B4F]",
       badgeBg: "bg-green-50 border-green-200 text-green-700",
-      icon: (
-        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-        </svg>
-      ),
+      icon: <CheckCircle2 className="w-10 h-10 text-white" />,
       statusLabel: "Berhasil Dikirim",
       title: "Terima Kasih",
       subtitle: "Atas Partisipasi Anda",
@@ -29,11 +26,7 @@ export default async function SuccessPage({
       accentColor: "#d97706",
       headerBg: "bg-[#132B4F]",
       badgeBg: "bg-amber-50 border-amber-200 text-amber-700",
-      icon: (
-        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
+      icon: <AlertTriangle className="w-10 h-10 text-white" />,
       statusLabel: "Sudah Diisi",
       title: "Survei Telah",
       subtitle: "Diisi Sebelumnya",
@@ -45,11 +38,7 @@ export default async function SuccessPage({
       accentColor: "#dc2626",
       headerBg: "bg-[#132B4F]",
       badgeBg: "bg-red-50 border-red-200 text-red-700",
-      icon: (
-        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-      ),
+      icon: <Lock className="w-10 h-10 text-white" />,
       statusLabel: "Periode Ditutup",
       title: "Survei Tidak",
       subtitle: "Tersedia",
@@ -86,7 +75,6 @@ export default async function SuccessPage({
                 style={{ backgroundColor: ui.accentColor }}
               />
               <div className="relative flex items-center gap-4">
-                {/* Icon — bounce in */}
                 <div
                   className="animate-bounce-in w-14 h-14 flex items-center justify-center shrink-0 delay-150"
                   style={{ backgroundColor: ui.accentColor }}
@@ -108,7 +96,7 @@ export default async function SuccessPage({
               </div>
             </div>
 
-            {/* ACCENT LINE — draws in */}
+            {/* ACCENT LINE */}
             <div
               className="h-1 animate-draw-line"
               style={{ backgroundColor: ui.accentColor }}
@@ -129,26 +117,22 @@ export default async function SuccessPage({
               {/* Info strip */}
               <div className="animate-fade-up delay-150 bg-[#F0F4F8] px-4 py-3 flex items-center gap-3 mb-7">
                 <div className="w-6 h-6 bg-[#132B4F] flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5 text-[#FAE705]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Info className="w-3.5 h-3.5 text-[#FAE705]" />
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">
                   BKPSDM Kabupaten Kepulauan Anambas
                 </p>
               </div>
 
-              {/* Button — pulse glow on hover */}
+              {/* Button */}
               <div className="animate-fade-up delay-225">
                 <Link
                   href={ui.buttonLink}
-                  className="btn-shimmer group block w-full py-4 text-center text-sm font-black uppercase tracking-widest text-white hover:opacity-90 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(19,43,79,0.25)] transition-all duration-200 active:scale-[0.98]"
+                  className="btn-shimmer group flex items-center justify-center gap-2 w-full py-4 text-center text-sm font-black uppercase tracking-widest text-white hover:opacity-90 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(19,43,79,0.25)] transition-all duration-200 active:scale-[0.98]"
                   style={{ backgroundColor: "#132B4F" }}
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    {ui.buttonText}
-                    <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
-                  </span>
+                  <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" />
+                  {ui.buttonText}
                 </Link>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { Suspense, useRef } from "react";
 import { login } from "@/app/action/auth";
 import { useSearchParams } from "next/navigation";
+import { AlertCircle, Lock, ShieldAlert } from "lucide-react";
 
 function ErrorMessage() {
   const searchParams = useSearchParams();
@@ -11,7 +12,7 @@ function ErrorMessage() {
 
   return (
     <div className="animate-shake flex items-center gap-3 bg-red-50 border border-red-200 px-4 py-3 mb-6">
-      <div className="w-1 h-full min-h-[20px] bg-red-500 shrink-0" />
+      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
       <p className="text-red-600 text-xs font-bold uppercase tracking-widest">
         Username atau password salah
       </p>
@@ -119,16 +120,17 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full py-4 bg-[#132B4F] text-white text-sm font-black uppercase tracking-widest hover:bg-[#009CC5] hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(19,43,79,0.25)] transition-all duration-200 active:scale-[0.98] mt-2"
                   >
-                    Masuk ke Dashboard →
+                    <span className="flex items-center justify-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Masuk ke Dashboard
+                    </span>
                   </RippleButton>
                 </div>
               </form>
 
               <div className="animate-fade-up delay-300 mt-6 pt-6 border-t border-gray-100 flex items-center gap-3">
                 <div className="w-8 h-8 bg-[#FAE705]/20 flex items-center justify-center shrink-0 animate-float">
-                  <svg className="w-4 h-4 text-[#132B4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                  <ShieldAlert className="w-4 h-4 text-[#132B4F]" />
                 </div>
                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase tracking-widest">
                   Hanya untuk personel yang berwenang

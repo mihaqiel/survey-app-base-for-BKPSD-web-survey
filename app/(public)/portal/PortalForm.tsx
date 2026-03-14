@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { submitSkmResponse } from "@/app/action/submit";
+import {
+  Search, ChevronDown, Check, X, Briefcase,
+  ThumbsDown, MinusCircle, ThumbsUp, Star,
+  ClipboardList, User, UserCheck, CheckCircle2, ArrowLeft, ArrowRight,
+  Loader2, Send,
+} from "lucide-react";
 
 const SKM_QUESTIONS = [
   { code: "U1", label: "Persyaratan",  text: "Bagaimana pendapat Saudara tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?" },
@@ -16,10 +22,10 @@ const SKM_QUESTIONS = [
 ];
 
 const OPTIONS = [
-  { val: 1, label: "Tidak Baik",   emoji: "😞", color: "#ef4444" },
-  { val: 2, label: "Kurang Baik",  emoji: "😐", color: "#f97316" },
-  { val: 3, label: "Baik",         emoji: "😊", color: "#22c55e" },
-  { val: 4, label: "Sangat Baik",  emoji: "😄", color: "#009CC5" },
+  { val: 1, label: "Tidak Baik",  icon: <ThumbsDown  className="w-6 h-6" />, color: "#ef4444" },
+  { val: 2, label: "Kurang Baik", icon: <MinusCircle className="w-6 h-6" />, color: "#f97316" },
+  { val: 3, label: "Baik",        icon: <ThumbsUp    className="w-6 h-6" />, color: "#22c55e" },
+  { val: 4, label: "Sangat Baik", icon: <Star        className="w-6 h-6" />, color: "#009CC5" },
 ];
 
 const PENDIDIKAN = ["SD","SMP","SMA/SMK","D1/D2/D3","S1/D4","S2","S3"];
@@ -69,6 +75,7 @@ export default function PortalForm() {
   const [submitting, setSubmitting]   = useState(false);
   const [layananList, setLayananList] = useState<Layanan[]>([]);
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
+  const [layananOpen, setLayananOpen] = useState(false);
   const [layananSearch, setLayananSearch] = useState("");
   const [selectedLayanan, setSelectedLayanan] = useState<Layanan | null>(null);
   const [nama, setNama]               = useState("");
@@ -85,10 +92,22 @@ export default function PortalForm() {
   const [answers, setAnswers]         = useState<Record<string, number>>({});
   const [saran, setSaran]             = useState("");
   const contentRef                    = useRef<HTMLDivElement>(null);
+  const dropdownRef                   = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/layanan").then((r) => r.json()).then(setLayananList);
     fetch("/api/pegawai").then((r) => r.json()).then(setPegawaiList);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setLayananOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const filteredLayanan = layananSearch.length > 0
@@ -111,7 +130,6 @@ export default function PortalForm() {
     setPrevStep(step);
     setStep(nextStep);
     setAnimKey((k) => k + 1);
-    // scroll to top of content
     setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
@@ -166,14 +184,11 @@ export default function PortalForm() {
                 const done    = i < step;
                 const current = i === step;
                 return (
-                  <div
-                    key={i}
+                  <div key={i}
                     className={`flex items-center gap-2.5 px-3 py-2 text-[10px] font-bold transition-all duration-200 ${
-                      current
-                        ? "bg-[#FAE705] text-[#132B4F]"
-                        : done
-                        ? "text-[#009CC5]"
-                        : "text-gray-300"
+                      current ? "bg-[#FAE705] text-[#132B4F]"
+                      : done   ? "text-[#009CC5]"
+                      :          "text-gray-300"
                     }`}
                   >
                     <div className={`w-4 h-4 flex items-center justify-center shrink-0 text-[8px] font-black transition-all duration-200 ${
@@ -181,7 +196,7 @@ export default function PortalForm() {
                       : done   ? "bg-[#009CC5] text-white"
                       :          "bg-gray-100 text-gray-400"
                     }`}>
-                      {done ? "✓" : i + 1}
+                      {done ? <Check className="w-2.5 h-2.5" /> : i + 1}
                     </div>
                     <span className="truncate">{label}</span>
                   </div>
@@ -193,7 +208,7 @@ export default function PortalForm() {
 
         {/* MAIN CONTENT */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white border border-gray-200 overflow-hidden">
+          <div className="bg-white border border-gray-200">
 
             {/* STEP TITLE BAR */}
             <div className="bg-[#132B4F] px-6 py-4 flex items-center gap-3">
@@ -206,51 +221,110 @@ export default function PortalForm() {
               </div>
             </div>
 
-            {/* STEP CONTENT — animated transition */}
+            {/* STEP CONTENT */}
             <div ref={contentRef} className="p-6 sm:p-8">
               <div key={animKey} className={`${slideIn}`}>
 
-                {/* STEP 0: PILIH LAYANAN */}
+                {/* STEP 0: PILIH LAYANAN — DROPDOWN STYLE */}
                 {step === 0 && (
                   <div className="space-y-4">
                     <p className="text-sm font-medium text-gray-500 mb-5 leading-relaxed">
                       Pilih layanan BKPSDM yang baru saja Anda gunakan.
                     </p>
-                    <div className="relative">
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Cari layanan..."
-                        value={layananSearch}
-                        onChange={(e) => setLayananSearch(e.target.value)}
-                        className="input-glow w-full pl-10 pr-4 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] placeholder-gray-300 outline-none transition-all duration-200"
-                      />
-                    </div>
-                    <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 border border-gray-200">
-                      {filteredLayanan.length === 0 ? (
-                        <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Tidak ditemukan</p>
-                      ) : filteredLayanan.map((l) => {
-                        const selected = selectedLayanan?.id === l.id;
-                        return (
+
+                    <div ref={dropdownRef} className="relative">
+                      {/* Trigger — div to avoid nested button */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setLayananOpen((o) => !o)}
+                        onKeyDown={(e) => e.key === "Enter" && setLayananOpen((o) => !o)}
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 bg-[#F0F4F8] border-2 text-left transition-all duration-200 cursor-pointer select-none ${
+                          layananOpen ? "border-[#009CC5]" : selectedLayanan ? "border-[#132B4F]" : "border-transparent hover:border-gray-300"
+                        }`}
+                      >
+                        <ClipboardList className={`w-4 h-4 shrink-0 ${selectedLayanan ? "text-[#009CC5]" : "text-gray-400"}`} />
+                        <span className={`flex-1 text-sm font-bold truncate ${selectedLayanan ? "text-[#132B4F]" : "text-gray-400"}`}>
+                          {selectedLayanan ? selectedLayanan.nama : "Pilih layanan..."}
+                        </span>
+                        {selectedLayanan && (
                           <button
-                            key={l.id}
                             type="button"
-                            onClick={() => setSelectedLayanan(l)}
-                            className={`w-full text-left px-5 py-3.5 text-sm font-bold flex items-center gap-3 transition-all duration-150 ${
-                              selected
-                                ? "bg-[#132B4F] text-white"
-                                : "text-[#132B4F] hover:bg-[#F0F4F8]"
-                            }`}
+                            title="Hapus pilihan"
+                            aria-label="Hapus pilihan layanan"
+                            onClick={(e) => { e.stopPropagation(); setSelectedLayanan(null); setLayananSearch(""); }}
+                            className="p-0.5 hover:text-red-500 text-gray-400 transition-colors"
                           >
-                            <div className={`w-1 h-4 shrink-0 transition-colors ${selected ? "bg-[#FAE705]" : "bg-gray-200"}`} />
-                            {l.nama}
-                            {selected && <span className="ml-auto text-[#FAE705] text-xs font-black">✓</span>}
+                            <X className="w-3.5 h-3.5" />
                           </button>
-                        );
-                      })}
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${layananOpen ? "rotate-180" : ""}`} />
+                      </div>
+
+                      {/* Dropdown panel */}
+                      {layananOpen && (
+                        <div className="absolute z-20 w-full top-full mt-1 bg-white border border-gray-200 shadow-lg animate-fade-down">
+                          {/* Search inside dropdown */}
+                          <div className="p-2 border-b border-gray-100">
+                            <div className="flex items-center gap-2 bg-[#F0F4F8] px-3 py-2">
+                              <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              <input
+                                type="text"
+                                placeholder="Cari layanan..."
+                                value={layananSearch}
+                                onChange={(e) => setLayananSearch(e.target.value)}
+                                autoFocus
+                                className="flex-1 text-sm font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
+                              />
+                              {layananSearch && (
+                                <button type="button" title="Hapus pencarian" aria-label="Hapus pencarian" onClick={() => setLayananSearch("")}>
+                                  <X className="w-3 h-3 text-gray-400 hover:text-red-400" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Options list */}
+                          <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-50">
+                            {filteredLayanan.length === 0 ? (
+                              <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">Tidak ditemukan</p>
+                            ) : filteredLayanan.map((l) => {
+                              const selected = selectedLayanan?.id === l.id;
+                              return (
+                                <button key={l.id} type="button"
+                                  onClick={() => { setSelectedLayanan(l); setLayananOpen(false); setLayananSearch(""); }}
+                                  className={`w-full text-left px-5 py-3.5 text-sm font-bold flex items-center gap-3 transition-all duration-150 ${
+                                    selected ? "bg-[#132B4F] text-white" : "text-[#132B4F] hover:bg-[#F0F4F8]"
+                                  }`}
+                                >
+                                  <div className={`w-1 h-4 shrink-0 transition-colors ${selected ? "bg-[#FAE705]" : "bg-gray-200"}`} />
+                                  <span className="flex-1">{l.nama}</span>
+                                  {selected && <Check className="w-3.5 h-3.5 text-[#FAE705] shrink-0" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Footer count */}
+                          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                              {filteredLayanan.length} layanan tersedia
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Selected confirmation badge */}
+                    {selectedLayanan && (
+                      <div className="animate-fade-up flex items-center gap-3 bg-[#132B4F] px-4 py-3">
+                        <Check className="w-4 h-4 text-[#FAE705] shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Layanan Terpilih</p>
+                          <p className="text-sm font-black text-white">{selectedLayanan.nama}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -264,7 +338,7 @@ export default function PortalForm() {
                       </div>
                       <div>
                         <label className={labelCls}>Tanggal Layanan</label>
-                        <input type="date" value={tglLayanan} onChange={(e) => setTglLayanan(e.target.value)} title="Tanggal Layanan" placeholder="Tanggal Layanan" className={inputCls} />
+                        <input type="date" value={tglLayanan} onChange={(e) => setTglLayanan(e.target.value)} title="Tanggal Layanan" className={inputCls} />
                       </div>
                       <div>
                         <label className={labelCls}>Usia</label>
@@ -274,37 +348,43 @@ export default function PortalForm() {
 
                     <div>
                       <label className={labelCls}>Jenis Kelamin</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {["Laki-laki","Perempuan"].map((v) => (
-                          <button key={v} type="button" onClick={() => setJenisKelamin(v)}
-                            className={`survey-option py-3 border-2 text-center text-sm font-black uppercase tracking-widest transition-all duration-200 ${jenisKelamin === v ? "selected bg-[#132B4F] border-[#132B4F] text-white" : "border-gray-200 text-gray-400 hover:border-[#009CC5]"}`}>
-                            {v === "Laki-laki" ? "👨 " : "👩 "}{v}
-                          </button>
-                        ))}
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <select value={jenisKelamin} onChange={(e) => setJenisKelamin(e.target.value)}
+                          title="Jenis Kelamin"
+                          className="input-glow w-full pl-10 pr-10 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] outline-none appearance-none transition-all duration-200 hover:border-gray-300 cursor-pointer">
+                          <option value="">Pilih jenis kelamin...</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
                     </div>
 
                     <div>
                       <label className={labelCls}>Pendidikan Terakhir</label>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {PENDIDIKAN.map((v) => (
-                          <button key={v} type="button" onClick={() => setPendidikan(v)}
-                            className={`survey-option py-2.5 border-2 text-center text-xs font-black uppercase tracking-widest transition-all duration-200 ${pendidikan === v ? "selected bg-[#132B4F] border-[#132B4F] text-white" : "border-gray-200 text-gray-400 hover:border-[#009CC5]"}`}>
-                            {v}
-                          </button>
-                        ))}
+                      <div className="relative">
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <select value={pendidikan} onChange={(e) => setPendidikan(e.target.value)}
+                          title="Pendidikan Terakhir"
+                          className="input-glow w-full px-4 pr-10 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] outline-none appearance-none transition-all duration-200 hover:border-gray-300 cursor-pointer">
+                          <option value="">Pilih pendidikan terakhir...</option>
+                          {PENDIDIKAN.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
                       </div>
                     </div>
 
                     <div>
                       <label className={labelCls}>Pekerjaan</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {PEKERJAAN.map((v) => (
-                          <button key={v} type="button" onClick={() => setPekerjaan(v)}
-                            className={`survey-option py-2.5 border-2 text-center text-xs font-black uppercase tracking-widest transition-all duration-200 ${pekerjaan === v ? "selected bg-[#132B4F] border-[#132B4F] text-white" : "border-gray-200 text-gray-400 hover:border-[#009CC5]"}`}>
-                            {v}
-                          </button>
-                        ))}
+                      <div className="relative">
+                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <select value={pekerjaan} onChange={(e) => setPekerjaan(e.target.value)}
+                          title="Pekerjaan"
+                          className="input-glow w-full pl-10 pr-10 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] outline-none appearance-none transition-all duration-200 hover:border-gray-300 cursor-pointer">
+                          <option value="">Pilih pekerjaan...</option>
+                          {PEKERJAAN.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
                       {pekerjaan === "Lainnya" && (
                         <input type="text" value={pekerjaanCustom} onChange={(e) => setPekerjaanCustom(e.target.value)}
@@ -337,9 +417,7 @@ export default function PortalForm() {
                       Cari dan pilih nama pegawai yang melayani Anda.
                     </p>
                     <div className="relative">
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-                      </svg>
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input type="text" placeholder="Ketik nama pegawai..."
                         value={selectedPegawai ? selectedPegawai.nama : pegawaiSearch}
                         onChange={(e) => { setSelectedPegawai(null); setPegawaiSearch(e.target.value); }}
@@ -383,15 +461,15 @@ export default function PortalForm() {
                           </div>
                         </div>
                         <button type="button" onClick={() => { setSelectedPegawai(null); setPegawaiSearch(""); }}
-                          className="text-[10px] font-black text-white/40 hover:text-[#FAE705] uppercase tracking-widest transition-colors">
-                          ✕ Ganti
+                          className="flex items-center gap-1 text-[10px] font-black text-white/40 hover:text-[#FAE705] uppercase tracking-widest transition-colors">
+                          <X className="w-3 h-3" /> Ganti
                         </button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* STEPS 3–11: QUESTIONS — enhanced option cards */}
+                {/* STEPS 3–11: QUESTIONS */}
                 {step >= 3 && step <= 11 && (
                   <div className="space-y-6">
                     <div className="flex items-start gap-3 mb-2">
@@ -413,18 +491,16 @@ export default function PortalForm() {
                         const key      = `u${step - 2}`;
                         const selected = answers[key] === opt.val;
                         return (
-                          <button
-                            key={opt.val}
-                            type="button"
+                          <button key={opt.val} type="button"
                             onClick={() => setAnswers((a) => ({ ...a, [key]: opt.val }))}
                             style={{ animationDelay: `${i * 60}ms` }}
                             className={`survey-option animate-fade-up py-5 border-2 text-center transition-all duration-200 focus:outline-none ${
-                              selected
-                                ? "border-[#132B4F] bg-[#132B4F]"
-                                : "border-gray-200 hover:border-[#009CC5] bg-white"
+                              selected ? "border-[#132B4F] bg-[#132B4F]" : "border-gray-200 hover:border-[#009CC5] bg-white"
                             } ${selected ? "selected" : ""}`}
                           >
-                            <span className="block text-2xl mb-1">{opt.emoji}</span>
+                            <span className={`flex justify-center mb-1 ${selected ? "text-[#FAE705]" : "text-gray-300"}`}>
+                              {opt.icon}
+                            </span>
                             <span className={`block text-xl font-black ${selected ? "text-white" : "text-gray-400"}`}>
                               {opt.val}
                             </span>
@@ -439,8 +515,7 @@ export default function PortalForm() {
                     {/* Progress dots */}
                     <div className="flex items-center gap-1.5 justify-center pt-2">
                       {SKM_QUESTIONS.map((_, i) => (
-                        <div
-                          key={i}
+                        <div key={i}
                           className={`h-1.5 rounded-full transition-all duration-300 ${
                             i === step - 3   ? "w-5 bg-[#009CC5]"
                             : answers[`u${i + 1}`] ? "w-3 bg-[#132B4F]"
@@ -457,9 +532,7 @@ export default function PortalForm() {
                   <div className="space-y-6">
                     <div>
                       <label className={labelCls}>Saran & Masukan (Opsional)</label>
-                      <textarea
-                        value={saran}
-                        onChange={(e) => setSaran(e.target.value)}
+                      <textarea value={saran} onChange={(e) => setSaran(e.target.value)}
                         placeholder="Tuliskan saran atau masukan Anda untuk perbaikan layanan ini..."
                         title="Saran dan Masukan"
                         className="input-glow w-full px-4 py-4 bg-[#F0F4F8] border-2 border-transparent text-sm font-medium text-[#132B4F] placeholder-gray-300 outline-none resize-none min-h-[120px] transition-all duration-200"
@@ -473,17 +546,14 @@ export default function PortalForm() {
                       </div>
                       <div className="divide-y divide-gray-100">
                         {[
-                          { icon: "📋", label: "Layanan",    val: selectedLayanan?.nama },
-                          { icon: "👤", label: "Responden",  val: `${nama} · ${usia} thn · ${jenisKelamin}` },
-                          { icon: "👨‍💼", label: "Pegawai",    val: selectedPegawai?.nama },
-                          { icon: "✅", label: "Penilaian",  val: `${Object.keys(answers).length} dari 9 unsur dijawab` },
+                          { icon: <ClipboardList className="w-4 h-4" />, label: "Layanan",   val: selectedLayanan?.nama },
+                          { icon: <User          className="w-4 h-4" />, label: "Responden", val: `${nama} · ${usia} thn · ${jenisKelamin}` },
+                          { icon: <UserCheck     className="w-4 h-4" />, label: "Pegawai",   val: selectedPegawai?.nama },
+                          { icon: <CheckCircle2  className="w-4 h-4" />, label: "Penilaian", val: `${Object.keys(answers).length} dari 9 unsur dijawab` },
                         ].map((row, i) => (
-                          <div
-                            key={row.label}
-                            className="px-5 py-3 flex items-start gap-4 animate-fade-up"
-                            style={{ animationDelay: `${i * 60}ms` }}
-                          >
-                            <span className="text-sm">{row.icon}</span>
+                          <div key={row.label} className="px-5 py-3 flex items-start gap-4 animate-fade-up"
+                            style={{ animationDelay: `${i * 60}ms` }}>
+                            <span className="text-[#009CC5] mt-0.5 shrink-0">{row.icon}</span>
                             <div>
                               <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">{row.label}</p>
                               <p className="text-sm font-bold text-[#132B4F]">{row.val}</p>
@@ -493,20 +563,14 @@ export default function PortalForm() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={handleSubmit}
-                      disabled={submitting}
+                    <button onClick={handleSubmit} disabled={submitting}
                       className="btn-shimmer w-full py-5 bg-[#132B4F] text-white font-black text-sm uppercase tracking-widest hover:bg-[#009CC5] hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(19,43,79,0.25)] disabled:opacity-50 disabled:hover:scale-100 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3"
                     >
                       {submitting ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Mengirim Data...
-                        </>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim Data...</>
                       ) : (
-                        <span className="flex items-center gap-2 group">
-                          Kirim Survei Kepuasan
-                          <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                        <span className="flex items-center gap-2">
+                          <Send className="w-4 h-4" /> Kirim Survei Kepuasan
                         </span>
                       )}
                     </button>
@@ -520,22 +584,15 @@ export default function PortalForm() {
                 {step < 12 && (
                   <div className="flex gap-3 mt-8 pt-6 border-t border-gray-100">
                     {step > 0 && (
-                      <button
-                        onClick={handleBack}
-                        className="btn-shimmer px-6 py-3.5 bg-[#F0F4F8] text-[#132B4F] font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
-                      >
-                        ← Kembali
+                      <button onClick={handleBack}
+                        className="btn-shimmer flex items-center gap-1.5 px-6 py-3.5 bg-[#F0F4F8] text-[#132B4F] font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
+                        <ArrowLeft className="w-3.5 h-3.5" /> Kembali
                       </button>
                     )}
-                    <button
-                      onClick={handleNext}
-                      disabled={!canProceed()}
-                      className="btn-shimmer flex-1 py-3.5 bg-[#132B4F] text-white font-black text-[11px] uppercase tracking-widest hover:bg-[#009CC5] hover:shadow-[0_6px_20px_rgba(19,43,79,0.2)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all duration-200 active:scale-[0.98] group"
-                    >
-                      <span className="flex items-center justify-center gap-1">
-                        {step === 11 ? "Lanjut ke Saran" : "Lanjut"}
-                        <span className="inline-block transition-transform duration-200 group-hover:translate-x-1 group-disabled:translate-x-0">→</span>
-                      </span>
+                    <button onClick={handleNext} disabled={!canProceed()}
+                      className="btn-shimmer flex-1 py-3.5 bg-[#132B4F] text-white font-black text-[11px] uppercase tracking-widest hover:bg-[#009CC5] hover:shadow-[0_6px_20px_rgba(19,43,79,0.2)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all duration-200 active:scale-[0.98] group flex items-center justify-center gap-1.5">
+                      {step === 11 ? "Lanjut ke Saran" : "Lanjut"}
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1 group-disabled:translate-x-0" />
                     </button>
                   </div>
                 )}
