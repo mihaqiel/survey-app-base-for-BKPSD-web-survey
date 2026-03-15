@@ -311,3 +311,33 @@ html {
     --foreground: #ededed;
   }
 }
+
+/* ── ENTERPRISE DASHBOARD ENHANCEMENTS ──────────────────────── */
+
+/* Enhanced card styling with subtle depth */
+.card-hover {
+  border-color: #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(19, 43, 79, 0.15);
+  border-color: rgba(0, 156, 197, 0.2);
+}
+
+/* Smooth tab content transition */
+.tab-content {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Enhanced visual feedback for interactive elements */
+.enterprise-input {
+  transition: all 0.2s ease;
+  border-color: #e2e8f0;
+}
+
+.enterprise-input:focus {
+  border-color: #009CC5;
+  box-shadow: 0 0 0 3px rgba(0, 156, 197, 0.1);
+}
