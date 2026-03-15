@@ -4,8 +4,8 @@ import { useState, useEffect, useTransition } from "react";
 import { getAllLayanan, createLayanan, deleteLayanan } from "@/app/action/admin";
 import Link from "next/link";
 import {
-  ArrowLeft, BarChart3, Layers, Plus, Trash2,
-  Info, X, ChevronRight, Search, TrendingUp,
+  BarChart3, Layers, Plus, Trash2,
+  Info, X, ChevronRight, Search, TrendingUp, Bell,
 } from "lucide-react";
 
 // ── types ──────────────────────────────────────────────────────────────────
@@ -219,31 +219,40 @@ export default function ServiceManagementPage() {
   return (
     <div className="font-sans bg-[#F0F4F8] flex flex-col" style={{ height: "100vh" }}>
 
-      {/* HEADER */}
-      <div className="animate-fade-down bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
-        <div className="flex items-center gap-3 animate-slide-left">
+      {/* GLOBAL HEADER */}
+      <div className="animate-fade-down bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
+        <div className="flex items-center gap-3">
           <div className="w-1 h-6 bg-[#FAE705]" />
-          <div>
+          <div className="animate-slide-left">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#009CC5]">Admin · Portal Survei</p>
-            <h1 className="text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none">Manajemen Layanan SKM</h1>
+            <h1 className="text-base lg:text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none">Layanan</h1>
           </div>
         </div>
         <div className="flex items-center gap-2 animate-slide-right">
-          <Link href="/admin"
-            className="btn-shimmer group flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
-            <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Dashboard
-          </Link>
-          <div className="flex items-center gap-2 px-3 py-2 bg-[#F0F4F8] border border-gray-200 text-[10px] font-black uppercase tracking-widest text-[#132B4F]">
-            <Layers className="w-3.5 h-3.5 text-[#009CC5]" />
-            {services.length} Layanan
+          <div className="hidden md:flex items-center gap-2 bg-[#F0F4F8] border border-gray-200 px-3 py-1.5 w-44">
+            <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-400 font-medium">Search Global...</span>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="btn-shimmer group flex items-center gap-2 px-3 py-2 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(0,156,197,0.3)] transition-all duration-200 active:scale-[0.98]">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F0F4F8] border border-gray-200">
+            <Layers className="w-3.5 h-3.5 text-[#009CC5]" />
+            <span className="text-[10px] font-black text-[#132B4F]">{services.length} Layanan</span>
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            className="btn-shimmer group flex items-center gap-2 px-3 py-1.5 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
             <Plus className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-90" />
             Tambah Layanan
           </button>
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div className="bg-white border-b border-gray-200 px-4 lg:px-6 shrink-0">
+        <div className="flex items-center">
+          {["Performa Layanan", "Daftar Responden", "Pengaturan"].map((tab, i) => (
+            <button key={tab} className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all duration-150 whitespace-nowrap ${i === 0 ? "border-[#009CC5] text-[#009CC5]" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
 

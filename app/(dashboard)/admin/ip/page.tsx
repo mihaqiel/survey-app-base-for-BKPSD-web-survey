@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, RefreshCw, ShieldCheck, ShieldOff, ShieldAlert,
-  Globe, CheckCircle, AlertTriangle, Loader2,
+  RefreshCw, ShieldCheck, ShieldOff, ShieldAlert,
+  Globe, CheckCircle, AlertTriangle, Loader2, Bell, Search,
 } from "lucide-react";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 interface IpEntry {
   ip: string;
@@ -69,23 +70,25 @@ export default function IpLogsPage() {
   return (
     <div className="min-h-screen font-sans bg-[#F0F4F8]">
 
-      {/* PAGE HEADER */}
-      <div className="animate-fade-down bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4 animate-slide-left">
-          <div className="w-1 h-7 bg-[#FAE705]" />
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#009CC5]">Admin · Keamanan</p>
-            <h1 className="text-xl font-black uppercase tracking-tight text-[#132B4F] leading-none">IP Spam Monitor</h1>
+      {/* GLOBAL HEADER */}
+      <div className="animate-fade-down bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-[#FAE705]" />
+          <div className="animate-slide-left">
+            <Breadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "IP Spam Block" }]} />
+            <h1 className="text-base lg:text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none mt-0.5">IP Spam Monitor</h1>
           </div>
         </div>
-        <div className="flex items-center gap-3 animate-slide-right">
-          <Link href="/admin"
-            className="btn-shimmer group flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
-            <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Dashboard
-          </Link>
-          <button onClick={() => fetchData(true)} disabled={refreshing}
-            className="btn-shimmer flex items-center gap-2 px-4 py-2 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50">
+        <div className="flex items-center gap-2 lg:gap-3 animate-slide-right">
+          <div className="hidden md:flex items-center gap-2 bg-[#F0F4F8] border border-gray-200 px-3 py-1.5 w-44">
+            <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-400 font-medium">Search Global...</span>
+          </div>
+          <button aria-label="Notifikasi" className="w-8 h-8 flex items-center justify-center bg-[#F0F4F8] border border-gray-200 hover:bg-white transition-colors">
+            <Bell className="w-3.5 h-3.5 text-gray-500" />
+          </button>
+          <button aria-label="Refresh data" onClick={() => fetchData(true)} disabled={refreshing}
+            className="btn-shimmer flex items-center gap-2 px-3 py-1.5 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
           </button>

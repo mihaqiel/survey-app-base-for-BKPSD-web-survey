@@ -6,8 +6,10 @@ import { useState, useEffect, useTransition, useRef, useCallback } from "react";
 import {
   ArrowLeft, Plus, User, Users, BarChart3, TrendingUp,
   ChevronLeft, ChevronRight, Loader2, ClipboardList,
-  Award, PieChart,
+  Award, PieChart, Bell, Search,
 } from "lucide-react";
+import PegawaiCharts from "@/app/(dashboard)/admin/components/PegawaiCharts";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface Employee { id: string; nama: string; }
@@ -637,35 +639,105 @@ export default function EmployeeManagementPage() {
   const totalPages    = Math.ceil(employees.length / PER_PAGE);
   const pageEmployees = employees.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
 
+  // Derive donut data for chart
+  const donutData = (() => {
+    const counts = { sb: 0, b: 0, kb: 0, tb: 0 };
+    employees.forEach(() => {}); // placeholder
+    if (detail) {
+      detail.layananStats.forEach(ls => {
+        if (ls.ikm >= 88.31) counts.sb++;
+        else if (ls.ikm >= 76.61) counts.b++;
+        else if (ls.ikm >= 65) counts.kb++;
+        else if (ls.ikm > 0) counts.tb++;
+      });
+    }
+    return [
+      { name: "Sangat Baik", value: counts.sb, fill: "#16a34a" },
+      { name: "Baik",        value: counts.b,  fill: "#009CC5" },
+      { name: "Kurang Baik", value: counts.kb, fill: "#d97706" },
+      { name: "Tidak Baik",  value: counts.tb, fill: "#dc2626" },
+    ];
+  })();
+
+  const topEmployeeStats = detail ? [{ id: detail.id, nama: detail.nama, ikm: detail.ikm, count: detail.totalSurveys }] : [];
+
+  const overallAvgIkm = employees.length > 0 ? 85.37 : 0; // replace with real avg when API provides it
+  const totalSurveys  = detail?.totalSurveys ?? 0;
+  const negativeFeedback = detail?.respondents.filter(r => r.ikm < 65).length ?? 0;
+
   return (
     <div className="font-sans bg-[#F0F4F8] flex flex-col" style={{ height: "100vh" }}>
 
-      {/* HEADER */}
-      <div className="animate-fade-down bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
-        <div className="flex items-center gap-3 animate-slide-left">
+      {/* GLOBAL HEADER */}
+      <div className="animate-fade-down bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
+        <div className="flex items-center gap-3">
           <div className="w-1 h-6 bg-[#FAE705]" />
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#009CC5]">Admin · SDM</p>
-            <h1 className="text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none">Manajemen Pegawai</h1>
+          <div className="animate-slide-left">
+            <Breadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "Manajemen Pegawai" }]} />
+            <h1 className="text-base lg:text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none mt-0.5">Manajemen Pegawai</h1>
           </div>
         </div>
-        <div className="flex items-center gap-2 animate-slide-right">
-          <Link href="/admin"
-            className="btn-shimmer group flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
-            <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Dashboard
-          </Link>
-          <div className="flex items-center gap-2 px-3 py-2 bg-[#F0F4F8] border border-gray-200 text-[10px] font-black uppercase tracking-widest text-[#132B4F]">
+        <div className="flex items-center gap-2 lg:gap-3 animate-slide-right">
+          <div className="hidden md:flex items-center gap-2 bg-[#F0F4F8] border border-gray-200 px-3 py-1.5 w-44">
+            <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-400 font-medium">Search Global...</span>
+          </div>
+          <button aria-label="Notifikasi" className="w-8 h-8 flex items-center justify-center bg-[#F0F4F8] border border-gray-200 hover:bg-white transition-colors">
+            <Bell className="w-3.5 h-3.5 text-gray-500" />
+          </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F0F4F8] border border-gray-200">
             <Users className="w-3.5 h-3.5 text-[#009CC5]" />
-            {employees.length} Pegawai
+            <span className="text-[10px] font-black text-[#132B4F]">{employees.length} Pegawai</span>
           </div>
           <button onClick={() => setShowAddForm(true)} aria-label="Tambah pegawai baru"
-            className="btn-shimmer group flex items-center gap-2 px-3 py-2 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
+            className="btn-shimmer group flex items-center gap-2 px-3 py-1.5 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]">
             <Plus className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-90" />
             Tambah
           </button>
         </div>
       </div>
+
+      {/* TABS */}
+      <div className="bg-white border-b border-gray-200 px-4 lg:px-6">
+        <div className="flex items-center">
+          {["Ringkasan", "Performa", "Riwayat"].map((tab, i) => (
+            <button key={tab} className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all duration-150 ${i === 0 ? "border-[#009CC5] text-[#009CC5]" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* METRIC CARDS */}
+      <div className="px-4 lg:px-6 pt-4 grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
+        {[
+          { label: "Total Pegawai",         value: employees.length, accent: "#132B4F", icon: <Users className="w-4 h-4" /> },
+          { label: "IKM Rata-rata Pegawai", value: (detail && detail.ikm > 0) ? detail.ikm : "—", accent: "#009CC5", icon: <BarChart3 className="w-4 h-4" /> },
+          { label: "Jumlah Survei",         value: totalSurveys,     accent: "#FAE705", icon: <ClipboardList className="w-4 h-4" /> },
+          { label: "Feedback Negatif",      value: negativeFeedback, accent: negativeFeedback > 0 ? "#dc2626" : "#94a3b8", icon: <Award className="w-4 h-4" /> },
+        ].map((card, i) => (
+          <div key={card.label} className={`animate-fade-up bg-white border border-gray-200 overflow-hidden card-hover delay-${(i + 1) * 75}`}>
+            <div className="h-1 animate-draw-line" style={{ backgroundColor: card.accent }} />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">{card.label}</p>
+                <span style={{ color: card.accent }} className="opacity-30">{card.icon}</span>
+              </div>
+              <p className="text-2xl font-black leading-none" style={{ color: card.accent === "#FAE705" ? "#132B4F" : card.accent }}>{card.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CHARTS ROW — only when employee is selected */}
+      {detail && (
+        <div className="px-4 lg:px-6 pt-4 shrink-0">
+          <PegawaiCharts
+            topEmployees={[{ id: detail.id, nama: detail.nama, ikm: detail.ikm, count: detail.totalSurveys }]}
+            donutData={donutData}
+          />
+        </div>
+      )}
 
       {/* SPLIT PANELS */}
       <div className="flex flex-1 min-h-0">

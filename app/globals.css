@@ -248,6 +248,62 @@ html {
   box-shadow: 0 8px 24px rgba(19, 43, 79, 0.12);
 }
 
+/* ── TAB ACTIVE UNDERLINE ───────────────────────────────── */
+.tab-active {
+  position: relative;
+}
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cyan);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── STATUS BADGE PILL ──────────────────────────────────── */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+/* ── CHART TOOLTIP ──────────────────────────────────────── */
+.chart-tooltip {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(19, 43, 79, 0.10);
+  font-size: 11px;
+  font-weight: 700;
+  color: #132B4F;
+}
+
+/* ── HEADER SEARCH PULSE ────────────────────────────────── */
+.search-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(0, 156, 197, 0.12);
+}
+
+/* ── NOTIFICATION DOT PULSE ─────────────────────────────── */
+@keyframes notifPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+.notif-dot {
+  animation: notifPulse 2s ease-in-out infinite;
+}
+
 /* ── DARK MODE (fixed) ──────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {

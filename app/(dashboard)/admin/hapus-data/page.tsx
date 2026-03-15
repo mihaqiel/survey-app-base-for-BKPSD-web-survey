@@ -3,6 +3,7 @@ import Link from "next/link";
 import EntityDeleteModal from "@/app/(dashboard)/admin/components/EntityDeleteModal";
 import DeleteConfirmModal from "@/app/(dashboard)/admin/components/DeleteConfirmModal";
 import DangerSearch from "@/app/(dashboard)/admin/components/DangerSearchInput";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default async function HapusDataPage({
   searchParams,
@@ -62,25 +63,21 @@ export default async function HapusDataPage({
   return (
     <div className="min-h-screen bg-[#F0F4F8] font-sans flex flex-col">
 
-      {/* ── TOP NAV ── */}
-      <div className="animate-fade-down bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-4 shrink-0 shadow-sm">
-        <div className="w-1 h-7 bg-red-500 animate-pulse" />
-        <div className="animate-slide-left">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-red-400">Admin · Danger Zone</p>
-          <h1 className="text-xl font-black uppercase tracking-tight text-[#132B4F] leading-none">
-            Pusat Penghapusan Data
-          </h1>
+      {/* GLOBAL HEADER */}
+      <div className="animate-fade-down bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-red-500 animate-pulse" />
+          <div className="animate-slide-left">
+            <Breadcrumb items={[{ label: "Admin", href: "/admin" }, { label: "Hapus Data Survei" }]} />
+            <h1 className="text-base lg:text-lg font-black uppercase tracking-tight text-[#132B4F] leading-none mt-0.5">
+              Pusat Penghapusan Data
+            </h1>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-3 animate-fade-in delay-150">
-          <Link
-            href="/admin"
-            className="btn-shimmer group px-4 py-2 bg-white border border-gray-200 text-[#132B4F] text-[10px] font-black uppercase tracking-widest hover:bg-[#F0F4F8] hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
-          >
-            <span className="flex items-center gap-1">
-              <span className="inline-block transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
-              Dashboard
-            </span>
-          </Link>
+        <div className="ml-auto flex items-center gap-2 animate-fade-in delay-150">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200">
+            <span className="text-[9px] font-black uppercase tracking-widest text-red-500 animate-pulse">⚠ Danger Zone</span>
+          </div>
         </div>
       </div>
 
@@ -123,7 +120,7 @@ export default async function HapusDataPage({
         </div>
 
         {/* ── TABS ── */}
-        <div className="animate-fade-up delay-150 flex border-b border-gray-200 bg-white">
+        <div className="animate-fade-up delay-150 flex border-b border-gray-200 bg-white -mx-0">
           {tabs.map((t) => (
             <Link
               key={t.key}
