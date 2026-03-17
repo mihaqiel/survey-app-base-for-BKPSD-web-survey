@@ -19,7 +19,7 @@ interface IkmLineChartProps {
 export default function IkmLineChart({
   data,
   height = 260,
-  color = "#009CC5",
+  color = "#3b82f6",
   showArea = true,
   multiLine,
 }: IkmLineChartProps) {
@@ -94,7 +94,7 @@ export default function IkmLineChart({
             legend: { display: false },
             tooltip: {
               backgroundColor: "#fff",
-              titleColor: "#132B4F",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,

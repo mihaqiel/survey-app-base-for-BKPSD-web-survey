@@ -167,8 +167,7 @@ export default function LayananExportButton({ layananNama, periodLabel, response
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="btn-shimmer group flex items-center gap-2 px-4 py-2 text-white text-[10px] font-black uppercase tracking-widest transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_6px_20px_rgba(19,43,79,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:hover:scale-100"
-      style={{ backgroundColor: "#132B4F" }}
+      className="group flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-all disabled:opacity-50"
     >
       {loading ? (
         <>
@@ -177,7 +176,7 @@ export default function LayananExportButton({ layananNama, periodLabel, response
         </>
       ) : (
         <>
-          <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Export Excel

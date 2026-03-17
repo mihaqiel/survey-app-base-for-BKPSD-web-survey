@@ -93,7 +93,7 @@ const SKM_OPTIONS = [
     val: 4,
     label: "Sangat Baik",
     icon: <Star className="w-6 h-6" />,
-    color: "#009CC5",
+    color: "#3b82f6",
   },
 ];
 
@@ -137,25 +137,27 @@ interface Pegawai {
   nama: string;
 }
 
+const inputClass =
+  "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-400 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100";
+const labelClass = "block text-xs font-semibold text-slate-500 mb-2";
+
 function StepBadge({ step, total }: { step: number; total: number }) {
   const pct = Math.round((step / (total - 1)) * 100);
   return (
     <div className="flex items-center gap-4">
-      <div className="w-10 h-10 bg-[#FAE705] flex items-center justify-center shrink-0">
-        <span className="text-sm font-black text-[#132B4F]">{step + 1}</span>
+      <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+        <span className="text-sm font-bold text-white">{step + 1}</span>
       </div>
       <div className="flex-1">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#009CC5]">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold text-slate-500">
             Langkah {step + 1} dari {total}
           </p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-            {pct}%
-          </p>
+          <p className="text-xs font-semibold text-slate-400">{pct}%</p>
         </div>
-        <div className="h-1.5 bg-gray-100 overflow-hidden">
+        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#009CC5] to-[#FAE705] transition-all duration-500 ease-out"
+            className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -198,8 +200,8 @@ function StarRating({
             <Star
               className="w-12 h-12 transition-colors duration-150"
               style={{
-                color: star <= (hovered || value) ? "#FAE705" : "#e2e8f0",
-                fill: star <= (hovered || value) ? "#FAE705" : "none",
+                color: star <= (hovered || value) ? "#f59e0b" : "#e2e8f0",
+                fill: star <= (hovered || value) ? "#f59e0b" : "none",
               }}
             />
           </button>
@@ -207,11 +209,11 @@ function StarRating({
       </div>
       <div className="text-center">
         {(hovered || value) > 0 ? (
-          <div className="animate-fade-up">
-            <p className="text-3xl font-black text-[#132B4F]">
+          <div>
+            <p className="text-3xl font-bold text-slate-900">
               {hovered || value}
             </p>
-            <p className="text-sm font-bold text-[#009CC5] mt-1">
+            <p className="text-sm font-semibold text-blue-600 mt-1">
               {labels[hovered || value]}
             </p>
           </div>
@@ -222,14 +224,14 @@ function StarRating({
         )}
       </div>
       {value > 0 && (
-        <div className="flex items-center gap-2 animate-fade-up">
+        <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5].map((s) => (
             <div
               key={s}
               className="h-2 rounded-full transition-all duration-300"
               style={{
                 width: s <= value ? "28px" : "8px",
-                backgroundColor: s <= value ? "#009CC5" : "#e2e8f0",
+                backgroundColor: s <= value ? "#3b82f6" : "#e2e8f0",
               }}
             />
           ))}
@@ -319,7 +321,7 @@ export default function PortalForm() {
         tglLayanan
       );
     if (step === 2) return !!selectedPegawai;
-    if (step === 3) return employeeRating > 0; // rating step — required
+    if (step === 3) return employeeRating > 0;
     if (step >= 4 && step <= 12) return !!answers[`u${step - 3}`];
     return true;
   };
@@ -370,15 +372,10 @@ export default function PortalForm() {
   const isForward = step >= prevStep;
   const slideIn = isForward ? "animate-slide-right" : "animate-slide-left";
 
-  const inputCls =
-    "input-glow w-full px-4 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] placeholder-gray-300 outline-none transition-all duration-200 hover:border-gray-300";
-  const labelCls =
-    "block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2";
-
   return (
-    <div className="bg-[#F0F4F8] min-h-screen">
+    <div className="bg-gray-50/50 min-h-screen">
       {/* STICKY PROGRESS HEADER */}
-      <div className="sticky top-0 z-30 bg-white border-b-4 border-[#009CC5] shadow-sm">
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <StepBadge step={step} total={TOTAL_STEPS} />
         </div>
@@ -386,10 +383,10 @@ export default function PortalForm() {
 
       <div className="max-w-4xl mx-auto px-4 py-10 flex gap-6 items-start">
         {/* SIDEBAR STEPPER */}
-        <aside className="hidden lg:block w-52 shrink-0 sticky top-28 animate-slide-left">
-          <div className="bg-white border border-gray-200 overflow-hidden">
-            <div className="bg-[#132B4F] px-4 py-3">
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#FAE705]">
+        <aside className="hidden lg:block w-52 shrink-0 sticky top-28">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-xs font-semibold text-slate-500">
                 Tahapan Survei
               </p>
             </div>
@@ -400,24 +397,24 @@ export default function PortalForm() {
                 return (
                   <div
                     key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 text-[10px] font-bold transition-all duration-200 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
                       current
-                        ? "bg-[#FAE705] text-[#132B4F]"
+                        ? "bg-blue-50 text-blue-700 font-semibold"
                         : done
-                          ? "text-[#009CC5]"
-                          : "text-gray-300"
+                          ? "text-slate-600"
+                          : "text-slate-300"
                     }`}
                   >
                     <div
-                      className={`w-4 h-4 flex items-center justify-center shrink-0 text-[8px] font-black ${
+                      className={`w-5 h-5 flex items-center justify-center shrink-0 text-xs font-semibold rounded-md ${
                         current
-                          ? "bg-[#132B4F] text-[#FAE705]"
+                          ? "bg-blue-600 text-white"
                           : done
-                            ? "bg-[#009CC5] text-white"
+                            ? "bg-green-100 text-green-600"
                             : "bg-gray-100 text-gray-400"
                       }`}
                     >
-                      {done ? <Check className="w-2.5 h-2.5" /> : i + 1}
+                      {done ? <Check className="w-3 h-3" /> : i + 1}
                     </div>
                     <span className="truncate">{label}</span>
                   </div>
@@ -429,19 +426,19 @@ export default function PortalForm() {
 
         {/* MAIN CONTENT */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white border border-gray-200">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {/* STEP TITLE BAR */}
-            <div className="bg-[#132B4F] px-6 py-4 flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#FAE705] flex items-center justify-center shrink-0">
-                <span className="text-[10px] font-black text-[#132B4F]">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-blue-600">
                   {step + 1}
                 </span>
               </div>
               <div>
-                <p className="text-[8px] font-black uppercase tracking-[0.25em] text-[#009CC5]">
+                <p className="text-xs font-semibold text-slate-400">
                   Langkah {step + 1}
                 </p>
-                <p className="text-sm font-black uppercase tracking-widest text-white">
+                <p className="text-sm font-bold text-slate-900">
                   {STEP_LABELS[step]}
                 </p>
               </div>
@@ -453,7 +450,7 @@ export default function PortalForm() {
                 {/* STEP 0: PILIH LAYANAN */}
                 {step === 0 && (
                   <div className="space-y-4">
-                    <p className="text-sm font-medium text-gray-500 mb-5 leading-relaxed">
+                    <p className="text-sm font-medium text-slate-500 mb-5 leading-relaxed">
                       Pilih layanan BKPSDM yang baru saja Anda gunakan.
                     </p>
                     <div ref={dropdownRef} className="relative">
@@ -464,19 +461,19 @@ export default function PortalForm() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && setLayananOpen((o) => !o)
                         }
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 bg-[#F0F4F8] border-2 text-left cursor-pointer select-none transition-all duration-200 ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 bg-gray-50 border rounded-lg text-left cursor-pointer select-none transition-all ${
                           layananOpen
-                            ? "border-[#009CC5]"
+                            ? "border-blue-300 ring-2 ring-blue-100"
                             : selectedLayanan
-                              ? "border-[#132B4F]"
-                              : "border-transparent hover:border-gray-300"
+                              ? "border-blue-200"
+                              : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <ClipboardList
-                          className={`w-4 h-4 shrink-0 ${selectedLayanan ? "text-[#009CC5]" : "text-gray-400"}`}
+                          className={`w-4 h-4 shrink-0 ${selectedLayanan ? "text-blue-600" : "text-gray-400"}`}
                         />
                         <span
-                          className={`flex-1 text-sm font-bold truncate ${selectedLayanan ? "text-[#132B4F]" : "text-gray-400"}`}
+                          className={`flex-1 text-sm font-medium truncate ${selectedLayanan ? "text-slate-900" : "text-gray-400"}`}
                         >
                           {selectedLayanan
                             ? selectedLayanan.nama
@@ -502,9 +499,9 @@ export default function PortalForm() {
                         />
                       </div>
                       {layananOpen && (
-                        <div className="absolute z-20 w-full top-full mt-1 bg-white border border-gray-200 shadow-lg animate-fade-down">
+                        <div className="absolute z-20 w-full top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                           <div className="p-2 border-b border-gray-100">
-                            <div className="flex items-center gap-2 bg-[#F0F4F8] px-3 py-2">
+                            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
                               <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                               <input
                                 type="text"
@@ -514,7 +511,7 @@ export default function PortalForm() {
                                   setLayananSearch(e.target.value)
                                 }
                                 autoFocus
-                                className="flex-1 text-sm font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none"
+                                className="flex-1 text-sm font-medium text-slate-900 placeholder-gray-400 bg-transparent outline-none"
                               />
                               {layananSearch && (
                                 <button
@@ -530,7 +527,7 @@ export default function PortalForm() {
                           </div>
                           <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-50">
                             {filteredLayanan.length === 0 ? (
-                              <p className="px-5 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest">
+                              <p className="px-5 py-4 text-xs text-gray-400 font-medium">
                                 Tidak ditemukan
                               </p>
                             ) : (
@@ -545,26 +542,26 @@ export default function PortalForm() {
                                       setLayananOpen(false);
                                       setLayananSearch("");
                                     }}
-                                    className={`w-full text-left px-5 py-3.5 text-sm font-bold flex items-center gap-3 transition-all duration-150 ${
+                                    className={`w-full text-left px-5 py-3.5 text-sm font-medium flex items-center gap-3 transition-all ${
                                       selected
-                                        ? "bg-[#132B4F] text-white"
-                                        : "text-[#132B4F] hover:bg-[#F0F4F8]"
+                                        ? "bg-blue-50 text-blue-700"
+                                        : "text-slate-900 hover:bg-gray-50"
                                     }`}
                                   >
                                     <div
-                                      className={`w-1 h-4 shrink-0 transition-colors ${selected ? "bg-[#FAE705]" : "bg-gray-200"}`}
+                                      className={`w-1 h-4 rounded-full shrink-0 transition-colors ${selected ? "bg-blue-600" : "bg-gray-200"}`}
                                     />
                                     <span className="flex-1">{l.nama}</span>
                                     {selected && (
-                                      <Check className="w-3.5 h-3.5 text-[#FAE705] shrink-0" />
+                                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                     )}
                                   </button>
                                 );
                               })
                             )}
                           </div>
-                          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/50">
+                            <p className="text-xs font-medium text-gray-400">
                               {filteredLayanan.length} layanan tersedia
                             </p>
                           </div>
@@ -572,13 +569,13 @@ export default function PortalForm() {
                       )}
                     </div>
                     {selectedLayanan && (
-                      <div className="animate-fade-up flex items-center gap-3 bg-[#132B4F] px-4 py-3">
-                        <Check className="w-4 h-4 text-[#FAE705] shrink-0" />
+                      <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                        <Check className="w-4 h-4 text-blue-600 shrink-0" />
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                          <p className="text-xs font-semibold text-blue-500">
                             Layanan Terpilih
                           </p>
-                          <p className="text-sm font-black text-white">
+                          <p className="text-sm font-bold text-slate-900">
                             {selectedLayanan.nama}
                           </p>
                         </div>
@@ -592,28 +589,28 @@ export default function PortalForm() {
                   <div className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
-                        <label className={labelCls}>Nama Lengkap</label>
+                        <label className={labelClass}>Nama Lengkap</label>
                         <input
                           type="text"
                           value={nama}
                           onChange={(e) => setNama(e.target.value)}
                           title="Nama Lengkap"
                           placeholder="Nama Anda"
-                          className={inputCls}
+                          className={inputClass}
                         />
                       </div>
                       <div>
-                        <label className={labelCls}>Tanggal Layanan</label>
+                        <label className={labelClass}>Tanggal Layanan</label>
                         <input
                           type="date"
                           value={tglLayanan}
                           onChange={(e) => setTglLayanan(e.target.value)}
                           title="Tanggal Layanan"
-                          className={inputCls}
+                          className={inputClass}
                         />
                       </div>
                       <div>
-                        <label className={labelCls}>Usia</label>
+                        <label className={labelClass}>Usia</label>
                         <input
                           type="number"
                           value={usia}
@@ -622,14 +619,14 @@ export default function PortalForm() {
                           placeholder="Tahun"
                           min={1}
                           max={120}
-                          className={inputCls}
+                          className={inputClass}
                         />
                       </div>
                     </div>
 
                     {/* RADIO BUTTON for gender */}
                     <div>
-                      <label className={labelCls}>
+                      <label className={labelClass}>
                         Jenis Kelamin <span className="text-red-400">*</span>
                       </label>
                       <div className="grid grid-cols-2 gap-3">
@@ -638,25 +635,24 @@ export default function PortalForm() {
                             key={v}
                             type="button"
                             onClick={() => setJenisKelamin(v)}
-                            className={`survey-option flex items-center gap-3 px-4 py-3.5 border-2 transition-all duration-200 ${
+                            className={`flex items-center gap-3 px-4 py-3 border rounded-lg transition-all ${
                               jenisKelamin === v
-                                ? "selected bg-[#132B4F] border-[#132B4F] text-white"
-                                : "border-gray-200 text-gray-500 hover:border-[#009CC5]"
+                                ? "bg-blue-50 border-blue-200 text-blue-700"
+                                : "border-gray-200 text-slate-500 hover:border-blue-200"
                             }`}
                           >
-                            {/* Radio circle */}
                             <div
                               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                                 jenisKelamin === v
-                                  ? "border-[#FAE705]"
+                                  ? "border-blue-600"
                                   : "border-gray-300"
                               }`}
                             >
                               {jenisKelamin === v && (
-                                <div className="w-2 h-2 rounded-full bg-[#FAE705]" />
+                                <div className="w-2 h-2 rounded-full bg-blue-600" />
                               )}
                             </div>
-                            <span className="text-sm font-black uppercase tracking-widest">
+                            <span className="text-sm font-semibold">
                               {v}
                             </span>
                           </button>
@@ -665,14 +661,14 @@ export default function PortalForm() {
                     </div>
 
                     <div>
-                      <label className={labelCls}>Pendidikan Terakhir</label>
+                      <label className={labelClass}>Pendidikan Terakhir</label>
                       <div className="relative">
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         <select
                           value={pendidikan}
                           onChange={(e) => setPendidikan(e.target.value)}
                           title="Pendidikan Terakhir"
-                          className="input-glow w-full px-4 pr-10 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] outline-none appearance-none transition-all duration-200 hover:border-gray-300 cursor-pointer"
+                          className={`${inputClass} pr-10 appearance-none cursor-pointer`}
                         >
                           <option value="">Pilih pendidikan terakhir...</option>
                           {PENDIDIKAN.map((v) => (
@@ -685,14 +681,14 @@ export default function PortalForm() {
                     </div>
 
                     <div>
-                      <label className={labelCls}>Pekerjaan</label>
+                      <label className={labelClass}>Pekerjaan</label>
                       <div className="relative">
                         <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         <select
                           value={pekerjaan}
                           onChange={(e) => setPekerjaan(e.target.value)}
                           title="Pekerjaan"
-                          className="input-glow w-full pl-10 pr-10 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] outline-none appearance-none transition-all duration-200 hover:border-gray-300 cursor-pointer"
+                          className={`${inputClass} pl-10 pr-10 appearance-none cursor-pointer`}
                         >
                           <option value="">Pilih pekerjaan...</option>
                           {PEKERJAAN.map((v) => (
@@ -709,18 +705,17 @@ export default function PortalForm() {
                           value={pekerjaanCustom}
                           onChange={(e) => setPekerjaanCustom(e.target.value)}
                           placeholder="Sebutkan pekerjaan Anda"
-                          className={`${inputCls} mt-2 animate-fade-down`}
+                          className={`${inputClass} mt-2`}
                         />
                       )}
                     </div>
 
                     {/* SWITCH for difabel */}
                     <div>
-                      <label className={labelCls}>
+                      <label className={labelClass}>
                         Penyandang Disabilitas?
                       </label>
-                      <div className="flex items-center gap-4 py-3 px-4 bg-[#F0F4F8]">
-                        {/* Switch toggle */}
+                      <div className="flex items-center gap-4 py-3 px-4 bg-gray-50 rounded-lg">
                         <button
                           type="button"
                           role="button"
@@ -729,7 +724,7 @@ export default function PortalForm() {
                             setIsDifabel(isDifabel === "Ya" ? "Tidak" : "Ya")
                           }
                           className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
-                            isDifabel === "Ya" ? "bg-[#009CC5]" : "bg-gray-300"
+                            isDifabel === "Ya" ? "bg-blue-600" : "bg-gray-300"
                           }`}
                         >
                           <div
@@ -741,9 +736,9 @@ export default function PortalForm() {
                           />
                         </button>
                         <span
-                          className={`text-sm font-black uppercase tracking-widest transition-colors ${
+                          className={`text-sm font-medium transition-colors ${
                             isDifabel === "Ya"
-                              ? "text-[#009CC5]"
+                              ? "text-blue-600"
                               : "text-gray-400"
                           }`}
                         >
@@ -758,7 +753,7 @@ export default function PortalForm() {
                           value={jenisDisabilitas}
                           onChange={(e) => setJenisDisabilitas(e.target.value)}
                           placeholder="Jenis disabilitas (contoh: Tuna Netra)"
-                          className={`${inputCls} mt-2 animate-fade-down`}
+                          className={`${inputClass} mt-2`}
                         />
                       )}
                     </div>
@@ -768,7 +763,7 @@ export default function PortalForm() {
                 {/* STEP 2: PILIH PEGAWAI */}
                 {step === 2 && (
                   <div className="space-y-4">
-                    <p className="text-sm font-medium text-gray-500 mb-5 leading-relaxed">
+                    <p className="text-sm font-medium text-slate-500 mb-5 leading-relaxed">
                       Cari dan pilih nama pegawai yang melayani Anda.
                     </p>
                     <div className="relative">
@@ -783,7 +778,7 @@ export default function PortalForm() {
                           setSelectedPegawai(null);
                           setPegawaiSearch(e.target.value);
                         }}
-                        className="input-glow w-full pl-10 pr-4 py-3.5 bg-[#F0F4F8] border-2 border-transparent text-sm font-bold text-[#132B4F] placeholder-gray-300 outline-none transition-all duration-200"
+                        className={`${inputClass} pl-10`}
                       />
                     </div>
                     {(() => {
@@ -792,18 +787,18 @@ export default function PortalForm() {
                           ? filteredPegawai
                           : pegawaiList;
                       return list.length > 0 && !selectedPegawai ? (
-                        <div className="border border-gray-200 overflow-hidden">
-                          <div className="bg-[#132B4F] px-4 py-2.5 flex items-center justify-between">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-white">
+                        <div className="border border-gray-200 rounded-xl overflow-hidden">
+                          <div className="bg-gray-50/50 px-4 py-2.5 flex items-center justify-between border-b border-gray-100">
+                            <p className="text-xs font-semibold text-slate-500">
                               {pegawaiSearch.length > 0
                                 ? "Hasil Pencarian"
                                 : "Semua Pegawai"}
                             </p>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-[#FAE705]">
+                            <p className="text-xs font-semibold text-blue-600">
                               {list.length} Pegawai
                             </p>
                           </div>
-                          <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                          <div className="max-h-64 overflow-y-auto divide-y divide-gray-50">
                             {list.map((p, i) => (
                               <button
                                 key={p.id}
@@ -812,12 +807,12 @@ export default function PortalForm() {
                                   setSelectedPegawai(p);
                                   setPegawaiSearch("");
                                 }}
-                                className="w-full text-left px-5 py-3.5 text-sm font-bold text-[#132B4F] hover:bg-[#F0F4F8] flex items-center gap-4 transition-all duration-150 group"
+                                className="w-full text-left px-5 py-3.5 text-sm font-medium text-slate-900 hover:bg-gray-50 flex items-center gap-4 transition-all group"
                               >
-                                <span className="text-[10px] font-black text-gray-300 w-5 shrink-0">
+                                <span className="text-xs font-medium text-gray-300 w-5 shrink-0">
                                   {i + 1}
                                 </span>
-                                <div className="w-1 h-4 bg-gray-200 group-hover:bg-[#009CC5] shrink-0 transition-colors" />
+                                <div className="w-1 h-4 rounded-full bg-gray-200 group-hover:bg-blue-400 shrink-0 transition-colors" />
                                 {p.nama}
                               </button>
                             ))}
@@ -826,14 +821,14 @@ export default function PortalForm() {
                       ) : null;
                     })()}
                     {selectedPegawai && (
-                      <div className="animate-bounce-in flex items-center justify-between bg-[#132B4F] px-5 py-4">
+                      <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-1 h-5 bg-[#FAE705]" />
+                          <div className="w-1 h-5 bg-blue-600 rounded-full" />
                           <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">
+                            <p className="text-xs font-semibold text-blue-500 mb-0.5">
                               Pegawai Terpilih
                             </p>
-                            <p className="text-sm font-black text-white">
+                            <p className="text-sm font-bold text-slate-900">
                               {selectedPegawai.nama}
                             </p>
                           </div>
@@ -844,7 +839,7 @@ export default function PortalForm() {
                             setSelectedPegawai(null);
                             setPegawaiSearch("");
                           }}
-                          className="flex items-center gap-1 text-[10px] font-black text-white/40 hover:text-[#FAE705] uppercase tracking-widest transition-colors"
+                          className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
                         >
                           <X className="w-3 h-3" /> Ganti
                         </button>
@@ -853,11 +848,11 @@ export default function PortalForm() {
                   </div>
                 )}
 
-                {/* STEP 3: RATING PEGAWAI — NEW */}
+                {/* STEP 3: RATING PEGAWAI */}
                 {step === 3 && selectedPegawai && (
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 bg-[#F0F4F8] px-4 py-3 mb-2">
-                      <div className="w-10 h-10 bg-[#132B4F] flex items-center justify-center shrink-0 text-sm font-black text-[#FAE705]">
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3 mb-2">
+                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">
                         {selectedPegawai.nama
                           .split(" ")
                           .map((w) => w[0])
@@ -866,15 +861,15 @@ export default function PortalForm() {
                           .toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                        <p className="text-xs font-semibold text-slate-400">
                           Pegawai yang Melayani
                         </p>
-                        <p className="text-sm font-black text-[#132B4F]">
+                        <p className="text-sm font-bold text-slate-900">
                           {selectedPegawai.nama}
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm font-medium text-gray-500 text-center leading-relaxed">
+                    <p className="text-sm font-medium text-slate-500 text-center leading-relaxed">
                       Berikan rating kepuasan Anda terhadap pegawai yang
                       melayani
                     </p>
@@ -889,20 +884,20 @@ export default function PortalForm() {
                 {step >= 4 && step <= 12 && (
                   <div className="space-y-6">
                     <div className="flex items-start gap-3 mb-2">
-                      <div className="w-8 h-8 bg-[#009CC5] flex items-center justify-center shrink-0 text-white font-black text-xs">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0 text-blue-600 font-bold text-xs">
                         {SKM_QUESTIONS[step - 4].code}
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[#009CC5] mb-1">
+                        <p className="text-xs font-semibold text-blue-600 mb-1">
                           {SKM_QUESTIONS[step - 4].label}
                         </p>
-                        <p className="text-base font-bold leading-relaxed text-[#132B4F]">
+                        <p className="text-base font-semibold leading-relaxed text-slate-900">
                           {SKM_QUESTIONS[step - 4].text}
                         </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {SKM_OPTIONS.map((opt, i) => {
+                      {SKM_OPTIONS.map((opt) => {
                         const key = `u${step - 3}`;
                         const selected = answers[key] === opt.val;
                         return (
@@ -912,25 +907,24 @@ export default function PortalForm() {
                             onClick={() =>
                               setAnswers((a) => ({ ...a, [key]: opt.val }))
                             }
-                            style={{ animationDelay: `${i * 60}ms` }}
-                            className={`survey-option animate-fade-up py-5 border-2 text-center transition-all duration-200 focus:outline-none ${
+                            className={`py-5 border rounded-xl text-center transition-all focus:outline-none ${
                               selected
-                                ? "border-[#132B4F] bg-[#132B4F] selected"
-                                : "border-gray-200 hover:border-[#009CC5] bg-white"
+                                ? "border-blue-200 bg-blue-50"
+                                : "border-gray-200 hover:border-blue-200 bg-white"
                             }`}
                           >
                             <span
-                              className={`flex justify-center mb-1 ${selected ? "text-[#FAE705]" : "text-gray-300"}`}
+                              className={`flex justify-center mb-1 ${selected ? "text-blue-600" : "text-gray-300"}`}
                             >
                               {opt.icon}
                             </span>
                             <span
-                              className={`block text-xl font-black ${selected ? "text-white" : "text-gray-400"}`}
+                              className={`block text-xl font-bold ${selected ? "text-blue-700" : "text-gray-400"}`}
                             >
                               {opt.val}
                             </span>
                             <span
-                              className={`block text-[9px] font-black uppercase tracking-widest mt-1 ${selected ? "text-[#FAE705]" : "text-gray-400"}`}
+                              className={`block text-xs font-semibold mt-1 ${selected ? "text-blue-600" : "text-gray-400"}`}
                             >
                               {opt.label}
                             </span>
@@ -945,9 +939,9 @@ export default function PortalForm() {
                           key={i}
                           className={`h-1.5 rounded-full transition-all duration-300 ${
                             i === step - 4
-                              ? "w-5 bg-[#009CC5]"
+                              ? "w-5 bg-blue-600"
                               : answers[`u${i + 1}`]
-                                ? "w-3 bg-[#132B4F]"
+                                ? "w-3 bg-slate-900"
                                 : "w-1.5 bg-gray-200"
                           }`}
                         />
@@ -960,7 +954,7 @@ export default function PortalForm() {
                 {step === 13 && (
                   <div className="space-y-6">
                     <div>
-                      <label className={labelCls}>
+                      <label className={labelClass}>
                         Saran & Masukan (Opsional)
                       </label>
                       <textarea
@@ -968,18 +962,18 @@ export default function PortalForm() {
                         onChange={(e) => setSaran(e.target.value)}
                         placeholder="Tuliskan saran atau masukan Anda untuk perbaikan layanan ini..."
                         title="Saran dan Masukan"
-                        className="input-glow w-full px-4 py-4 bg-[#F0F4F8] border-2 border-transparent text-sm font-medium text-[#132B4F] placeholder-gray-300 outline-none resize-none min-h-[120px] transition-all duration-200"
+                        className={`${inputClass} resize-none min-h-[120px]`}
                       />
                     </div>
 
                     {/* Summary */}
-                    <div className="border border-gray-200 overflow-hidden">
-                      <div className="bg-[#132B4F] px-5 py-3">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[#FAE705]">
+                    <div className="border border-gray-100 rounded-xl overflow-hidden">
+                      <div className="bg-gray-50/50 px-5 py-3 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-slate-500">
                           Ringkasan Survei
                         </p>
                       </div>
-                      <div className="divide-y divide-gray-100">
+                      <div className="divide-y divide-gray-50">
                         {[
                           {
                             icon: <ClipboardList className="w-4 h-4" />,
@@ -1001,20 +995,19 @@ export default function PortalForm() {
                             label: "Penilaian",
                             val: `${Object.keys(answers).length} dari 9 unsur dijawab`,
                           },
-                        ].map((row, i) => (
+                        ].map((row) => (
                           <div
                             key={row.label}
-                            className="px-5 py-3 flex items-start gap-4 animate-fade-up"
-                            style={{ animationDelay: `${i * 60}ms` }}
+                            className="px-5 py-3 flex items-start gap-4"
                           >
-                            <span className="text-[#009CC5] mt-0.5 shrink-0">
+                            <span className="text-blue-600 mt-0.5 shrink-0">
                               {row.icon}
                             </span>
                             <div>
-                              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                              <p className="text-xs font-semibold text-slate-400">
                                 {row.label}
                               </p>
-                              <p className="text-sm font-bold text-[#132B4F]">
+                              <p className="text-sm font-semibold text-slate-900">
                                 {row.val}
                               </p>
                             </div>
@@ -1026,22 +1019,10 @@ export default function PortalForm() {
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="btn-shimmer w-full py-5 bg-[#132B4F] text-white font-black text-sm uppercase tracking-widest hover:bg-[#009CC5] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3"
+                      className="w-full py-4 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3"
                     >
                       {submitting ? (
                         <>
-                          {/* Busy indicator — dots */}
-                          <div className="flex gap-1.5">
-                            {[0, 1, 2].map((i) => (
-                              <div
-                                key={i}
-                                className="w-2 h-2 rounded-full bg-white/60"
-                                style={{
-                                  animation: `bounce 1s ease-in-out ${i * 0.2}s infinite`,
-                                }}
-                              />
-                            ))}
-                          </div>
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Mengirim Data...
                         </>
@@ -1051,7 +1032,7 @@ export default function PortalForm() {
                         </span>
                       )}
                     </button>
-                    <p className="text-center text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+                    <p className="text-center text-xs text-gray-400 font-medium">
                       Data survei bersifat rahasia dan hanya untuk evaluasi mutu
                       pelayanan
                     </p>
@@ -1064,7 +1045,7 @@ export default function PortalForm() {
                     {step > 0 && (
                       <button
                         onClick={handleBack}
-                        className="btn-shimmer flex items-center gap-1.5 px-6 py-3.5 bg-[#F0F4F8] text-[#132B4F] font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+                        className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 text-slate-600 font-semibold text-sm rounded-lg hover:bg-gray-100 transition-all"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" /> Kembali
                       </button>
@@ -1072,7 +1053,7 @@ export default function PortalForm() {
                     <button
                       onClick={handleNext}
                       disabled={!canProceed()}
-                      className="btn-shimmer flex-1 py-3.5 bg-[#132B4F] text-white font-black text-[11px] uppercase tracking-widest hover:bg-[#009CC5] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98] group flex items-center justify-center gap-1.5"
+                      className="flex-1 py-3 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all group flex items-center justify-center gap-1.5"
                     >
                       {step === 12 ? "Lanjut ke Saran" : "Lanjut"}
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1 group-disabled:translate-x-0" />
@@ -1084,13 +1065,6 @@ export default function PortalForm() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); opacity: 0.4; }
-          50% { transform: translateY(-6px); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

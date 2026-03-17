@@ -70,7 +70,7 @@ export default function DonutChart({
             legend: { display: false },
             tooltip: {
               backgroundColor: "#fff",
-              titleColor: "#132B4F",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,
@@ -106,8 +106,8 @@ export default function DonutChart({
         <canvas ref={canvasRef} />
         {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <p className="text-2xl font-black text-[#132B4F] leading-none">{displayCenter}</p>
-          <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">{centerLabel}</p>
+          <p className="text-2xl font-bold text-slate-900 leading-none">{displayCenter}</p>
+          <p className="text-xs font-semibold text-slate-400 mt-1">{centerLabel}</p>
         </div>
       </div>
 
@@ -121,10 +121,10 @@ export default function DonutChart({
                 className="w-3 h-3 rounded-sm shrink-0"
                 style={{ backgroundColor: slice.fill }}
               />
-              <p className="text-[11px] font-bold text-[#132B4F] flex-1 leading-tight">{slice.name}</p>
-              <span className="text-[10px] font-bold text-gray-400">{slice.value}</span>
+              <p className="text-xs font-semibold text-slate-900 flex-1 leading-tight">{slice.name}</p>
+              <span className="text-xs font-medium text-slate-400">{slice.value}</span>
               <span
-                className="text-[10px] font-black w-10 text-right"
+                className="text-xs font-bold w-10 text-right"
                 style={{ color: slice.fill }}
               >
                 {pct}%

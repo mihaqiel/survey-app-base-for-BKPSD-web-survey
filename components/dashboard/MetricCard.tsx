@@ -12,30 +12,27 @@ export default function MetricCard({
   value,
   sub,
   icon,
-  accentColor = "#009CC5",
+  accentColor = "#3b82f6",
   delay = "",
 }: MetricCardProps) {
-  const textColor = accentColor === "#FAE705" ? "#132B4F" : accentColor;
-
   return (
     <div
-      className={`animate-fade-up ${delay} bg-white border border-gray-200 overflow-hidden card-hover`}
+      className={`${delay} bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden`}
     >
-      <div className="h-1 animate-draw-line" style={{ backgroundColor: accentColor }} />
       <div className="p-5">
         <div className="flex items-start justify-between mb-2">
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 leading-tight">
+          <p className="text-xs font-semibold text-slate-500 leading-tight">
             {label}
           </p>
           {icon && (
-            <span className="opacity-25 shrink-0" style={{ color: textColor }}>
+            <span className="opacity-25 shrink-0" style={{ color: accentColor }}>
               {icon}
             </span>
           )}
         </div>
         <p
-          className="text-3xl font-black leading-none animate-count-up"
-          style={{ color: textColor }}
+          className="text-3xl font-bold leading-none"
+          style={{ color: accentColor }}
         >
           {value}
         </p>

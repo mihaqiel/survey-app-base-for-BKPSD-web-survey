@@ -18,13 +18,11 @@ export default function GlobalExportButton() {
 
       const { periodLabel, data } = result;
 
-      // ── Use ExcelJS for proper styling ──────────────────────────────
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();
       wb.creator = "BKPSDM Anambas";
       wb.created = new Date();
 
-      // ── SHEET 1: DATA ───────────────────────────────────────────────
       const wsData = wb.addWorksheet("Data");
       wsData.columns = [
         { header: "Silahkan Pilih Perangkat Daerah Yang Anda Terima Layanannya", key: "opd", width: 55 },
@@ -47,7 +45,6 @@ export default function GlobalExportButton() {
         { header: "Sarpras", key: "u9", width: 12 },
       ];
 
-      // Style header row
       const dataHeaderRow = wsData.getRow(1);
       dataHeaderRow.eachCell(cell => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
@@ -62,7 +59,6 @@ export default function GlobalExportButton() {
       });
       dataHeaderRow.height = 40;
 
-      // Add data rows
       let rowIdx = 2;
       data.forEach((svc: (typeof data)[number]) => {
         svc.rawResponses.forEach((r: (typeof svc.rawResponses)[number]) => {
@@ -96,7 +92,6 @@ export default function GlobalExportButton() {
       wsData.autoFilter = { from: "A1", to: "R1" };
       wsData.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
-      // ── SHEET 2: REKAP ──────────────────────────────────────────────
       const wsRekap = wb.addWorksheet("Rekap");
       wsRekap.columns = [
         { key: "a", width: 35 }, { key: "b", width: 16 },
@@ -108,7 +103,6 @@ export default function GlobalExportButton() {
         { key: "m", width: 10 }, { key: "n", width: 16 },
       ];
 
-      // Header row
       const rekapHeader = wsRekap.addRow([
         "Jenis Layanan", "Total Responden",
         "Persyaratan", "Prosedur", "Jangka Waktu", "Tarif", "Produk",
@@ -129,13 +123,9 @@ export default function GlobalExportButton() {
       });
 
       const serviceNames = data.map((s: (typeof data)[number]) => s.serviceName);
-      const unsurCols = ["C","D","E","F","G","H","I","J","K"];
 
       serviceNames.forEach((name: string, idx: number) => {
         const row = idx + 2;
-        const unsurFormulas = unsurCols.map(col =>
-          `=(AVERAGEIFS(Data!${col === "C" ? "J" : col === "D" ? "K" : col === "E" ? "L" : col === "F" ? "M" : col === "G" ? "N" : col === "H" ? "O" : col === "I" ? "P" : col === "J" ? "Q" : "R"}:${col === "C" ? "J" : col === "D" ? "K" : col === "E" ? "L" : col === "F" ? "M" : col === "G" ? "N" : col === "H" ? "O" : col === "I" ? "P" : col === "J" ? "Q" : "R"},Data!$B:$B,$A${row}))*25`
-        );
         const dataRow = wsRekap.addRow([
           name,
           { formula: `COUNTIFS(Data!B:B,A${row})` },
@@ -165,10 +155,8 @@ export default function GlobalExportButton() {
             right: { style: "hair", color: { argb: "FFBDC3C7" } },
           };
         });
-        // Service name left-aligned
         dataRow.getCell(1).alignment = { horizontal: "left" };
         dataRow.getCell(1).font = { size: 10, name: "Arial", bold: false };
-        // Bold IKM
         dataRow.getCell(12).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(13).font = { bold: true, size: 10, name: "Arial" };
         dataRow.getCell(14).font = { bold: true, size: 10, name: "Arial" };
@@ -176,11 +164,10 @@ export default function GlobalExportButton() {
 
       const lastDataRow = serviceNames.length + 1;
 
-      // Summary rows — yellow background like reference
       const summaryRows = [
         {
           label: "Rerata IKM Per Unsur",
-          cols: unsurCols.map((col, i) => ({
+          cols: ["C","D","E","F","G","H","I","J","K"].map((col) => ({
             formula: `IFERROR(AVERAGE(${col}2:${col}${lastDataRow}),0)`
           })),
           extra: [
@@ -192,7 +179,7 @@ export default function GlobalExportButton() {
         { label: "Predikat", cols: Array(9).fill(""), extra: [{ formula: `IFERROR(IF(C${lastDataRow+2}>=88.31,"Sangat Baik",IF(C${lastDataRow+2}>=76.61,"Baik",IF(C${lastDataRow+2}>=65,"Kurang Baik","Tidak Baik"))),"-")` }, "", ""] },
       ];
 
-      summaryRows.forEach((sr, si) => {
+      summaryRows.forEach((sr) => {
         const rowData: unknown[] = [sr.label, "", ...sr.cols.map((c: any) => (typeof c === "object" ? c : "")), ...sr.extra];
         const sumRow = wsRekap.addRow(rowData);
         sumRow.eachCell(cell => {
@@ -213,7 +200,6 @@ export default function GlobalExportButton() {
 
       wsRekap.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
 
-      // ── DOWNLOAD ────────────────────────────────────────────────────
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
@@ -233,8 +219,7 @@ export default function GlobalExportButton() {
 
   return (
     <button onClick={handleDownload} disabled={loading}
-      className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 hover:opacity-90 shadow-lg"
-      style={{ backgroundColor: "#009CC5" }}
+      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50 hover:bg-blue-700"
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

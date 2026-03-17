@@ -67,7 +67,7 @@ export default function SparklineChart({ lines, xLabels, height = 160 }: Sparkli
             legend: { display: false },
             tooltip: {
               backgroundColor: "#fff",
-              titleColor: "#132B4F",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,

@@ -80,13 +80,15 @@ function BarChartView({
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "#0D1F38",
-              titleColor: "#FAE705",
-              bodyColor: "#e2e8f0",
+              backgroundColor: "#fff",
+              titleColor: "#0f172a",
+              bodyColor: "#64748b",
+              borderColor: "#e2e8f0",
+              borderWidth: 1,
               titleFont: { size: 11, weight: "bold" as const },
               bodyFont: { size: 12 },
               padding: 12,
-              cornerRadius: 0,
+              cornerRadius: 8,
               callbacks: {
                 title: (items: any[]) => data[items[0].dataIndex]?.name ?? "",
                 label: (item: any) =>
@@ -174,11 +176,11 @@ function LineChartView({ drill }: { drill: DrillData }) {
             ...(hasIkm ? [{
               label: "IKM",
               data: drill.trend.map(p => p.ikm ?? 0),
-              borderColor: "#FAE705",
+              borderColor: "#f59e0b",
               backgroundColor: "transparent",
               borderWidth: 2,
               pointRadius: 4,
-              pointBackgroundColor: "#FAE705",
+              pointBackgroundColor: "#f59e0b",
               pointBorderColor: "#fff",
               pointBorderWidth: 1.5,
               tension: 0.4,
@@ -195,11 +197,13 @@ function LineChartView({ drill }: { drill: DrillData }) {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "#0D1F38",
-              titleColor: "#FAE705",
-              bodyColor: "#e2e8f0",
+              backgroundColor: "#fff",
+              titleColor: "#0f172a",
+              bodyColor: "#64748b",
+              borderColor: "#e2e8f0",
+              borderWidth: 1,
               padding: 12,
-              cornerRadius: 0,
+              cornerRadius: 8,
             },
           },
           scales: {
@@ -250,7 +254,6 @@ export default function DashboardCharts({
   const [drill, setDrill] = useState<DrillData | null>(null);
 
   const handleDrill = useCallback((item: ChartData) => {
-    // Mock weekly trend — replace with real API data when available
     const trend: TrendPoint[] = Array.from({ length: 8 }, (_, i) => ({
       date:  `W${i + 1}`,
       count: Math.max(1, Math.round((item.value ?? 10) * (0.5 + Math.random() * 0.9))),
@@ -269,7 +272,7 @@ export default function DashboardCharts({
         {drill ? (
           <button
             onClick={() => setDrill(null)}
-            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#009CC5] hover:text-[#132B4F] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Kembali ke Perbandingan Layanan
@@ -278,8 +281,8 @@ export default function DashboardCharts({
           <div className="flex gap-1">
             {(["ikm", "count"] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest transition-all duration-150 ${
-                  mode === m ? "bg-[#132B4F] text-white" : "text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                  mode === m ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-900 hover:bg-gray-50"
                 }`}>
                 {m === "ikm"
                   ? <><BarChart3 className="w-3 h-3" />Nilai IKM</>
@@ -290,14 +293,14 @@ export default function DashboardCharts({
         )}
 
         {!drill ? (
-          <div className="flex items-center gap-1.5 text-[9px] text-gray-300 font-medium">
+          <div className="flex items-center gap-1.5 text-xs text-gray-300 font-medium">
             <MousePointerClick className="w-3 h-3" />
             Klik bar untuk lihat tren
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: drill.color }} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 max-w-[200px] truncate">
+            <span className="text-xs font-semibold text-slate-500 max-w-[200px] truncate">
               {drill.label}
             </span>
           </div>
@@ -313,7 +316,7 @@ export default function DashboardCharts({
         ) : (
           <div className="h-full flex flex-col items-center justify-center gap-2">
             <BarChart3 className="w-10 h-10 text-gray-200" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Belum ada data</p>
+            <p className="text-xs font-medium text-gray-300">Belum ada data</p>
           </div>
         )}
       </div>
@@ -322,12 +325,12 @@ export default function DashboardCharts({
       {drill && (
         <div className="px-5 pb-4 pt-1 flex items-center gap-5 shrink-0 border-t border-gray-50">
           <div className="flex items-center gap-1.5">
-            <div className="w-5 h-0.5" style={{ backgroundColor: drill.color }} />
-            <span className="text-[9px] font-bold text-gray-400">Responden</span>
+            <div className="w-5 h-0.5 rounded-full" style={{ backgroundColor: drill.color }} />
+            <span className="text-xs font-medium text-slate-400">Responden</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-5 border-t border-dashed border-yellow-400" />
-            <span className="text-[9px] font-bold text-gray-400">IKM</span>
+            <div className="w-5 border-t border-dashed border-amber-400" />
+            <span className="text-xs font-medium text-slate-400">IKM</span>
           </div>
         </div>
       )}

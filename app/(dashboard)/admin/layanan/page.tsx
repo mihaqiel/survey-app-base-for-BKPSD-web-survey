@@ -17,6 +17,8 @@ const UNSUR_LABELS = [
   "Produk", "Kompetensi", "Perilaku", "Sarana", "Pengaduan",
 ];
 
+const inputClass = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100";
+
 // ── Respondent detail popover ─────────────────────────────────────────────
 function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,51 +29,48 @@ function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div ref={ref} className="bg-white border border-gray-200 shadow-xl w-full max-w-md animate-fade-up">
-        <div className="bg-[#132B4F] px-5 py-4 flex items-center justify-between">
+      <div ref={ref} className="bg-white rounded-xl border border-gray-100 shadow-xl w-full max-w-md">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Detail Penilaian</p>
-            <p className="text-sm font-black text-white">{r.nama}</p>
+            <p className="text-xs font-medium text-slate-500 mb-0.5">Detail Penilaian</p>
+            <p className="text-sm font-semibold text-slate-900">{r.nama}</p>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="h-0.5" style={{ backgroundColor: ikmColor(r.ikm) }} />
         <div className="p-5 space-y-4">
-          {/* Summary */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: "IKM", value: r.ikm.toFixed(2), color: ikmColor(r.ikm) },
-              { label: "Tanggal", value: r.tglLayanan, color: "#132B4F" },
-              { label: "Pegawai", value: r.pegawai, color: "#132B4F" },
+              { label: "Tanggal", value: r.tglLayanan, color: undefined },
+              { label: "Pegawai", value: r.pegawai, color: undefined },
             ].map(c => (
-              <div key={c.label} className="bg-[#F8FAFC] p-3">
-                <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mb-1">{c.label}</p>
-                <p className="text-[11px] font-black truncate" style={{ color: c.color }}>{c.value}</p>
+              <div key={c.label} className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs font-medium text-slate-500 mb-1">{c.label}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: c.color }}>{c.value}</p>
               </div>
             ))}
           </div>
-          {/* U1-U9 breakdown */}
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">Penilaian Per Unsur</p>
+            <p className="text-xs font-semibold text-slate-500 mb-3">Penilaian Per Unsur</p>
             <div className="space-y-2">
               {UNSUR_LABELS.map((label, i) => {
                 const val = r[`u${i + 1}`] ?? 0;
                 const pct = (val / 4) * 100;
-                const colors = ["#ef4444", "#f97316", "#22c55e", "#009CC5"];
+                const colors = ["#ef4444", "#f97316", "#22c55e", "#3b82f6"];
                 const labels = ["Tidak Baik", "Kurang Baik", "Baik", "Sangat Baik"];
                 return (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-[#132B4F]">U{i + 1} · {label}</span>
+                      <span className="text-xs font-medium text-slate-700">U{i + 1} · {label}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black" style={{ color: colors[val - 1] || "#94a3b8" }}>
+                        <span className="text-xs font-semibold" style={{ color: colors[val - 1] || "#94a3b8" }}>
                           {val > 0 ? labels[val - 1] : "—"}
                         </span>
-                        <span className="text-[10px] font-black text-[#132B4F] w-4 text-right">{val}</span>
+                        <span className="text-xs font-bold text-slate-900 w-4 text-right">{val}</span>
                       </div>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -83,11 +82,10 @@ function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
               })}
             </div>
           </div>
-          {/* Saran */}
           {r.saran && (
-            <div className="bg-[#F0F4F8] p-3">
-              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Saran</p>
-              <p className="text-[11px] text-[#132B4F]">{r.saran}</p>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-500 mb-1">Saran</p>
+              <p className="text-sm text-slate-700">{r.saran}</p>
             </div>
           )}
         </div>
@@ -113,23 +111,23 @@ function PeriodSelector({ periodes, selected, onChange }: {
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-2 px-3 py-1.5 border-2 text-[10px] font-black text-[#132B4F] transition-all bg-white ${
-          open ? "border-[#009CC5]" : "border-gray-200 hover:border-gray-300"
+        className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg text-xs font-semibold text-slate-700 transition-all bg-white ${
+          open ? "border-blue-300 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
         }`}>
         <span className="truncate max-w-[140px]">{current?.label ?? "Pilih Periode"}</span>
-        {current?.status === "AKTIF" && <span className="text-[8px] text-green-500">●</span>}
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        {current?.status === "AKTIF" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 bg-white border border-gray-200 shadow-lg mt-1 min-w-[200px] animate-fade-down">
+        <div className="absolute top-full right-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 min-w-[200px] overflow-hidden">
           {periodes.map(p => (
             <button key={p.id} onClick={() => { onChange(p.id); setOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F0F4F8] transition-colors text-left ${selected === p.id ? "bg-[#F0F8FF]" : ""}`}>
+              className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left ${selected === p.id ? "bg-blue-50" : ""}`}>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold text-[#132B4F] truncate">{p.label}</p>
-                <p className="text-[9px] text-gray-400">{p.status === "AKTIF" ? "● Aktif" : "Nonaktif"}</p>
+                <p className="text-sm font-medium text-slate-900 truncate">{p.label}</p>
+                <p className="text-xs text-slate-400">{p.status === "AKTIF" ? "Aktif" : "Nonaktif"}</p>
               </div>
-              {selected === p.id && <Check className="w-3.5 h-3.5 text-[#009CC5] shrink-0" />}
+              {selected === p.id && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
             </button>
           ))}
         </div>
@@ -169,40 +167,36 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header with period selector */}
-      <div className="px-5 py-4 border-b border-gray-100 bg-[#132B4F]">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Layanan SKM</p>
-            <h2 className="text-sm font-black text-white leading-tight">{service.nama}</h2>
+            <p className="text-xs font-medium text-slate-500 mb-0.5">Layanan SKM</p>
+            <h2 className="text-base font-semibold text-slate-900 leading-tight">{service.nama}</h2>
           </div>
-          <div className="shrink-0">
-            <PeriodSelector periodes={periodes} selected={selectedPeriode} onChange={setSelectedPeriode} />
-          </div>
+          <PeriodSelector periodes={periodes} selected={selectedPeriode} onChange={setSelectedPeriode} />
         </div>
         {data && (
           <div className="flex items-center gap-3 mt-3">
-            <p className="text-2xl font-black leading-none" style={{ color: data.ikm > 0 ? ikmColor(data.ikm) : "#94a3b8" }}>
+            <p className="text-2xl font-bold leading-none" style={{ color: data.ikm > 0 ? ikmColor(data.ikm) : "#94a3b8" }}>
               {data.ikm > 0 ? data.ikm.toFixed(2) : "—"}
             </p>
-            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: data.ikm > 0 ? ikmColor(data.ikm) : "#94a3b8" }}>
-              {ikmLabel(data.ikm)}
-            </p>
-            <span className="text-[9px] text-white/40 ml-auto">{data.total} responden</span>
+            <StatusBadge ikm={data.ikm} size="sm" />
+            <span className="text-xs text-slate-400 ml-auto">{data.total} responden</span>
           </div>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-white">
+      <div className="flex border-b border-gray-100 bg-white">
         {[
-          { key: "performa",   label: "Performa", icon: <BarChart3 className="w-3 h-3" /> },
-          { key: "responden",  label: "Responden", icon: <Users className="w-3 h-3" /> },
-          { key: "pengaturan", label: "Pengaturan", icon: <Settings className="w-3 h-3" /> },
+          { key: "performa",   label: "Performa", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+          { key: "responden",  label: "Responden", icon: <Users className="w-3.5 h-3.5" /> },
+          { key: "pengaturan", label: "Pengaturan", icon: <Settings className="w-3.5 h-3.5" /> },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-[9px] font-black uppercase tracking-widest border-b-2 transition-all ${
-              activeTab === tab.key ? "border-[#009CC5] text-[#009CC5]" : "border-transparent text-gray-400 hover:text-gray-600"
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+              activeTab === tab.key ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400 hover:text-slate-600"
             }`}>
             {tab.icon}{tab.label}
           </button>
@@ -212,12 +206,12 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32 gap-3">
-            <div className="w-5 h-5 border-2 border-[#009CC5]/20 border-t-[#009CC5] rounded-full animate-spin" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Memuat...</p>
+            <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+            <p className="text-sm text-slate-400">Memuat...</p>
           </div>
         ) : !data ? (
           <div className="flex items-center justify-center h-32">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Data tidak ditemukan</p>
+            <p className="text-sm text-slate-400">Data tidak ditemukan</p>
           </div>
         ) : (
           <>
@@ -226,19 +220,19 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
               <div className="p-5 space-y-4">
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Total Responden", value: data.total,                     color: "#009CC5" },
-                    { label: "IKM Score",       value: data.ikm > 0 ? data.ikm.toFixed(2) : "—", color: ikmColor(data.ikm) },
-                    { label: "Periode",         value: data.periode?.label ?? "—",     color: "#132B4F" },
+                    { label: "Total Responden", value: data.total, color: "#3b82f6" },
+                    { label: "IKM Score", value: data.ikm > 0 ? data.ikm.toFixed(2) : "—", color: ikmColor(data.ikm) },
+                    { label: "Periode", value: data.periode?.label ?? "—", color: undefined },
                   ].map(c => (
-                    <div key={c.label} className="bg-[#F8FAFC] border border-gray-200 p-3">
-                      <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 mb-1">{c.label}</p>
-                      <p className="text-lg font-black truncate" style={{ color: c.color }}>{c.value}</p>
+                    <div key={c.label} className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs font-medium text-slate-500 mb-1">{c.label}</p>
+                      <p className="text-lg font-bold truncate" style={{ color: c.color }}>{c.value}</p>
                     </div>
                   ))}
                 </div>
                 {data.total > 0 && (
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">Analisis Per Unsur</p>
+                    <p className="text-xs font-semibold text-slate-500 mb-3">Analisis Per Unsur</p>
                     <div className="space-y-2">
                       {UNSUR_LABELS.map((label, i) => {
                         const val = data.unsurAvg[i] ?? 0;
@@ -246,8 +240,8 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                         return (
                           <div key={label}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-bold text-[#132B4F]">U{i + 1} · {label}</span>
-                              <span className="text-[10px] font-black" style={{ color: ikmColor(val * 25) }}>{val.toFixed(2)}</span>
+                              <span className="text-xs font-medium text-slate-700">U{i + 1} · {label}</span>
+                              <span className="text-xs font-bold" style={{ color: ikmColor(val * 25) }}>{val.toFixed(2)}</span>
                             </div>
                             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-500"
@@ -261,8 +255,8 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                 )}
                 {data.total === 0 && (
                   <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <BarChart3 className="w-10 h-10 text-gray-200" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Belum ada data survei di periode ini</p>
+                    <BarChart3 className="w-10 h-10 text-slate-200" />
+                    <p className="text-sm text-slate-400">Belum ada data survei di periode ini</p>
                   </div>
                 )}
               </div>
@@ -271,9 +265,8 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
             {/* RESPONDEN */}
             {activeTab === "responden" && (
               <div className="p-5 space-y-3">
-                {/* Filter */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   {[
                     { key: "jenisKelamin", label: "Gender",     opts: uniqueVals("jenisKelamin") },
                     { key: "pendidikan",   label: "Pendidikan", opts: uniqueVals("pendidikan") },
@@ -282,43 +275,45 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                     <select key={f.key} value={(filter as any)[f.key]}
                       title={`Filter ${f.label}`}
                       onChange={e => setFilter(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      className="px-2 py-1.5 border border-gray-200 text-[10px] font-bold text-[#132B4F] bg-white outline-none hover:border-gray-300 transition-colors">
+                      className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-white outline-none hover:border-gray-300 transition-colors">
                       <option value="">Semua {f.label}</option>
                       {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ))}
                   {(filter.jenisKelamin || filter.pendidikan || filter.pekerjaan) && (
                     <button onClick={() => setFilter({ jenisKelamin: "", pendidikan: "", pekerjaan: "" })}
-                      className="flex items-center gap-1 text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest">
+                      className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700">
                       <X className="w-3 h-3" />Reset
                     </button>
                   )}
-                  <span className="text-[9px] text-gray-400 ml-auto">{filteredRespondents.length} responden</span>
+                  <span className="text-xs text-slate-400 ml-auto">{filteredRespondents.length} responden</span>
                 </div>
 
-                <div className="border border-gray-200 overflow-hidden">
-                  <div className="grid grid-cols-4 px-4 py-2 bg-[#F8FAFC] border-b border-gray-100">
-                    {["Nama", "Pegawai", "Tanggal", "IKM"].map(h => (
-                      <p key={h} className="text-[8px] font-black uppercase tracking-widest text-gray-400">{h}</p>
-                    ))}
-                  </div>
-                  <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
-                    {filteredRespondents.length === 0 ? (
-                      <div className="flex items-center justify-center py-10">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Tidak ada data</p>
-                      </div>
-                    ) : filteredRespondents.map((r: any) => (
-                      <button key={r.id} onClick={() => setSelectedRespondent(r)}
-                        className="w-full grid grid-cols-4 items-center px-4 py-2.5 hover:bg-[#F0F8FF] transition-colors text-left group">
-                        <p className="text-[11px] font-bold text-[#132B4F] group-hover:text-[#009CC5] truncate transition-colors">{r.nama}</p>
-                        <p className="text-[10px] text-gray-500 truncate">{r.pegawai}</p>
-                        <p className="text-[10px] text-gray-400">{r.tglLayanan}</p>
-                        <p className="text-[10px] font-black" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</p>
-                      </button>
-                    ))}
-                  </div>
+                <div className="overflow-hidden rounded-lg border border-gray-100">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100">
+                        {["Nama", "Pegawai", "Tanggal", "IKM"].map(h => (
+                          <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {filteredRespondents.length === 0 ? (
+                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada data</td></tr>
+                      ) : filteredRespondents.map((r: any) => (
+                        <tr key={r.id} onClick={() => setSelectedRespondent(r)}
+                          className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                          <td className="px-4 py-2.5 text-sm font-medium text-slate-900 group-hover:text-blue-600 truncate transition-colors">{r.nama}</td>
+                          <td className="px-4 py-2.5 text-sm text-slate-500 truncate">{r.pegawai}</td>
+                          <td className="px-4 py-2.5 text-sm text-slate-400">{r.tglLayanan}</td>
+                          <td className="px-4 py-2.5 text-sm font-bold" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <p className="text-[9px] text-gray-400 text-center">Klik nama responden untuk melihat detail penilaian U1–U9</p>
+                <p className="text-xs text-slate-400 text-center">Klik nama responden untuk melihat detail penilaian U1–U9</p>
               </div>
             )}
 
@@ -326,9 +321,9 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
             {activeTab === "pengaturan" && (
               <div className="p-5 space-y-4">
                 <UpdateLayananForm service={service} />
-                <div className="border border-red-200 p-4 bg-red-50">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-2">Danger Zone</p>
-                  <p className="text-[11px] text-red-400 mb-3">Menghapus layanan akan menghapus semua respons terkait secara permanen.</p>
+                <div className="border border-red-100 rounded-lg p-4 bg-red-50">
+                  <p className="text-xs font-semibold text-red-600 mb-2">Danger Zone</p>
+                  <p className="text-sm text-red-500 mb-3">Menghapus layanan akan menghapus semua respons terkait secara permanen.</p>
                   <DeleteLayananButton id={service.id} nama={service.nama} />
                 </div>
               </div>
@@ -337,7 +332,6 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
         )}
       </div>
 
-      {/* Respondent detail popover */}
       {selectedRespondent && (
         <RespondentPopover r={selectedRespondent} onClose={() => setSelectedRespondent(null)} />
       )}
@@ -358,21 +352,19 @@ function UpdateLayananForm({ service }: { service: Service }) {
   return (
     <form action={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Nama Layanan</label>
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nama Layanan</label>
         <input name="nama" type="text" required defaultValue={service.nama}
-          title="Nama Layanan" placeholder="Nama layanan..."
-          className="w-full px-4 py-3 bg-[#F0F4F8] border-2 border-transparent focus:border-[#009CC5] text-sm font-bold text-[#132B4F] outline-none transition-all" />
+          title="Nama Layanan" placeholder="Nama layanan..." className={inputClass} />
       </div>
       <div>
-        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Kategori</label>
-        <select name="kategori" defaultValue={service.kategori ?? ""} title="Kategori Layanan"
-          className="w-full px-4 py-3 bg-[#F0F4F8] border-2 border-transparent focus:border-[#009CC5] text-sm font-bold text-[#132B4F] outline-none transition-all">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kategori</label>
+        <select name="kategori" defaultValue={service.kategori ?? ""} title="Kategori Layanan" className={inputClass}>
           <option value="">Tanpa Kategori</option>
           {KATEGORI_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
         </select>
       </div>
       <button type="submit" disabled={isPending}
-        className="px-4 py-2 bg-[#132B4F] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#009CC5] disabled:opacity-50 transition-all">
+        className="px-4 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-all">
         {isPending ? "Menyimpan..." : "Simpan Perubahan"}
       </button>
     </form>
@@ -387,7 +379,7 @@ function DeleteLayananButton({ id, nama }: { id: string; nama: string }) {
         startTransition(async () => { await deleteLayanan(id); window.location.href = "/admin/layanan"; });
       }
     }} disabled={isPending}
-      className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 disabled:opacity-50 transition-all">
+      className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all">
       <Trash2 className="w-3.5 h-3.5" />
       {isPending ? "Menghapus..." : `Hapus ${nama}`}
     </button>
@@ -400,21 +392,20 @@ function AddPanel({ onClose }: { onClose: () => void }) {
     startTransition(async () => { await createLayanan(formData); onClose(); });
   };
   return (
-    <div className="p-6 space-y-5 animate-fade-up">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-0.5 h-4 bg-[#009CC5]" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-[#132B4F]">Tambah Layanan Baru</p>
+    <div className="p-6 space-y-5">
+      <div>
+        <p className="text-xs font-semibold text-blue-600 mb-1">Layanan Baru</p>
+        <h3 className="text-base font-semibold text-slate-900">Tambah Layanan</h3>
       </div>
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Nama Layanan <span className="text-red-400">*</span>
           </label>
-          <input name="nama" type="text" required title="Nama Layanan" placeholder="e.g. Layanan Mutasi Pegawai"
-            className="w-full px-4 py-3 bg-[#F0F4F8] border-2 border-transparent focus:border-[#009CC5] text-sm font-bold text-[#132B4F] placeholder-gray-300 outline-none transition-all" />
+          <input name="nama" type="text" required title="Nama Layanan" placeholder="e.g. Layanan Mutasi Pegawai" className={inputClass} />
         </div>
         <button type="submit" disabled={isPending}
-          className="w-full py-3 bg-[#009CC5] text-white font-black text-sm uppercase tracking-widest hover:bg-[#132B4F] disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+          className="w-full py-3 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
           {isPending ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</> : <><Plus className="w-4 h-4" />Buat Layanan</>}
         </button>
       </form>
@@ -444,7 +435,6 @@ export default function LayananSKMPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // Auto-select from URL ?id= param
   useEffect(() => {
     if (services.length === 0) return;
     const params = new URLSearchParams(window.location.search);
@@ -458,24 +448,21 @@ export default function LayananSKMPage() {
   const filtered = services.filter(s => s.nama.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="font-sans bg-[#F0F4F8] flex flex-col" style={{ height: "100vh" }}>
+    <div className="font-sans bg-gray-50/50 flex flex-col" style={{ height: "100vh" }}>
 
       {/* HEADER */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-0.5 h-6 bg-[#FAE705]" />
-          <div>
-            <p className="text-[8px] font-black uppercase tracking-[0.25em] text-[#009CC5]">BKPSDM · Admin</p>
-            <h1 className="text-base font-black uppercase tracking-tight text-[#132B4F] leading-none">Layanan SKM</h1>
-          </div>
+      <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900">Layanan SKM</h1>
+          <p className="text-xs text-slate-500">Kelola layanan survei kepuasan</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-[#F0F4F8] border border-gray-200 px-3 py-1.5">
-            <Layers className="w-3.5 h-3.5 text-[#009CC5]" />
-            <span className="text-[10px] font-black text-[#132B4F]">{services.length} Layanan</span>
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-xs font-semibold text-slate-700">{services.length} Layanan</span>
           </div>
           <button onClick={() => { setShowAdd(true); setSelected(null); }}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#009CC5] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#132B4F] transition-all">
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-all">
             <Plus className="w-3.5 h-3.5" />Tambah
           </button>
         </div>
@@ -484,14 +471,14 @@ export default function LayananSKMPage() {
       {/* SPLIT */}
       <div className="flex flex-1 min-h-0">
         {/* LEFT */}
-        <div className="w-72 shrink-0 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-72 shrink-0 bg-white border-r border-gray-100 flex flex-col">
           <div className="px-4 py-3 border-b border-gray-100">
-            <div className={`flex items-center gap-2 border-2 px-3 py-2 transition-all ${query ? "border-[#009CC5]" : "border-gray-200 hover:border-gray-300"}`}>
-              <Search className={`w-3.5 h-3.5 shrink-0 ${query ? "text-[#009CC5]" : "text-gray-300"}`} />
+            <div className={`flex items-center gap-2 border rounded-lg px-3 py-2 transition-all ${query ? "border-blue-300 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"}`}>
+              <Search className={`w-3.5 h-3.5 shrink-0 ${query ? "text-blue-600" : "text-slate-300"}`} />
               <input type="text" placeholder="Cari layanan..." value={query} title="Cari layanan"
                 onChange={e => setQuery(e.target.value)}
-                className="flex-1 text-xs font-bold text-[#132B4F] placeholder-gray-300 bg-transparent outline-none" />
-              {query && <button onClick={() => setQuery("")} aria-label="Hapus"><X className="w-3 h-3 text-gray-400 hover:text-red-400" /></button>}
+                className="flex-1 text-xs font-medium text-slate-900 placeholder-gray-300 bg-transparent outline-none" />
+              {query && <button onClick={() => setQuery("")} aria-label="Hapus"><X className="w-3 h-3 text-slate-400 hover:text-red-400" /></button>}
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -503,7 +490,7 @@ export default function LayananSKMPage() {
             />
           </div>
           <div className="px-4 py-2.5 border-t border-gray-100">
-            <p className="text-[9px] text-gray-400">{filtered.length} dari {services.length} layanan</p>
+            <p className="text-xs text-slate-400">{filtered.length} dari {services.length} layanan</p>
           </div>
         </div>
 
@@ -515,12 +502,12 @@ export default function LayananSKMPage() {
             <LayananDetailPanel key={selected.id} service={selected} periodes={periodes} />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-10">
-              <div className="w-16 h-16 bg-[#F0F4F8] flex items-center justify-center">
-                <Layers className="w-8 h-8 text-gray-300" />
+              <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center">
+                <Layers className="w-8 h-8 text-slate-200" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-300 mb-2">Pilih Layanan</p>
-                <p className="text-[11px] text-gray-400 max-w-xs">Klik layanan di kiri untuk melihat detail performa dan daftar responden</p>
+                <p className="text-sm font-medium text-slate-400 mb-1">Pilih Layanan</p>
+                <p className="text-sm text-slate-400 max-w-xs">Klik layanan di kiri untuk melihat detail performa dan daftar responden</p>
               </div>
             </div>
           )}

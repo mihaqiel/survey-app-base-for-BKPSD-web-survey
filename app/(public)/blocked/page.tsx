@@ -17,7 +17,6 @@ export default function BlockedPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setReason(params.get("reason") ?? "duplicate");
-    // Get client IP via public API
     fetch("https://api.ipify.org?format=json")
       .then(r => r.json())
       .then(d => setIp(d.ip))
@@ -42,49 +41,41 @@ export default function BlockedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md animate-fade-up">
+    <div className="min-h-screen bg-gray-50/50 flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md">
 
         {/* Card */}
-        <div className="bg-white border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
           {/* Header */}
-          <div className="bg-[#132B4F] px-8 py-7">
-            <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 flex items-center justify-center shrink-0 ${
-                isDuplicate ? "bg-[#d97706]" : "bg-red-500"
+          <div className="px-8 py-6 border-b border-gray-100">
+            <div className="flex items-center gap-4 mb-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                isDuplicate ? "bg-amber-50" : "bg-red-50"
               }`}>
                 {isDuplicate
-                  ? <AlertTriangle className="w-7 h-7 text-white" />
-                  : <ShieldOff className="w-7 h-7 text-white" />
+                  ? <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  : <ShieldOff className="w-6 h-6 text-red-600" />
                 }
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#009CC5] mb-1">
+                <p className="text-xs font-semibold text-slate-500 mb-0.5">
                   {isDuplicate ? "Duplikasi Terdeteksi" : "Akses Diblokir"}
                 </p>
-                <h1 className="text-xl font-black uppercase tracking-tight text-white leading-tight">
+                <h1 className="text-lg font-bold text-slate-900">
                   {isDuplicate ? "Survei Sudah Diisi" : "IP Anda Diblokir"}
                 </h1>
               </div>
             </div>
           </div>
 
-          <div className="h-1" style={{
-            backgroundColor: isDuplicate ? "#d97706" : "#dc2626"
-          }} />
-
           <div className="px-8 py-7 space-y-5">
 
             {/* Message */}
-            <div className={`flex items-start gap-3 border px-4 py-4 ${
-              isDuplicate
-                ? "bg-amber-50 border-amber-200"
-                : "bg-red-50 border-red-200"
+            <div className={`flex items-start gap-3 border rounded-lg px-4 py-4 ${
+              isDuplicate ? "bg-amber-50 border-amber-100" : "bg-red-50 border-red-100"
             }`}>
-              <div className="w-1 min-h-[20px] shrink-0 mt-0.5"
-                style={{ backgroundColor: isDuplicate ? "#d97706" : "#dc2626" }} />
-              <p className="text-sm font-medium leading-relaxed text-gray-700">
+              <p className="text-sm leading-relaxed text-slate-700">
                 {isDuplicate
                   ? "Sistem mendeteksi bahwa perangkat ini sudah mengisi survei untuk layanan yang sama hari ini. Setiap perangkat hanya dapat mengisi 1 survei per layanan per hari."
                   : "IP address Anda telah diblokir secara manual oleh administrator. Jika Anda merasa ini adalah kesalahan, silakan kirim permintaan pembukaan blokir di bawah."
@@ -95,7 +86,7 @@ export default function BlockedPage() {
             {/* Duplicate: just go back */}
             {isDuplicate && (
               <Link href="/"
-                className="flex items-center justify-center gap-2 w-full py-4 bg-[#132B4F] text-white font-black text-sm uppercase tracking-widest hover:bg-[#009CC5] transition-all">
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 transition-all">
                 <ArrowLeft className="w-4 h-4" />
                 Kembali ke Beranda
               </Link>
@@ -105,51 +96,35 @@ export default function BlockedPage() {
             {isManual && !sent && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">
-                    Kirim Permintaan Pembukaan Blokir
-                  </p>
+                  <p className="text-xs font-semibold text-slate-500 mb-3">Kirim Permintaan Pembukaan Blokir</p>
 
-                  <div className="bg-[#F0F4F8] px-3 py-2 mb-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">IP Address Anda</p>
-                    <p className="text-sm font-mono font-bold text-[#132B4F] mt-0.5">{ip || "Memuat..."}</p>
+                  <div className="bg-gray-50 rounded-lg px-3 py-2 mb-3">
+                    <p className="text-xs font-medium text-slate-500">IP Address Anda</p>
+                    <p className="text-sm font-mono font-semibold text-slate-900 mt-0.5">{ip || "Memuat..."}</p>
                   </div>
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5">
                         Pesan <span className="text-red-400">*</span>
                       </label>
-                      <textarea
-                        value={message}
-                        onChange={e => setMessage(e.target.value)}
-                        placeholder="Jelaskan mengapa IP Anda harus dibuka blokirnya..."
-                        title="Pesan permintaan"
-                        rows={4}
-                        className="w-full px-3 py-3 bg-[#F0F4F8] border-2 border-transparent focus:border-[#009CC5] text-sm font-medium text-[#132B4F] placeholder-gray-300 outline-none resize-none transition-all"
-                      />
+                      <textarea value={message} onChange={e => setMessage(e.target.value)}
+                        placeholder="Jelaskan mengapa IP Anda harus dibuka blokirnya..." title="Pesan permintaan" rows={4}
+                        className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none resize-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100" />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">
-                        Email (opsional)
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="email@contoh.com"
-                        title="Email untuk balasan"
-                        className="w-full px-3 py-3 bg-[#F0F4F8] border-2 border-transparent focus:border-[#009CC5] text-sm font-medium text-[#132B4F] placeholder-gray-300 outline-none transition-all"
-                      />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1.5">Email (opsional)</label>
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                        placeholder="email@contoh.com" title="Email untuk balasan"
+                        className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100" />
                     </div>
                   </div>
 
-                  {error && (
-                    <p className="text-[10px] font-bold text-red-500 mt-2">{error}</p>
-                  )}
+                  {error && <p className="text-sm font-medium text-red-500 mt-2">{error}</p>}
                 </div>
 
                 <button type="submit" disabled={loading}
-                  className="w-full py-3.5 bg-[#132B4F] text-white font-black text-sm uppercase tracking-widest hover:bg-[#009CC5] disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                  className="w-full py-3.5 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                   {loading
                     ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mengirim...</>
                     : <><Send className="w-4 h-4" />Kirim Permintaan</>
@@ -157,7 +132,7 @@ export default function BlockedPage() {
                 </button>
 
                 <Link href="/"
-                  className="flex items-center justify-center gap-2 w-full py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#132B4F] transition-colors">
+                  className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors">
                   <ArrowLeft className="w-3 h-3" />
                   Kembali ke Beranda
                 </Link>
@@ -167,15 +142,15 @@ export default function BlockedPage() {
             {/* Sent confirmation */}
             {isManual && sent && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 bg-green-50 border border-green-200 px-4 py-4">
+                <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-lg px-4 py-4">
                   <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-green-700">Permintaan Terkirim</p>
+                    <p className="text-sm font-semibold text-green-700">Permintaan Terkirim</p>
                     <p className="text-sm text-green-600 mt-0.5">Administrator akan meninjau permintaan Anda.</p>
                   </div>
                 </div>
                 <Link href="/"
-                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#132B4F] text-white font-black text-sm uppercase tracking-widest hover:bg-[#009CC5] transition-all">
+                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 transition-all">
                   <ArrowLeft className="w-4 h-4" />
                   Kembali ke Beranda
                 </Link>
@@ -184,9 +159,7 @@ export default function BlockedPage() {
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-gray-400 font-medium mt-4 uppercase tracking-widest">
-          BKPSDM Kabupaten Kepulauan Anambas
-        </p>
+        <p className="text-center text-xs text-slate-400 mt-4">BKPSDM Kabupaten Kepulauan Anambas</p>
       </div>
     </div>
   );

@@ -12,7 +12,6 @@ const UNSUR_LABELS = [
 
 const SHORT_LABELS = ["U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8", "U9"];
 
-// Split 9 unsur into 3 groups of 3 for the reference-style sub-charts
 const GROUPS = [
   { title: "Administrasi", indices: [0, 1, 2] },
   { title: "Biaya & Produk", indices: [3, 4, 5] },
@@ -20,8 +19,8 @@ const GROUPS = [
 ];
 
 interface LayananDetailChartsProps {
-  unsurAvg: number[];         // 1-4 scale per unsur
-  trendData: TrendPoint[];    // monthly IKM trend
+  unsurAvg: number[];
+  trendData: TrendPoint[];
   ikm: number;
 }
 
@@ -43,39 +42,32 @@ export default function LayananDetailCharts({
     <div className="space-y-4">
 
       {/* ── 12-Month IKM Line Chart ── */}
-      <div className="bg-white border border-gray-200 overflow-hidden animate-fade-up">
-        <div
-          className="h-0.5 animate-draw-line"
-          style={{ background: "linear-gradient(to right, #009CC5, #FAE705)" }}
-        />
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 bg-[#009CC5]" />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#132B4F]">
-                Tren IKM Layanan
-              </p>
-              <p className="text-[9px] text-gray-400 font-medium mt-0.5">
-                {hasTrend ? `${trendData.length} periode data` : "Berdasarkan data periode aktif"}
-              </p>
-            </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900">
+              Tren IKM Layanan
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {hasTrend ? `${trendData.length} periode data` : "Berdasarkan data periode aktif"}
+            </p>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#009CC5]/10 rounded">
-            <TrendingUp className="w-3 h-3 text-[#009CC5]" />
-            <span className="text-[9px] font-black text-[#009CC5]">IKM {ikm.toFixed(2)}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg">
+            <TrendingUp className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-bold text-blue-600">IKM {ikm.toFixed(2)}</span>
           </div>
         </div>
 
         <div className="px-5 pt-4 pb-2">
           {hasTrend ? (
-            <IkmLineChart data={trendData} height={220} color="#009CC5" showArea />
+            <IkmLineChart data={trendData} height={220} color="#3b82f6" showArea />
           ) : (
             <div className="h-[220px] flex flex-col items-center justify-center gap-2">
               <BarChart3 className="w-8 h-8 text-gray-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">
+              <p className="text-xs font-medium text-gray-300">
                 Data tren belum tersedia
               </p>
-              <p className="text-[9px] text-gray-300 font-medium">
+              <p className="text-xs text-gray-300">
                 Butuh minimal 2 periode untuk menampilkan tren
               </p>
             </div>
@@ -92,17 +84,13 @@ export default function LayananDetailCharts({
           return (
             <div
               key={group.title}
-              className="bg-white border border-gray-200 overflow-hidden animate-fade-up card-hover"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
             >
-              <div className="h-0.5 bg-[#009CC5] animate-draw-line" />
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-0.5 h-3.5 bg-[#009CC5]" />
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#132B4F]">
-                    {group.title}
-                  </p>
-                </div>
-                <span className="text-[9px] font-black text-gray-400">
+                <p className="text-xs font-bold text-slate-900">
+                  {group.title}
+                </p>
+                <span className="text-xs font-semibold text-slate-400">
                   avg {groupAvg.toFixed(2)}
                 </span>
               </div>
@@ -113,9 +101,9 @@ export default function LayananDetailCharts({
               <div className="px-4 pb-3 space-y-1">
                 {groupBars.map((bar) => (
                   <div key={bar.shortLabel} className="flex items-center justify-between gap-2">
-                    <span className="text-[8px] font-black text-gray-400">{bar.shortLabel}</span>
-                    <p className="text-[9px] text-gray-500 flex-1 truncate">{bar.label}</p>
-                    <span className="text-[9px] font-black" style={{ color: bar.ikm >= 88.31 ? "#16a34a" : bar.ikm >= 76.61 ? "#009CC5" : bar.ikm >= 65 ? "#d97706" : "#dc2626" }}>
+                    <span className="text-xs font-semibold text-slate-400">{bar.shortLabel}</span>
+                    <p className="text-xs text-slate-500 flex-1 truncate">{bar.label}</p>
+                    <span className="text-xs font-bold" style={{ color: bar.ikm >= 88.31 ? "#16a34a" : bar.ikm >= 76.61 ? "#3b82f6" : bar.ikm >= 65 ? "#d97706" : "#dc2626" }}>
                       {bar.value.toFixed(2)}
                     </span>
                   </div>

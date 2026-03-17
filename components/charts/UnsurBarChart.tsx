@@ -19,7 +19,7 @@ interface UnsurBarChartProps {
 export default function UnsurBarChart({
   data,
   height = 130,
-  color = "#009CC5",
+  color = "#3b82f6",
 }: UnsurBarChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
@@ -46,7 +46,7 @@ export default function UnsurBarChart({
 
       const ikmColor = (ikm: number) => {
         if (ikm >= 88.31) return "#16a34a";
-        if (ikm >= 76.61) return "#009CC5";
+        if (ikm >= 76.61) return "#3b82f6";
         if (ikm >= 65) return "#d97706";
         if (ikm > 0) return "#dc2626";
         return "#94a3b8";
@@ -75,7 +75,7 @@ export default function UnsurBarChart({
             legend: { display: false },
             tooltip: {
               backgroundColor: "#fff",
-              titleColor: "#132B4F",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,
