@@ -175,7 +175,7 @@ export default async function HapusDataPage({
             <div className="flex-1 overflow-y-auto">
               <table className="w-full text-xs">
                 <tbody className="divide-y divide-gray-100">
-                  {listData.map((item, i) => (
+                  {listData.map((item: { id: string; nama: string; count: number }, i: number) => (
                     <tr
                       key={item.id}
                       data-entity-row
@@ -305,7 +305,7 @@ export default async function HapusDataPage({
                 {[
                   { label: "Total Layanan", val: layananList.length,                               color: "text-[#132B4F]", accent: "" },
                   { label: "Total Pegawai", val: pegawaiList.length,                               color: "text-[#132B4F]", accent: "" },
-                  { label: "Total Respon",  val: layananList.reduce((s, l) => s + l.count, 0),     color: "text-red-600",   accent: "text-red-400" },
+                  { label: "Total Respon",  val: layananList.reduce((s: number, l: { count: number }) => s + l.count, 0),     color: "text-red-600",   accent: "text-red-400" },
                 ].map((stat, i) => (
                   <div key={stat.label} className={`animate-count-up ${i === 0 ? "pr-4" : i === 1 ? "px-4" : "pl-4"}`} style={{ animationDelay: `${i * 80}ms` }}>
                     <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${stat.accent || "text-gray-400"}`}>

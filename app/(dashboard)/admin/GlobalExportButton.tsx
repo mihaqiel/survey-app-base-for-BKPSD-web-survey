@@ -1,26 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import * as XLSX from "xlsx";
 import { getGlobalExportData } from "@/app/action/admin";
 
-// Color constants matching reference
-const NAVY  = "FF132B4F";
-const CYAN  = "FF009CC5";
 const YELLOW = "FFFAE705";
 const WHITE  = "FFFFFFFF";
-const LIGHT_BLUE = "FFD6EAF8";  // alternating row bg
-const HEADER_BG  = "FF1F4E79";  // dark blue header like reference
-
-function cell(s: XLSX.CellObject): XLSX.CellObject { return s; }
-
-function styleSheet(ws: XLSX.WorkSheet, dataLen: number, serviceCount: number) {
-  // We can't do cell styling with xlsx-js alone (needs xlsx-style or SheetJS Pro)
-  // But we CAN set column widths, freeze panes, and autofilter
-  ws["!freeze"] = { xSplit: 0, ySplit: 1 };
-  ws["!autofilter"] = { ref: `A1:T1` };
-  return ws;
-}
+const LIGHT_BLUE = "FFD6EAF8";
 
 export default function GlobalExportButton() {
   const [loading, setLoading] = useState(false);

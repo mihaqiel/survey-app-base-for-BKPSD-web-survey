@@ -76,7 +76,7 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
       {/* STATS BAR */}
       <section ref={statsRef} className="scroll-fade bg-[#F0F4F8] border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 py-6 grid grid-cols-3 divide-x divide-gray-300">
+        <div className="max-w-5xl mx-auto px-6 py-6 grid grid-cols-1 sm:grid-cols-3 sm:divide-x divide-gray-300 gap-4 sm:gap-0">
           {[
             { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan RB", delay: "delay-75" },
             { val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis",    delay: "delay-150" },

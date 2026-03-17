@@ -17,7 +17,7 @@ export async function getLayananWithResponseCount() {
     orderBy: { nama: "asc" },
     include: { _count: { select: { respon: true } } },
   });
-  return list.map((l) => ({ id: l.id, nama: l.nama, count: l._count.respon }));
+  return list.map((l: typeof list[0]) => ({ id: l.id, nama: l.nama, count: l._count.respon }));
 }
 
 export async function getPegawaiWithResponseCount() {
@@ -25,7 +25,7 @@ export async function getPegawaiWithResponseCount() {
     orderBy: { nama: "asc" },
     include: { _count: { select: { respon: true } } },
   });
-  return list.map((p) => ({ id: p.id, nama: p.nama, count: p._count.respon }));
+  return list.map((p: typeof list[0]) => ({ id: p.id, nama: p.nama, count: p._count.respon }));
 }
 
 export async function getLayananDetail(id: string) {
@@ -51,7 +51,7 @@ export async function getLayananDetail(id: string) {
     id: layanan.id,
     nama: layanan.nama,
     totalCount: layanan._count.respon,
-    preview: layanan.respon.map((r) => ({
+    preview: layanan.respon.map((r: typeof layanan.respon[0]) => ({
       id: r.id, nama: r.nama, tglLayanan: r.tglLayanan,
       createdAt: r.createdAt, jenisKelamin: r.jenisKelamin,
       pegawai: r.pegawai?.nama ?? "-",

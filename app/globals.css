@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --color-navy: #132B4F;
+  --color-navy-dark: #0D1F38;
+  --color-cyan: #009CC5;
+  --color-yellow: #FAE705;
+  --color-surface: #F0F4F8;
+}
+
 /* ── DESIGN TOKENS ─────────────────────────────────────── */
 :root {
   --background: #ffffff;

@@ -305,7 +305,7 @@ export async function getPeriodeComparisonData(periodeIds: string[]) {
   });
 
   const results = await Promise.all(
-    periods.map(async (p) => {
+    periods.map(async (p: typeof periods[0]) => {
       const respon = await prisma.respon.findMany({
         where: { periodeId: p.id },
         select: {
@@ -454,7 +454,7 @@ export async function getServiceIkmAcrossPeriods(layananId: string, periodeIds: 
   });
 
   const results = await Promise.all(
-    periods.map(async (p) => {
+    periods.map(async (p: typeof periods[0]) => {
       const respon = await prisma.respon.findMany({
         where: { periodeId: p.id, layananId },
         select: { u1: true, u2: true, u3: true, u4: true, u5: true, u6: true, u7: true, u8: true, u9: true },

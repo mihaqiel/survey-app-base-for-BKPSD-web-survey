@@ -111,7 +111,7 @@ export default async function HapusLayananDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {layanan.preview.map((r, i) => (
+                {layanan.preview.map((r: { id: string; nama: string; pegawai: string; tglLayanan: Date; avgScore: number; jenisKelamin: string }, i: number) => (
                   <tr
                     key={r.id}
                     className={`transition-colors duration-150 hover:bg-red-50/30 animate-fade-up ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}

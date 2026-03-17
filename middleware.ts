@@ -1,14 +1,24 @@
-// middleware.ts — project root (next to /app)
 import { NextRequest, NextResponse } from "next/server";
+import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
 
-// NOTE: Middleware runs in Edge Runtime — cannot import from lib/ipStore
-// (Node.js global not available in edge). Manual block is checked inside
-// the server action instead. This middleware is kept minimal.
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-export function middleware(_req: NextRequest) {
+  // Protect all /admin routes
+  if (pathname.startsWith("/admin")) {
+    const token = req.cookies.get(COOKIE_NAME)?.value;
+    const valid = await verifySessionToken(token);
+
+    if (!valid) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [], // disabled — duplicate/spam logic is in the server action
+  matcher: ["/admin/:path*"],
 };

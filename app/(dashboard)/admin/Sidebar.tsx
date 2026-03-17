@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/action/auth";
@@ -83,9 +84,11 @@ export default function Sidebar() {
       {/* HEADER */}
       <div className="px-5 py-5 border-b border-white/10 shrink-0 flex items-start justify-between">
         <div>
-          <img
+          <Image
             src="/logo-bkpsdm.png"
             alt="BKPSDM"
+            width={100}
+            height={40}
             className="h-10 w-auto object-contain brightness-0 invert mb-3 hover:scale-105 transition-transform duration-200"
           />
           <div className="flex items-center gap-2">

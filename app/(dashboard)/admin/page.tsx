@@ -11,6 +11,13 @@ import {
   Bell, LogOut,
 } from "lucide-react";
 
+interface ServiceStat {
+  id: string;
+  nama: string;
+  ikm: number;
+  count: number;
+}
+
 export default async function AdminDashboard() {
   const stats   = await getAdminDashboardStats();
   const periodes = await getAllPeriode();
@@ -29,14 +36,15 @@ export default async function AdminDashboard() {
   }
 
   // ── Compute stats ──────────────────────────────────────────────────────────
-  const servicesWithData = stats.services.filter(s => s.count > 0);
+  const services = stats.services as ServiceStat[];
+  const servicesWithData = services.filter((s) => s.count > 0);
 
   const overallIkm = stats.totalResponses > 0
-    ? parseFloat((stats.services.reduce((acc, s) => acc + (s.ikm * s.count), 0) / stats.totalResponses).toFixed(1))
+    ? parseFloat((services.reduce((acc: number, s) => acc + (s.ikm * s.count), 0) / stats.totalResponses).toFixed(1))
     : 0;
 
   const catCount = { sb: 0, b: 0, kb: 0, tb: 0 };
-  servicesWithData.forEach(s => {
+  servicesWithData.forEach((s) => {
     if      (s.ikm >= 88.31) catCount.sb++;
     else if (s.ikm >= 76.61) catCount.b++;
     else if (s.ikm >= 65)    catCount.kb++;
@@ -51,8 +59,8 @@ export default async function AdminDashboard() {
   ];
 
   const barChartData = servicesWithData
-    .sort((a, b) => b.ikm - a.ikm)
-    .map(s => ({ id: s.id, name: s.nama, ikm: s.ikm, count: s.count, fill: ikmColor(s.ikm) }));
+    .sort((a: ServiceStat, b: ServiceStat) => b.ikm - a.ikm)
+    .map((s: ServiceStat) => ({ id: s.id, name: s.nama, ikm: s.ikm, count: s.count, fill: ikmColor(s.ikm) }));
 
   const employees   = (stats as any).employees        ?? [];
   const trendData   = (stats as any).trendData        ?? [];
@@ -61,13 +69,13 @@ export default async function AdminDashboard() {
   // Pill data for toolbar
   const pills = [
     { label: "Survei",    value: stats.totalResponses,  color: "#009CC5",  dot: true },
-    { label: "Layanan",   value: stats.services.length,  color: "#132B4F",  dot: false },
+    { label: "Layanan",   value: services.length,  color: "#132B4F",  dot: false },
     { label: "Responden", value: stats.totalResponses,  color: "#16a34a",  dot: false },
     { label: "IKM",       value: overallIkm > 0 ? overallIkm : "—", color: ikmColor(overallIkm), dot: false },
   ];
 
   // Performa tab: sorted services
-  const perfServices = [...servicesWithData].sort((a, b) => b.ikm - a.ikm);
+  const perfServices = [...servicesWithData].sort((a: ServiceStat, b: ServiceStat) => b.ikm - a.ikm);
 
   return (
     <div className="min-h-screen font-sans bg-[#F0F4F8]">

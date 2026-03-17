@@ -1,7 +1,7 @@
 "use client";
 
 import { submitSkmResponse, searchPegawai } from "@/app/action/submit";
-import { useState, useCallback, FormEvent } from "react";
+import { useState, useCallback, useRef, useEffect, FormEvent } from "react";
 
 const SKM_QUESTIONS = [
   {
@@ -130,24 +130,37 @@ export default function SkmForm({
   const [pekerjaan, setPekerjaan] = useState("");
   const [searching, setSearching] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [submitted, setSubmitted] = useState(false);
 
-  const handlePegawaiSearch = useCallback(async (query: string) => {
+  // Debounced employee search
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handlePegawaiSearch = useCallback((query: string) => {
     setPegawaiQuery(query);
     setSelectedPegawai(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (query.length < 2) {
       setPegawaiResults([]);
       return;
     }
     setSearching(true);
-    const results = await searchPegawai(query);
-    setPegawaiResults(results);
-    setSearching(false);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchPegawai(query);
+      setPegawaiResults(results);
+      setSearching(false);
+    }, 300);
   }, []);
 
   const handleSubmit = (e: FormEvent) => {
+    setSubmitted(true);
     if (!selectedPegawai) {
       e.preventDefault();
-      alert("Harap pilih nama pegawai yang melayani Anda.");
       return;
     }
     setLoading(true);
@@ -253,7 +266,7 @@ export default function SkmForm({
               </div>
 
               {/* Usia & Gender */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
                     Usia <span className="text-red-400">*</span>
@@ -410,7 +423,7 @@ export default function SkmForm({
               </div>
 
               {pegawaiResults.length > 0 && !selectedPegawai && (
-                <div className="absolute z-10 w-full bg-white border border-gray-200 border-t-0 shadow-lg overflow-hidden">
+                <div className="absolute z-10 w-full bg-white border border-gray-200 border-t-0 shadow-lg overflow-hidden max-h-60 overflow-y-auto">
                   {pegawaiResults.map((p) => (
                     <button
                       key={p.id}
@@ -429,6 +442,12 @@ export default function SkmForm({
                 </div>
               )}
             </div>
+
+            {submitted && !selectedPegawai && (
+              <p className="mt-2 text-xs font-bold text-red-500">
+                Harap pilih nama pegawai yang melayani Anda.
+              </p>
+            )}
 
             {selectedPegawai && (
               <div className="mt-3 flex items-center justify-between bg-[#132B4F] px-5 py-3.5">
@@ -485,7 +504,7 @@ export default function SkmForm({
                   </div>
 
                   {/* Options */}
-                  <div className="ml-14 grid grid-cols-4 gap-2">
+                  <div className="sm:ml-14 grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {OPTIONS.map((opt) => (
                       <label key={opt.val} className="cursor-pointer">
                         <input

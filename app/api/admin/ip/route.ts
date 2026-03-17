@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
 
-async function isAdmin(req: NextRequest): Promise<boolean> {
-  try {
-    const c = await cookies();
-    if (c.get("admin_session")?.value === "true" || c.get("skm_token")) return true;
-  } catch {}
-  return req.headers.get("cookie")?.includes("admin_session=true") ?? false;
+async function isAdmin(): Promise<boolean> {
+  const c = await cookies();
+  return await verifySessionToken(c.get(COOKIE_NAME)?.value);
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  if (!await isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Get all IPs from responses
   const dbGroups = await prisma.respon.groupBy({
@@ -24,7 +22,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const blockedIps = await prisma.blockedIp.findMany({
     select: { ip: true, reason: true, blockedAt: true, message: true, messageAt: true, messageEmail: true },
   });
-  const blockedMap = new Map(blockedIps.map(b => [b.ip, b]));
+  const blockedMap = new Map<string, typeof blockedIps[0]>(blockedIps.map((b: typeof blockedIps[0]) => [b.ip, b]));
 
   // Get distinct layanan counts per IP
   const layananGroups = await prisma.respon.groupBy({
@@ -32,7 +30,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     _count: { ipAddress: true },
   });
   const layananCountMap: Record<string, Set<string>> = {};
-  layananGroups.forEach(g => {
+  layananGroups.forEach((g: typeof layananGroups[0]) => {
     if (!g.ipAddress) return;
     if (!layananCountMap[g.ipAddress]) layananCountMap[g.ipAddress] = new Set();
     layananCountMap[g.ipAddress].add(g.layananId);
@@ -40,12 +38,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // Merge: IPs with responses + blocked IPs without responses
   const allIps = new Set([
-    ...dbGroups.map(g => g.ipAddress).filter(Boolean),
-    ...blockedIps.map(b => b.ip),
+    ...dbGroups.map((g: typeof dbGroups[0]) => g.ipAddress).filter(Boolean),
+    ...blockedIps.map((b: typeof blockedIps[0]) => b.ip),
   ]);
 
-  const result = Array.from(allIps).map(ip => {
-    const dbEntry = dbGroups.find(g => g.ipAddress === ip);
+  const result = Array.from(allIps).map((ip: string | null) => {
+    const dbEntry = dbGroups.find((g: typeof dbGroups[0]) => g.ipAddress === ip);
     const blocked = blockedMap.get(ip!);
     return {
       ip: ip!,
@@ -65,7 +63,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  if (!await isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json() as { ip?: string; action?: string; reason?: string };
   const { ip, action, reason } = body;

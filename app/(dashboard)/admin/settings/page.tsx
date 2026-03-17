@@ -83,7 +83,7 @@ export default async function SettingsPage() {
             </div>
             <PeriodeManager
               activePeriode={activePeriod ? { id: activePeriod.id, label: activePeriod.label, token: activePeriod.token, status: activePeriod.status } : null}
-              allPeriodes={allPeriodes.map(p => ({ id: p.id, label: p.label, token: p.token, status: p.status, createdAt: p.createdAt.toISOString() }))}
+              allPeriodes={allPeriodes.map((p: typeof allPeriodes[0]) => ({ id: p.id, label: p.label, token: p.token, status: p.status, createdAt: p.createdAt.toISOString() }))}
             />
           </div>
         </div>

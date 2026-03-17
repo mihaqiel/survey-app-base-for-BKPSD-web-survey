@@ -2,21 +2,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
 
-async function isAdmin(req: NextRequest): Promise<boolean> {
-  try {
-    const c = await cookies();
-    if (c.get("admin_session")?.value === "true") return true;
-  } catch { /* fall through */ }
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  return cookieHeader.includes("admin_session=true");
+async function isAdmin(): Promise<boolean> {
+  const c = await cookies();
+  return await verifySessionToken(c.get(COOKIE_NAME)?.value);
 }
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  if (!await isAdmin(req)) {
+  if (!await isAdmin()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,16 +32,16 @@ export async function GET(
   const totalSurveys = responses.length;
   let overallIkm = 0;
   if (totalSurveys > 0) {
-    const totalScore = responses.reduce((acc, r) =>
+    const totalScore = responses.reduce((acc: number, r: typeof responses[0]) =>
       acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
     overallIkm = parseFloat(((totalScore / (9 * totalSurveys)) * 25).toFixed(1));
   }
 
   // ── Per-layanan stats ────────────────────────────────────────────────────
   const layananMap = new Map<string, { nama: string; scores: number[]; count: number }>();
-  responses.forEach((r) => {
+  responses.forEach((r: typeof responses[0]) => {
     const lid = r.layananId;
-    const existing = layananMap.get(lid) ?? { nama: r.layanan.nama, scores: [], count: 0 };
+    const existing = layananMap.get(lid) ?? { nama: r.layanan.nama, scores: [] as number[], count: 0 };
     const avg = (r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9) / 9;
     existing.scores.push(avg);
     existing.count++;
@@ -62,7 +59,7 @@ export async function GET(
   }).sort((a, b) => b.count - a.count);
 
   // ── Respondent list ──────────────────────────────────────────────────────
-  const respondents = responses.map((r) => {
+  const respondents = responses.map((r: typeof responses[0]) => {
     const avg = (r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9) / 9;
     const ikm = parseFloat((avg * 25).toFixed(1));
     const tglLayanan = r.tglLayanan
