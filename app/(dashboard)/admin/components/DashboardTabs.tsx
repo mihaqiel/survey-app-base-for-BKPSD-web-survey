@@ -22,16 +22,45 @@ type Tab = typeof TABS[number];
 // ── Popover wrapper ─────────────────────────────────────────────────────────
 function Popover({ trigger, children }: { trigger: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    // Use setTimeout to avoid the current click from immediately closing
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClickOutside, true);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, [open]);
+
   return (
-    <div ref={ref} className="relative">
-      <div onMouseDown={(e) => { e.stopPropagation(); setOpen(o => !o); }} className="cursor-pointer">{trigger}</div>
-      {open && <div className="absolute top-full right-0 mt-2 z-50 animate-fade-down" onMouseDown={(e) => e.stopPropagation()}>{children}</div>}
+    <div ref={containerRef} className="relative" style={{ overflow: "visible" }}>
+      <div
+        onClickCapture={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(o => !o);
+        }}
+        className="cursor-pointer"
+      >
+        {trigger}
+      </div>
+      {open && (
+        <div
+          className="absolute top-full right-0 mt-2 z-[9999]"
+          style={{ overflow: "visible" }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -346,8 +375,8 @@ export default function DashboardTabs({
   return (
     <>
       {/* TABS + TOOLBAR ROW */}
-      <div className="bg-white border-b border-gray-100 sticky top-[73px] sm:top-[76px] z-10 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center px-4 sm:px-6 gap-3 sm:gap-6 pt-3 sm:pt-0">
+      <div className="bg-white border-b border-gray-100 sticky top-[73px] sm:top-[76px] z-30 shadow-sm" style={{ overflow: "visible" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center px-4 sm:px-6 gap-3 sm:gap-6 pt-3 sm:pt-0" style={{ overflow: "visible" }}>
           
           {/* Tabs */}
           <div className="flex items-stretch shrink-0 overflow-x-auto no-scrollbar scroll-smooth">
@@ -367,7 +396,7 @@ export default function DashboardTabs({
           <div className="hidden sm:block w-px h-8 bg-gray-100 shrink-0" />
 
           {/* Controls Container */}
-          <div className="flex items-center gap-4 flex-1 justify-between sm:justify-start pb-3 sm:pb-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-4 flex-1 justify-between sm:justify-start pb-3 sm:pb-0" style={{ overflow: "visible" }}>
             
             {/* Metric pills */}
             <div className={`flex items-center gap-2 transition-all duration-300 ${
@@ -378,8 +407,8 @@ export default function DashboardTabs({
 
             {/* Toolbar Buttons */}
             <div className={`flex items-center gap-2 transition-all duration-300 ml-auto bg-gray-50/80 p-1.5 rounded-lg border border-gray-100/50 ${
-              toolbarOpen ? "opacity-100 shrink-0" : "opacity-0 pointer-events-none w-0 overflow-hidden"
-            }`}>
+              toolbarOpen ? "opacity-100 shrink-0" : "opacity-0 pointer-events-none w-0"
+            }`} style={{ overflow: "visible" }}>
               <button aria-label="Notifikasi"
                 className="w-8 h-8 flex items-center justify-center rounded-md bg-white border border-gray-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all focus:ring-2 focus:ring-blue-100">
                 <Bell className="w-4 h-4" />
