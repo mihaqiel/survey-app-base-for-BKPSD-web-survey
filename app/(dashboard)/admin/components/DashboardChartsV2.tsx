@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import DonutChart, { DonutSlice } from "@/components/charts/DonutChart";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp, Activity } from "lucide-react";
 
 export interface ServiceChartData {
   id: string;
@@ -46,13 +46,13 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
           labels: data.map(d => d.label),
           datasets: [{
             data: data.map(d => d.ikm),
-            borderColor: "#009CC5",
-            backgroundColor: "rgba(0,156,197,0.08)",
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59,130,246,0.1)",
             borderWidth: 2,
             pointRadius: 4,
             pointHoverRadius: 6,
             pointBackgroundColor: "#ffffff",
-            pointBorderColor: "#009CC5",
+            pointBorderColor: "#3b82f6",
             pointBorderWidth: 2,
             tension: 0.4,
             fill: true,
@@ -67,20 +67,20 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
             legend: { display: false },
             tooltip: {
               backgroundColor: "#ffffff",
-              titleColor: "#132B4F",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,
-              padding: 10,
-              cornerRadius: 6,
+              padding: 12,
+              cornerRadius: 8,
               displayColors: false,
-              titleFont: { size: 11, weight: "bold" as const },
+              titleFont: { size: 12, weight: "bold" as const },
               callbacks: {
                 title: (items: any[]) => items[0]?.label ?? "",
                 label: (item: any) => {
                   const v = Number(item.raw);
                   const tag = v >= 88.31 ? "Sangat Baik" : v >= 76.61 ? "Baik" : v >= 65 ? "Kurang Baik" : "Tidak Baik";
-                  return `IKM: ${v.toFixed(2)}  (${tag})`;
+                  return `Skor IKM: ${v.toFixed(2)}  (${tag})`;
                 },
               },
             },
@@ -89,12 +89,12 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
             x: {
               grid: { display: false },
               border: { display: false },
-              ticks: { color: "#94a3b8", font: { size: 10 }, maxRotation: 0, maxTicksLimit: 8 },
+              ticks: { color: "#94a3b8", font: { size: 11 }, maxRotation: 0, maxTicksLimit: 8 },
             },
             y: {
               grid: { color: "#f1f5f9" },
               border: { display: false },
-              ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 6 },
+              ticks: { color: "#94a3b8", font: { size: 11 }, maxTicksLimit: 6 },
               min: 60,
               max: 100,
             },
@@ -109,13 +109,16 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
     };
   }, [data]);
 
-  return <div style={{ height: 200 }}><canvas ref={canvasRef} /></div>;
+  return <div style={{ height: 260 }}><canvas ref={canvasRef} /></div>;
 }
 
-function ServiceBarChart({ services, mode }: { services: ServiceChartData[]; mode: "ikm" | "count" }) {
+function ServiceWaveChart({ services, mode }: { services: ServiceChartData[]; mode: "ikm" | "count" }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<any>(null);
-  const data = [...services].sort((a, b) => mode === "ikm" ? b.ikm - a.ikm : b.count - a.count);
+  
+  // Keep original order, avoid sorting to maintain a smooth continuous wave across X-axis 
+  // if you want names alphabetically, or keeping the provided structured order.
+  const data = [...services];
 
   useEffect(() => {
     if (!canvasRef.current || data.length === 0) return;
@@ -123,52 +126,74 @@ function ServiceBarChart({ services, mode }: { services: ServiceChartData[]; mod
 
     import("chart.js").then((mod) => {
       if (destroyed) return;
-      mod.Chart.register(mod.BarController, mod.BarElement, mod.CategoryScale, mod.LinearScale, mod.Tooltip);
+      mod.Chart.register(
+        mod.LineController, mod.LineElement, mod.PointElement,
+        mod.CategoryScale, mod.LinearScale, mod.Tooltip, mod.Filler
+      );
       if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+      
+      const ctx = canvasRef.current!.getContext('2d');
+      // Create a smooth gradient for the wave
+      const gradient = ctx?.createLinearGradient(0, 0, 0, 300);
+      gradient?.addColorStop(0, mode === "ikm" ? "rgba(59, 130, 246, 0.4)" : "rgba(16, 185, 129, 0.4)");
+      gradient?.addColorStop(1, mode === "ikm" ? "rgba(59, 130, 246, 0.0)" : "rgba(16, 185, 129, 0.0)");
 
       chartRef.current = new mod.Chart(canvasRef.current!, {
-        type: "bar",
+        type: "line",
         data: {
           labels: data.map(d => d.name.length > 14 ? d.name.slice(0, 14) + "…" : d.name),
           datasets: [{
             data: data.map(d => mode === "ikm" ? d.ikm : d.count),
-            backgroundColor: data.map(d => d.fill + "cc"),
-            hoverBackgroundColor: data.map(d => d.fill),
-            borderWidth: 0,
-            borderRadius: 3,
-            borderSkipped: false,
-            maxBarThickness: 48,
-            barPercentage: 0.6,
-            categoryPercentage: 0.7,
+            borderColor: mode === "ikm" ? "#3b82f6" : "#10b981",
+            backgroundColor: gradient || "rgba(59,130,246,0.1)",
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#ffffff",
+            pointBorderColor: mode === "ikm" ? "#3b82f6" : "#10b981",
+            pointBorderWidth: 2,
+            fill: true,
+            tension: 0.4, // This creates the smooth wave effect
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: { duration: 700, easing: "easeOutQuart" },
+          interaction: { mode: "index", intersect: false },
+          animation: { duration: 1000, easing: "easeOutQuart" },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "#fff",
-              titleColor: "#132B4F",
+              backgroundColor: "#ffffff",
+              titleColor: "#0f172a",
               bodyColor: "#64748b",
               borderColor: "#e2e8f0",
               borderWidth: 1,
-              padding: 10,
-              cornerRadius: 6,
+              padding: 12,
+              cornerRadius: 8,
               displayColors: false,
-              titleFont: { size: 11, weight: "bold" as const },
+              titleFont: { size: 12, weight: "bold" as const },
               callbacks: {
                 title: (items: any[]) => data[items[0].dataIndex]?.name ?? "",
                 label: (item: any) => mode === "ikm"
-                  ? `IKM: ${data[item.dataIndex].ikm.toFixed(2)}`
-                  : `Responden: ${data[item.dataIndex].count}`,
+                  ? `Skor IKM: ${data[item.dataIndex].ikm.toFixed(2)}`
+                  : `Jumlah Responden: ${data[item.dataIndex].count}`,
               },
             },
           },
           scales: {
-            x: { grid: { display: false }, border: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 }, maxRotation: 30 } },
-            y: { grid: { color: "#f1f5f9" }, border: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 5 }, min: 0, max: mode === "ikm" ? 100 : undefined },
+            x: { 
+              grid: { display: false }, 
+              border: { display: false }, 
+              ticks: { color: "#94a3b8", font: { size: 11 }, maxRotation: 45 } 
+            },
+            y: { 
+              grid: { color: "#f1f5f9" }, 
+              border: { display: false }, 
+              ticks: { color: "#94a3b8", font: { size: 11 }, maxTicksLimit: 6 }, 
+              min: 0, 
+              max: mode === "ikm" ? 100 : undefined 
+            },
           },
         },
       });
@@ -182,14 +207,14 @@ function ServiceBarChart({ services, mode }: { services: ServiceChartData[]; mod
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2" style={{ height: 200 }}>
-        <BarChart3 className="w-10 h-10 text-gray-200" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Belum ada data layanan</p>
+      <div className="flex flex-col items-center justify-center gap-3" style={{ height: 260 }}>
+        <Activity className="w-12 h-12 text-slate-200" />
+        <p className="text-sm font-medium text-slate-400">Belum ada data evaluasi layanan</p>
       </div>
     );
   }
 
-  return <div style={{ height: 200 }}><canvas ref={canvasRef} /></div>;
+  return <div style={{ height: 260 }}><canvas ref={canvasRef} /></div>;
 }
 
 export default function DashboardChartsV2({ services, donutData, trendData }: Props) {
@@ -202,39 +227,33 @@ export default function DashboardChartsV2({ services, donutData, trendData }: Pr
     : services.filter(s => s.id === selectedService);
 
   // For trend: if a specific service is selected, filter trend data
-  // (trendData is global — per-service trend would require a separate fetch)
   const hasTrend = trendData.length > 0 && selectedService === "all";
 
   // Filtered donut data based on service selection
-  const filteredDonut = selectedService === "all"
-    ? donutData
-    : donutData; // donut always shows all
+  const filteredDonut = donutData; // donut always shows all
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       {/* Left: Chart */}
-      <div className="lg:col-span-2 bg-white border border-gray-200 overflow-hidden">
-        <div className="h-0.5" style={{ background: "linear-gradient(to right, #132B4F, #009CC5, #FAE705)" }} />
-        <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 bg-[#009CC5]" />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#132B4F]">
-                {hasTrend ? "Tren IKM Keseluruhan (6 Bulan)" : "Perbandingan Kinerja Layanan"}
-              </p>
-              <p className="text-[9px] text-gray-400 font-medium mt-0.5">
-                {selectedService === "all" ? "Semua layanan" : `${chartServices[0]?.name ?? "Layanan terpilih"}`}
-              </p>
-            </div>
+      <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="px-6 py-5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+             <h3 className="text-base font-semibold text-slate-900">
+                {hasTrend ? "Tren IKM Keseluruhan (6 Bulan Terakhir)" : "Kurva Perbandingan Kinerja Layanan"}
+             </h3>
+             <p className="text-sm text-slate-500 mt-1">
+                {selectedService === "all" ? "Visualisasi dari semua unit layanan" : `${chartServices[0]?.name ?? "Layanan terpilih"}`}
+             </p>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex items-center gap-3">
             {/* Service filter dropdown */}
             <select
               value={selectedService}
               onChange={e => setSelectedService(e.target.value)}
               title="Filter layanan"
-              className="px-2 py-1 border border-gray-200 text-[9px] font-bold text-[#132B4F] bg-white outline-none hover:border-gray-300 transition-colors max-w-[140px] truncate"
+              className="px-3 py-1.5 rounded border border-gray-200 text-xs font-semibold text-slate-700 bg-white outline-none hover:border-gray-300 transition-colors max-w-[160px] truncate shadow-sm focus:ring-2 focus:ring-blue-100"
             >
               <option value="all">Semua Layanan</option>
               {services.map(s => (
@@ -242,15 +261,15 @@ export default function DashboardChartsV2({ services, donutData, trendData }: Pr
               ))}
             </select>
             {!hasTrend && (
-              <div className="flex gap-1">
+              <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100">
                 {(["ikm", "count"] as const).map(m => (
                   <button key={m}
                     aria-label={m === "ikm" ? "Tampilkan IKM" : "Tampilkan Responden"}
                     onClick={() => setMode(m)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest transition-all rounded ${
-                      mode === m ? "bg-[#132B4F] text-white" : "text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all rounded-md ${
+                      mode === m ? "bg-white text-blue-600 shadow-sm border border-gray-200" : "text-slate-500 hover:text-slate-700"
                     }`}>
-                    {m === "ikm" ? <><TrendingUp className="w-3 h-3" />IKM</> : <><BarChart3 className="w-3 h-3" />Responden</>}
+                    {m === "ikm" ? <><TrendingUp className="w-3.5 h-3.5" />IKM</> : <><Activity className="w-3.5 h-3.5" />Responden</>}
                   </button>
                 ))}
               </div>
@@ -258,48 +277,47 @@ export default function DashboardChartsV2({ services, donutData, trendData }: Pr
           </div>
         </div>
 
-        <div className="px-5 pt-4 pb-2">
+        <div className="px-6 pt-6 pb-4 flex-1">
           {hasTrend
             ? <TrendLineChart data={trendData} />
-            : <ServiceBarChart services={chartServices} mode={mode} />
+            : <ServiceWaveChart services={chartServices} mode={mode} />
           }
         </div>
 
-        <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-4 flex-wrap">
-          <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Kategori IKM:</p>
-          {[
-            { color: "#16a34a", label: "Sangat Baik (≥88.31)" },
-            { color: "#009CC5", label: "Baik (≥76.61)" },
-            { color: "#d97706", label: "Kurang Baik (≥65)" },
-            { color: "#dc2626", label: "Tidak Baik (<65)" },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-[9px] font-bold text-gray-500">{label}</span>
-            </div>
-          ))}
+        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-50 flex flex-wrap items-center gap-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori IKM:</p>
+          <div className="flex flex-wrap items-center gap-4">
+             {[
+               { color: "#10b981", label: "Sangat Baik (≥88.31)" },
+               { color: "#3b82f6", label: "Baik (≥76.61)" },
+               { color: "#f59e0b", label: "Kurang Baik (≥65)" },
+               { color: "#ef4444", label: "Tidak Baik (<65)" },
+             ].map(({ color, label }) => (
+               <div key={label} className="flex items-center gap-2">
+                 <div className="w-2.5 h-2.5 rounded border border-white/50" style={{ backgroundColor: color }} />
+                 <span className="text-xs font-medium text-slate-600">{label}</span>
+               </div>
+             ))}
+          </div>
         </div>
       </div>
 
       {/* Right: Donut */}
-      <div className="bg-white border border-gray-200 overflow-hidden">
-        <div className="h-0.5 bg-[#FAE705]" />
-        <div className="px-5 py-3.5 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 bg-[#FAE705]" />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#132B4F]">Status Performa Layanan</p>
-              <p className="text-[9px] text-gray-400 font-medium mt-0.5">Distribusi kategori IKM</p>
-            </div>
-          </div>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="px-6 py-5 border-b border-gray-50">
+           <h3 className="text-base font-semibold text-slate-900">Persebaran Responden</h3>
+           <p className="text-sm text-slate-500 mt-1">Berdasarkan kategori kepuasan IKM global</p>
         </div>
-        <div className="p-5">
+        
+        <div className="p-6 flex-1 flex flex-col items-center justify-center">
           {filteredDonut.some(d => d.value > 0) ? (
-            <DonutChart data={filteredDonut} height={200} centerLabel="Layanan" centerValue={filteredDonut.reduce((s, d) => s + d.value, 0)} />
+            <div className="w-full">
+               <DonutChart data={filteredDonut} height={240} centerLabel="Layanan" centerValue={filteredDonut.reduce((s, d) => s + d.value, 0)} />
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2" style={{ height: 200 }}>
-              <BarChart3 className="w-8 h-8 text-gray-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Belum ada data</p>
+            <div className="flex flex-col items-center justify-center gap-3">
+              <BarChart3 className="w-12 h-12 text-slate-200" />
+              <p className="text-sm font-medium text-slate-400">Belum ada distribusi data</p>
             </div>
           )}
         </div>
