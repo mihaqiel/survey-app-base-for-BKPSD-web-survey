@@ -10,43 +10,46 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// 🗓️ GLOBAL PERIOD (The Gatekeeper)
+// GLOBAL PERIOD
 model Periode {
-  id        String   @id @default(cuid())
-  label     String   @default("Global Access")
-  status    String   @default("AKTIF") 
-  token     String   @unique
+  id        String    @id @default(cuid())
+  label     String    @default("Global Access")
+  status    String    @default("AKTIF")  // AKTIF | NONAKTIF
+  token     String    @unique
+  startDate DateTime?
+  endDate   DateTime?
   respon    Respon[]
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
-// 🏢 FIXED SERVICE (22 Layanan) - ⚠️ ENSURE NO 'perangkatId' HERE
+// FIXED SERVICE (22 Layanan)
 model Layanan {
-  id        String   @id @default(cuid())
-  nama      String
-  respon    Respon[]
+  id       String   @id @default(cuid())
+  nama     String
+  kategori String?  // for Tree grouping
+  respon   Respon[]
 }
 
-// 👨‍💼 EMPLOYEE
+// EMPLOYEE
 model Pegawai {
-  id        String   @id @default(cuid())
-  nama      String
-  respon    Respon[]
+  id     String   @id @default(cuid())
+  nama   String
+  respon Respon[]
 }
 
-// 📝 RESPONSE
+// RESPONSE
 model Respon {
-  id          String   @id @default(cuid())
-  
+  id        String  @id @default(cuid())
+
   // Relations
-  periodeId   String
-  periode     Periode  @relation(fields: [periodeId], references: [id])
-  
-  layananId   String
-  layanan     Layanan  @relation(fields: [layananId], references: [id])
-  
-  pegawaiId   String
-  pegawai     Pegawai  @relation(fields: [pegawaiId], references: [id])
+  periodeId String
+  periode   Periode @relation(fields: [periodeId], references: [id])
+
+  layananId String
+  layanan   Layanan @relation(fields: [layananId], references: [id])
+
+  pegawaiId String
+  pegawai   Pegawai @relation(fields: [pegawaiId], references: [id])
 
   // Demographics
   nama             String
@@ -57,8 +60,8 @@ model Respon {
   isDifabel        String
   jenisDisabilitas String?
   tglLayanan       DateTime
-  
-  // Scores
+
+  // SKM Scores (1-4 scale, 9 elements per Permenpan RB 14/2017)
   u1 Int
   u2 Int
   u3 Int
@@ -68,19 +71,22 @@ model Respon {
   u7 Int
   u8 Int
   u9 Int
-  
+
+  // Employee star rating (1-5 scale)
+  rating Int?
+
   saran     String?
   ipAddress String?
   createdAt DateTime @default(now())
 }
 
-// 📜 SYSTEM AUDIT LOG
+// SYSTEM AUDIT LOG
 model LogActivity {
   id        String   @id @default(cuid())
-  action    String   // e.g., "CREATE", "DELETE", "ARCHIVE"
-  target    String   // e.g., "Periode: SKM Q1 2024"
-  details   String?  // Optional extra information
-  timestamp DateTime @default(now()) // Used for "Newest first" sorting
+  action    String
+  target    String
+  details   String?
+  timestamp DateTime @default(now())
 }
 
 model Admin {
@@ -88,4 +94,16 @@ model Admin {
   username  String   @unique
   password  String
   createdAt DateTime @default(now())
+}
+
+// IP BLOCK — persisted in DB so blocks survive server restarts
+model BlockedIp {
+  id           String   @id @default(cuid())
+  ip           String   @unique
+  reason       String?  // "manual" | "auto" | custom reason
+  blockedAt    DateTime @default(now())
+  // Unblock request from the blocked user
+  message      String?  // user's unblock request message
+  messageAt    DateTime?
+  messageEmail String?  // optional email for reply
 }

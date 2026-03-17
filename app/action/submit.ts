@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-// 🔍 EMPLOYEE SEARCH
+// EMPLOYEE SEARCH
 export async function searchPegawai(query: string) {
   if (!query || query.length < 2) return [];
   return await prisma.pegawai.findMany({
@@ -21,7 +21,7 @@ function todayWib(): string {
   return wib.toISOString().split("T")[0];
 }
 
-// 💾 SUBMIT SURVEY
+// SUBMIT SURVEY
 export async function submitSkmResponse(formData: FormData) {
   const headerList = await headers();
   const ip =
@@ -32,8 +32,16 @@ export async function submitSkmResponse(formData: FormData) {
   const layananId = formData.get("layananId") as string;
   const today = todayWib();
 
-  // ── 1. Duplicate check: same IP + layanan + today ────────────────────────
-  // Uses the existing `respon` table — no new DB table needed
+  // 1. Check if IP is manually blocked in DB
+  const blockedIp = await prisma.blockedIp.findUnique({
+    where: { ip },
+    select: { id: true },
+  });
+  if (blockedIp) {
+    redirect("/blocked?reason=manual");
+  }
+
+  // 2. Duplicate check: same IP + layanan + today (24h per service)
   const existing = await prisma.respon.findFirst({
     where: {
       ipAddress: ip,
@@ -47,10 +55,10 @@ export async function submitSkmResponse(formData: FormData) {
   });
 
   if (existing) {
-    redirect("/success?status=duplicate");
+    redirect("/blocked?reason=duplicate");
   }
 
-  // ── 2. Check active period ────────────────────────────────────────────────
+  // 3. Check active period
   const activePeriod = await prisma.periode.findFirst({
     where: { status: "AKTIF" },
   });
@@ -58,7 +66,7 @@ export async function submitSkmResponse(formData: FormData) {
     redirect("/success?status=closed");
   }
 
-  // ── 3. Validate required fields ──────────────────────────────────────────
+  // 4. Validate required fields
   const pegawaiId     = formData.get("pegawaiId") as string;
   const nama          = formData.get("nama") as string;
   const tglLayananStr = formData.get("tglLayanan") as string;
@@ -67,40 +75,72 @@ export async function submitSkmResponse(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
-  // ── 4. Parse remaining fields ────────────────────────────────────────────
+  // 5. Parse fields
   const getInt = (key: string) => parseInt(formData.get(key) as string) || 0;
+  const getOptionalInt = (key: string): number | null => {
+    const val = parseInt(formData.get(key) as string);
+    return isNaN(val) ? null : val;
+  };
 
   let pekerjaan = formData.get("pekerjaan") as string;
   if (pekerjaan === "Lainnya") {
-    pekerjaan = (formData.get("pekerjaan_custom") as string) || "Lainnya";
+    const custom = (formData.get("pekerjaan_custom") as string)?.trim();
+    if (!custom) throw new Error("Pekerjaan custom is required");
+    pekerjaan = custom;
   }
 
   const isDifabel        = formData.get("isDifabel") as string;
   const jenisDisabilitas = isDifabel === "Ya"
-    ? (formData.get("jenisDisabilitas") as string)
+    ? (formData.get("jenisDisabilitas") as string) || null
     : null;
 
-  // ── 5. Save to database ──────────────────────────────────────────────────
+  const rating = getOptionalInt("rating");
+
+  // 6. Save to database
   await prisma.respon.create({
     data: {
-      periodeId: activePeriod.id,
+      periodeId:  activePeriod.id,
       layananId,
       pegawaiId,
       nama,
-      tglLayanan:        new Date(tglLayananStr),
-      usia:              getInt("usia"),
-      jenisKelamin:      formData.get("jenisKelamin") as string,
-      pendidikan:        formData.get("pendidikan") as string,
+      tglLayanan:       new Date(tglLayananStr),
+      usia:             getInt("usia"),
+      jenisKelamin:     formData.get("jenisKelamin") as string,
+      pendidikan:       formData.get("pendidikan") as string,
       pekerjaan,
       isDifabel,
       jenisDisabilitas,
       u1: getInt("u1"), u2: getInt("u2"), u3: getInt("u3"),
       u4: getInt("u4"), u5: getInt("u5"), u6: getInt("u6"),
       u7: getInt("u7"), u8: getInt("u8"), u9: getInt("u9"),
-      saran:     formData.get("saran") as string,
+      rating,
+      saran:     (formData.get("saran") as string) || null,
       ipAddress: ip,
     },
   });
 
   redirect("/success?status=success");
+}
+
+// SUBMIT UNBLOCK REQUEST
+export async function submitUnblockRequest(formData: FormData) {
+  const ip      = formData.get("ip") as string;
+  const message = formData.get("message") as string;
+  const email   = formData.get("email") as string;
+
+  if (!ip || !message) return { error: "IP dan pesan wajib diisi" };
+
+  const blocked = await prisma.blockedIp.findUnique({ where: { ip } });
+  if (!blocked) return { error: "IP tidak ditemukan dalam daftar blokir" };
+
+  await prisma.blockedIp.update({
+    where: { ip },
+    data: {
+      message,
+      messageAt:    new Date(),
+      messageEmail: email || null,
+    },
+  });
+
+  return { ok: true };
 }

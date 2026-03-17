@@ -24,7 +24,6 @@ interface Props {
   trendData: TrendPoint[];
 }
 
-// ── Line chart matching reference image exactly ───────────────────────────────
 function TrendLineChart({ data }: { data: TrendPoint[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<any>(null);
@@ -74,9 +73,8 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
               borderWidth: 1,
               padding: 10,
               cornerRadius: 6,
-              titleFont: { size: 11, weight: "bold" as const },
-              bodyFont: { size: 11 },
               displayColors: false,
+              titleFont: { size: 11, weight: "bold" as const },
               callbacks: {
                 title: (items: any[]) => items[0]?.label ?? "",
                 label: (item: any) => {
@@ -91,12 +89,12 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
             x: {
               grid: { display: false },
               border: { display: false },
-              ticks: { color: "#94a3b8", font: { size: 10 }, maxRotation: 0 },
+              ticks: { color: "#94a3b8", font: { size: 10 }, maxRotation: 0, maxTicksLimit: 8 },
             },
             y: {
-              grid: { color: "#f1f5f9", lineWidth: 1 },
+              grid: { color: "#f1f5f9" },
               border: { display: false },
-              ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 6, stepSize: 5 },
+              ticks: { color: "#94a3b8", font: { size: 10 }, maxTicksLimit: 6 },
               min: 60,
               max: 100,
             },
@@ -114,7 +112,6 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
   return <div style={{ height: 200 }}><canvas ref={canvasRef} /></div>;
 }
 
-// ── Bar chart for when no trend data ─────────────────────────────────────────
 function ServiceBarChart({ services, mode }: { services: ServiceChartData[]; mode: "ikm" | "count" }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<any>(null);
@@ -195,54 +192,79 @@ function ServiceBarChart({ services, mode }: { services: ServiceChartData[]; mod
   return <div style={{ height: 200 }}><canvas ref={canvasRef} /></div>;
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
 export default function DashboardChartsV2({ services, donutData, trendData }: Props) {
-  const [mode, setMode] = useState<"ikm" | "count">("ikm");
-  const hasTrend = trendData.length > 0;
+  const [mode, setMode]               = useState<"ikm" | "count">("ikm");
+  const [selectedService, setSelectedService] = useState<string>("all");
+
+  // Filter services by selected service for chart
+  const chartServices = selectedService === "all"
+    ? services
+    : services.filter(s => s.id === selectedService);
+
+  // For trend: if a specific service is selected, filter trend data
+  // (trendData is global — per-service trend would require a separate fetch)
+  const hasTrend = trendData.length > 0 && selectedService === "all";
+
+  // Filtered donut data based on service selection
+  const filteredDonut = selectedService === "all"
+    ? donutData
+    : donutData; // donut always shows all
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-      {/* Left: Line/Bar Chart */}
+      {/* Left: Chart */}
       <div className="lg:col-span-2 bg-white border border-gray-200 overflow-hidden">
         <div className="h-0.5" style={{ background: "linear-gradient(to right, #132B4F, #009CC5, #FAE705)" }} />
-
-        {/* Chart header */}
-        <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-0.5 h-4 bg-[#009CC5]" />
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-[#132B4F]">
                 {hasTrend ? "Tren IKM Keseluruhan (6 Bulan)" : "Perbandingan Kinerja Layanan"}
               </p>
-              <p className="text-[9px] text-gray-400 font-medium mt-0.5">Berdasarkan data survei per layanan</p>
+              <p className="text-[9px] text-gray-400 font-medium mt-0.5">
+                {selectedService === "all" ? "Semua layanan" : `${chartServices[0]?.name ?? "Layanan terpilih"}`}
+              </p>
             </div>
           </div>
-          {!hasTrend && (
-            <div className="flex gap-1">
-              {(["ikm", "count"] as const).map(m => (
-                <button key={m}
-                  aria-label={m === "ikm" ? "Tampilkan IKM" : "Tampilkan Responden"}
-                  onClick={() => setMode(m)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest transition-all rounded ${
-                    mode === m ? "bg-[#132B4F] text-white" : "text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
-                  }`}>
-                  {m === "ikm" ? <><TrendingUp className="w-3 h-3" />IKM</> : <><BarChart3 className="w-3 h-3" />Responden</>}
-                </button>
+          <div className="flex items-center gap-2">
+            {/* Service filter dropdown */}
+            <select
+              value={selectedService}
+              onChange={e => setSelectedService(e.target.value)}
+              title="Filter layanan"
+              className="px-2 py-1 border border-gray-200 text-[9px] font-bold text-[#132B4F] bg-white outline-none hover:border-gray-300 transition-colors max-w-[140px] truncate"
+            >
+              <option value="all">Semua Layanan</option>
+              {services.map(s => (
+                <option key={s.id} value={s.id}>{s.name.length > 20 ? s.name.slice(0, 20) + "…" : s.name}</option>
               ))}
-            </div>
-          )}
+            </select>
+            {!hasTrend && (
+              <div className="flex gap-1">
+                {(["ikm", "count"] as const).map(m => (
+                  <button key={m}
+                    aria-label={m === "ikm" ? "Tampilkan IKM" : "Tampilkan Responden"}
+                    onClick={() => setMode(m)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest transition-all rounded ${
+                      mode === m ? "bg-[#132B4F] text-white" : "text-gray-400 hover:text-[#132B4F] hover:bg-gray-50"
+                    }`}>
+                    {m === "ikm" ? <><TrendingUp className="w-3 h-3" />IKM</> : <><BarChart3 className="w-3 h-3" />Responden</>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Chart area */}
         <div className="px-5 pt-4 pb-2">
           {hasTrend
             ? <TrendLineChart data={trendData} />
-            : <ServiceBarChart services={services} mode={mode} />
+            : <ServiceBarChart services={chartServices} mode={mode} />
           }
         </div>
 
-        {/* Legend */}
         <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-4 flex-wrap">
           <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Kategori IKM:</p>
           {[
@@ -272,13 +294,8 @@ export default function DashboardChartsV2({ services, donutData, trendData }: Pr
           </div>
         </div>
         <div className="p-5">
-          {donutData.some(d => d.value > 0) ? (
-            <DonutChart
-              data={donutData}
-              height={200}
-              centerLabel="Layanan"
-              centerValue={donutData.reduce((s, d) => s + d.value, 0)}
-            />
+          {filteredDonut.some(d => d.value > 0) ? (
+            <DonutChart data={filteredDonut} height={200} centerLabel="Layanan" centerValue={filteredDonut.reduce((s, d) => s + d.value, 0)} />
           ) : (
             <div className="flex flex-col items-center justify-center gap-2" style={{ height: 200 }}>
               <BarChart3 className="w-8 h-8 text-gray-200" />
