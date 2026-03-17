@@ -30,8 +30,8 @@ function Popover({ trigger, children }: { trigger: React.ReactNode; children: Re
   }, []);
   return (
     <div ref={ref} className="relative">
-      <div onClick={() => setOpen(o => !o)} className="cursor-pointer">{trigger}</div>
-      {open && <div className="absolute top-full right-0 mt-2 z-50 animate-fade-down">{children}</div>}
+      <div onMouseDown={(e) => { e.stopPropagation(); setOpen(o => !o); }} className="cursor-pointer">{trigger}</div>
+      {open && <div className="absolute top-full right-0 mt-2 z-50 animate-fade-down" onMouseDown={(e) => e.stopPropagation()}>{children}</div>}
     </div>
   );
 }
