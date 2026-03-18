@@ -8,7 +8,7 @@ import { Activity, Layers, Users, QrCode } from "lucide-react";
 export default async function SettingsPage() {
   const activePeriod   = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
   const allPeriodes    = await prisma.periode.findMany({ orderBy: { createdAt: "desc" } });
-  const totalResponses = activePeriod ? await prisma.respon.count({ where: { periodeId: activePeriod.id } }) : 0;
+  const totalResponses = await prisma.respon.count(); // All-time across all periods
   const totalLayanan   = await prisma.layanan.count();
   const totalPegawai   = await prisma.pegawai.count();
 

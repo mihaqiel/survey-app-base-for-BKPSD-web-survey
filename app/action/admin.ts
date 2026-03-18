@@ -19,14 +19,14 @@ type EmployeeStat = {
 // 1. DASHBOARD OVERVIEW
 // ----------------------------------------------------------------------
 export async function getAdminDashboardStats() {
+  // Active period is for label/display only — dashboard shows ALL data across all periods
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
-  if (!activePeriod) return null;
 
   const services = await prisma.layanan.findMany({
     orderBy: { nama: "asc" },
     include: {
       respon: {
-        where: { periodeId: activePeriod.id },
+        // No periodeId filter — all responses across all periods
         select: {
           u1: true, u2: true, u3: true, u4: true, u5: true,
           u6: true, u7: true, u8: true, u9: true,
@@ -54,7 +54,7 @@ export async function getAdminDashboardStats() {
   }
 
   const allRespon = await prisma.respon.findMany({
-    where: { periodeId: activePeriod.id },
+    // No periodeId filter — all responses
     select: {
       createdAt: true, u1: true, u2: true, u3: true,
       u4: true, u5: true, u6: true, u7: true, u8: true, u9: true,
@@ -100,9 +100,8 @@ export async function getAdminDashboardStats() {
     .map(e => ({ id: e.id, nama: e.nama || "Unknown", count: e.count, ikm: parseFloat(((e.totalScore / (9 * e.count)) * 25).toFixed(2)) }))
     .sort((a, b) => b.ikm - a.ikm);
 
-  // ── Recent responses
+  // ── Recent responses (all periods)
   const recentRaw = await prisma.respon.findMany({
-    where: { periodeId: activePeriod.id },
     include: { layanan: { select: { nama: true } } },
     orderBy: { createdAt: "desc" },
     take: 10,
@@ -119,22 +118,19 @@ export async function getAdminDashboardStats() {
     };
   });
 
-  // ── Gender data
+  // ── Gender data (all periods)
   const genderRaw = await prisma.respon.groupBy({
     by: ["jenisKelamin"],
-    where: { periodeId: activePeriod.id },
     _count: { id: true },
   });
   const gender = genderRaw.map((g: any) => ({ label: g.jenisKelamin || "Lainnya", count: g._count.id }));
 
-  // ── Period dates
+  // ── Date range across all responses
   const firstRespon = await prisma.respon.findFirst({
-    where: { periodeId: activePeriod.id },
     orderBy: { createdAt: "asc" },
     select: { createdAt: true },
   });
   const lastRespon = await prisma.respon.findFirst({
-    where: { periodeId: activePeriod.id },
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });
@@ -142,7 +138,7 @@ export async function getAdminDashboardStats() {
   const fmt = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
   return {
-    periodLabel: activePeriod.label,
+    periodLabel: activePeriod?.label ?? "Semua Data",
     periodStart: firstRespon ? fmt(new Date(firstRespon.createdAt)) : "",
     periodEnd:   lastRespon  ? fmt(new Date(lastRespon.createdAt))  : "",
     totalResponses,

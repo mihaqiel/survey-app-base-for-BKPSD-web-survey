@@ -25,10 +25,9 @@ export default async function AdminDashboard() {
   if (!stats) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-        <div className="w-8 h-8 border-2 border-[#132B4F]/20 border-t-[#132B4F] rounded-full animate-spin" />
-        <p className="text-sm font-medium text-gray-500">Sistem Belum Diinisialisasi</p>
+        <p className="text-sm font-medium text-gray-500">Belum ada data survei</p>
         <Link href="/admin/settings"
-          className="px-6 py-2.5 text-white text-sm font-semibold bg-[#132B4F] hover:bg-slate-800 transition-all duration-200 rounded-md">
+          className="px-6 py-2.5 text-white text-sm font-semibold bg-slate-900 hover:bg-slate-800 transition-all duration-200 rounded-lg">
           Buka Pengaturan
         </Link>
       </div>
