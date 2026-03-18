@@ -112,7 +112,6 @@ export default function PortalForm() {
 
   const [layananList, setLayananList]     = useState<Layanan[]>([]);
   const [pegawaiList, setPegawaiList]     = useState<Pegawai[]>([]);
-  const [layananOpen, setLayananOpen]     = useState(false);
   const [layananSearch, setLayananSearch] = useState("");
   const [searching, setSearching]         = useState(false);  // dot-loading state
   const [selectedLayanan, setSelectedLayanan] = useState<Layanan | null>(null);
@@ -133,21 +132,11 @@ export default function PortalForm() {
   const [saran,           setSaran]           = useState("");
 
   const contentRef  = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     fetch("/api/layanan").then(r=>r.json()).then(setLayananList);
     fetch("/api/pegawai").then(r=>r.json()).then(setPegawaiList);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
-        setLayananOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   /* dot loading when typing search */
@@ -364,43 +353,12 @@ export default function PortalForm() {
       {/* ══ WARM BACKGROUND WRAPPER ══════════════════════════ */}
       <div className="portal-warm-bg" style={{ minHeight:"100vh" }}>
 
-        {/* ── STICKY PROGRESS HEADER ─────────────────────── */}
-        <div
-          className="sticky top-0 z-30"
-          style={{
-            background: "rgba(255,255,255,0.95)",
-            backdropFilter: "blur(14px)",
-            borderBottom: "1px solid #e2e8f0",
-            boxShadow: "0 2px 12px rgba(0,0,0,.06)",
-          }}
-        >
-          <div className="max-w-4xl mx-auto px-5 py-3.5 flex items-center gap-4">
-            {/* Yellow arrow badge */}
-            <div className="step-arrow shrink-0" style={{ fontFamily:"var(--pf-body)" }}>
-              {step + 1} <ArrowRight style={{ width:12, height:12, display:"inline" }} />
-            </div>
-
-            {/* Progress */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-bold text-slate-600" style={{ fontFamily:"var(--pf-body)" }}>
-                  {STEP_LABELS[step]}
-                </p>
-                <p className="text-xs font-black" style={{ color:"#0d2d58", fontFamily:"var(--pf-body)" }}>{pct}%</p>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
-                <div className="h-full grad-bar rounded-full transition-all duration-700" style={{ width:`${pct}%` }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* ── LAYOUT ─────────────────────────────────────── */}
-        <div className="max-w-4xl mx-auto px-4 pt-8 pb-4 flex gap-5 items-start">
+        <div className="max-w-4xl mx-auto px-4 pt-6 pb-4 flex gap-5 items-start">
 
           {/* SIDEBAR */}
-          <aside className="hidden lg:block w-48 shrink-0 sticky top-24">
-            <div className="rounded-2xl overflow-hidden bg-white shadow-sm" style={{ border:"1px solid #fde047" }}>
+          <aside className="hidden lg:block w-48 shrink-0 sticky top-6">
+            <div className="rounded-2xl overflow-hidden bg-white">
               <div className="px-4 py-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.1)", background:"#0d2d58" }}>
                 <p className="text-[10px] font-black tracking-[.18em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.6)" }}>
                   Tahapan Survei
@@ -429,7 +387,7 @@ export default function PortalForm() {
 
           {/* MAIN CARD */}
           <div className="flex-1 min-w-0">
-            <div ref={contentRef} className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border:"1px solid #fde047" }}>
+            <div ref={contentRef} className="bg-white rounded-2xl overflow-hidden">
               {/* Card header */}
               <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}>
                 <div>
@@ -453,105 +411,70 @@ export default function PortalForm() {
                         Pilih layanan BKPSDM yang baru saja Anda gunakan.
                       </p>
 
-                      <div ref={dropdownRef} className="relative">
-                        {/* Trigger */}
-                        <div role="button" tabIndex={0}
-                          onClick={() => setLayananOpen(o=>!o)}
-                          onKeyDown={e => e.key==="Enter" && setLayananOpen(o=>!o)}
-                          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 cursor-pointer select-none bg-white transition-all"
-                          style={{
-                            borderColor: layananOpen ? "#FAE705" : selectedLayanan ? "#fde047" : "#e2e8f0",
-                            boxShadow: layananOpen ? "0 0 0 3px rgba(250,231,5,.18)" : "0 1px 3px rgba(0,0,0,.05)",
-                          }}
-                        >
-                          <ClipboardList className="w-4 h-4 shrink-0" style={{ color: selectedLayanan?"#0d2d58":"#94a3b8" }} />
-                          <span className="flex-1 text-sm font-semibold truncate" style={{ color: selectedLayanan?"#0d1b2a":"#94a3b8", fontFamily:"var(--pf-body)" }}>
-                            {selectedLayanan ? selectedLayanan.nama : "Pilih layanan..."}
-                          </span>
-                          {selectedLayanan && (
-                            <button type="button" title="Hapus" aria-label="Hapus pilihan"
-                              onClick={e => { e.stopPropagation(); setSelectedLayanan(null); setLayananSearch(""); }}
-                              className="text-slate-300 hover:text-red-400 transition-colors p-0.5"
-                            >
-                              <X className="w-3.5 h-3.5"/>
-                            </button>
-                          )}
-                          <ChevronDown className={`w-4 h-4 text-slate-300 shrink-0 transition-transform duration-200 ${layananOpen?"rotate-180":""}`}/>
-                        </div>
-
-                        {/* Dropdown */}
-                        {layananOpen && (
-                          <div className="absolute z-20 w-full top-full mt-2 lay-drop">
-                            {/* Label + search */}
-                            <div className="px-4 pt-3 pb-2">
-                              <p className="text-[10px] font-black tracking-[.18em] uppercase text-amber-700 mb-2" style={{ fontFamily:"var(--pf-body)" }}>
-                                Pilih Layanan
-                              </p>
-                              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                                <Search className="w-3.5 h-3.5 shrink-0 text-slate-400"/>
-                                <input type="text" placeholder="Cari layanan..."
-                                  value={layananSearch}
-                                  onChange={e => handleLayananSearch(e.target.value)}
-                                  autoFocus
-                                  className="flex-1 text-sm font-semibold bg-transparent outline-none text-slate-800 placeholder-slate-400"
-                                  style={{ fontFamily:"var(--pf-body)" }}
-                                />
-                                {layananSearch && (
-                                  <button type="button" title="Hapus" aria-label="Hapus pencarian"
-                                    onClick={() => { setLayananSearch(""); setSearching(false); }}
-                                  >
-                                    <X className="w-3 h-3 text-slate-400 hover:text-red-400"/>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Dot loading OR results */}
-                            {searching ? (
-                              <div className="flex items-center gap-2.5 px-5 py-4">
-                                <span className="dot"/>
-                                <span className="dot"/>
-                                <span className="dot"/>
-                              </div>
-                            ) : (
-                              <div className="max-h-[320px] overflow-y-auto" style={{ borderTop:"1px solid #fef9c3" }}>
-                                {filteredLayanan.length === 0 ? (
-                                  <p className="px-5 py-4 text-xs text-slate-400 font-medium" style={{ fontFamily:"var(--pf-body)" }}>
-                                    Tidak ditemukan
-                                  </p>
-                                ) : filteredLayanan.map(l => {
-                                  const sel = selectedLayanan?.id === l.id;
-                                  return (
-                                    <button key={l.id} type="button"
-                                      onClick={() => { setSelectedLayanan(l); setLayananOpen(false); setLayananSearch(""); }}
-                                      className={`lay-item ${sel?"active":""}`}
-                                      style={{ fontFamily:"var(--pf-body)", borderBottom:"1px solid #fafafa" }}
-                                    >
-                                      <div className="w-1 h-4 rounded-full shrink-0" style={{ background: sel?"#FAE705":"#e2e8f0" }}/>
-                                      <span className="flex-1">{l.nama}</span>
-                                      {sel && <Check className="w-3.5 h-3.5 shrink-0 text-amber-600"/>}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            <div className="px-4 py-2" style={{ borderTop:"1px solid #fef9c3", background:"#fffce8" }}>
-                              <p className="text-[10px] font-semibold text-amber-600" style={{ fontFamily:"var(--pf-body)" }}>
-                                {filteredLayanan.length} layanan tersedia
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                      {/* Inline search — same pattern as Pilih Pegawai */}
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+                        <input type="text" placeholder="Cari layanan..."
+                          value={selectedLayanan ? selectedLayanan.nama : layananSearch}
+                          onChange={e => { setSelectedLayanan(null); handleLayananSearch(e.target.value); }}
+                          className={`${inputCls} pl-10`}
+                          style={{ fontFamily:"var(--pf-body)" }}
+                        />
                       </div>
 
-                      {selectedLayanan && (
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background:"#fefce8", border:"1.5px solid #fde047" }}>
-                          <Check className="w-4 h-4 shrink-0 text-amber-600"/>
-                          <div>
-                            <p className="text-[10px] font-bold tracking-wide uppercase text-amber-600" style={{ fontFamily:"var(--pf-body)" }}>Layanan Terpilih</p>
-                            <p className="text-sm font-bold text-slate-900" style={{ fontFamily:"var(--pf-body)" }}>{selectedLayanan.nama}</p>
+                      {/* Dot loading */}
+                      {searching && (
+                        <div className="flex items-center gap-2.5 px-2 py-1">
+                          <span className="dot"/><span className="dot"/><span className="dot"/>
+                        </div>
+                      )}
+
+                      {/* Inline list */}
+                      {!searching && !selectedLayanan && (
+                        <div className="rounded-xl overflow-hidden border border-slate-100">
+                          <div className="px-4 py-2.5 flex items-center justify-between bg-slate-50" style={{ borderBottom:"1px solid #f1f5f9" }}>
+                            <p className="text-[10px] font-black uppercase tracking-wide text-slate-500" style={{ fontFamily:"var(--pf-body)" }}>
+                              {layananSearch.length > 0 ? "Hasil Pencarian" : "Semua Layanan"}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-400" style={{ fontFamily:"var(--pf-body)" }}>
+                              {filteredLayanan.length} layanan
+                            </p>
                           </div>
+                          <div className="max-h-64 overflow-y-auto bg-white divide-y divide-slate-50">
+                            {filteredLayanan.length === 0 ? (
+                              <p className="px-5 py-4 text-xs text-slate-400 font-medium" style={{ fontFamily:"var(--pf-body)" }}>Tidak ditemukan</p>
+                            ) : filteredLayanan.map((l, i) => (
+                              <button key={l.id} type="button"
+                                onClick={() => { setSelectedLayanan(l); setLayananSearch(""); }}
+                                className="peg-item"
+                                style={{ fontFamily:"var(--pf-body)" }}
+                              >
+                                <span className="text-xs text-slate-300 w-5 shrink-0">{i + 1}</span>
+                                <div className="w-1 h-4 rounded-full bg-slate-200 shrink-0"/>
+                                <span className="flex-1 text-left">{l.nama}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Selected confirmation */}
+                      {selectedLayanan && (
+                        <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ background:"#fefce8", border:"1.5px solid #fde047" }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-1 h-5 rounded-full bg-amber-400"/>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wide text-amber-600" style={{ fontFamily:"var(--pf-body)" }}>Layanan Terpilih</p>
+                              <p className="text-sm font-bold text-slate-900" style={{ fontFamily:"var(--pf-body)" }}>{selectedLayanan.nama}</p>
+                            </div>
+                          </div>
+                          <button type="button"
+                            onClick={() => { setSelectedLayanan(null); setLayananSearch(""); }}
+                            className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-400 transition-colors"
+                            style={{ fontFamily:"var(--pf-body)" }}
+                          >
+                            <X className="w-3 h-3"/> Ganti
+                          </button>
                         </div>
                       )}
                     </div>
