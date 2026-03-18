@@ -27,6 +27,16 @@ const GALLERY = [
   { src: "/foto-4.jpg", alt: "Pelatihan ASN BKPSDM",      tag: "Kompetensi",  label: "Pelatihan ASN",     desc: "Pengembangan kompetensi aparatur sipil negara secara berkala" },
 ];
 
+const MANTAP = [
+  { letter: "M", word: "Melayani",    desc: "Memberikan pelayanan terbaik kepada ASN dan masyarakat dengan cepat, tepat, dan ramah." },
+  { letter: "A", word: "Akuntabel",   desc: "Melaksanakan setiap tugas secara bertanggung jawab, transparan, dan sesuai regulasi." },
+  { letter: "N", word: "Netral",      desc: "Bebas dari intervensi politik, menjaga keadilan dan objektivitas dalam setiap keputusan." },
+  { letter: "T", word: "Teladan",     desc: "Menjadi panutan dalam sikap, perilaku, dan etos kerja di lingkungan kantor maupun masyarakat." },
+  { letter: "A", word: "Akhlak",      desc: "Mengutamakan nilai-nilai moral, etika, dan integritas berlandaskan kejujuran serta tanggung jawab." },
+  { letter: "P", word: "Profesional", desc: "Bekerja secara kompeten, berorientasi pada hasil, dan senantiasa meningkatkan kualitas diri." },
+  { letter: "!", word: "Semangat",    desc: "Keyakinan penuh, semangat, serta energi positif dalam menjalankan tugas pelayanan publik." },
+];
+
 const STATS = [
   { value: "2008", label: "Tahun Berdiri",  sub: "Bersama Kab. Anambas"     },
   { value: "9",    label: "Unsur SKM",      sub: "Standar Permenpan RB"     },
@@ -141,6 +151,9 @@ function StatItem({ value, label, sub }: { value: string; label: string; sub: st
 /* ── Page ─────────────────────────────────────── */
 export default function TentangPage() {
   const [progress, setProgress] = useState(0);
+  const [tick, setTick] = useState(0);
+  const activePhoto  = tick % GALLERY.length;
+  const activeMantap = tick % MANTAP.length;
   const gallery = useInView(0.08);
   const pillars = useInView(0.08);
   const legal   = useInView(0.08);
@@ -153,6 +166,11 @@ export default function TentangPage() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 4500);
+    return () => clearInterval(timer);
   }, []);
 
   const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
@@ -354,103 +372,138 @@ export default function TentangPage() {
       </section>
 
       {/* ════════════════════════════════════
-          GALLERY
+          TAGLINE & GALLERY
       ════════════════════════════════════ */}
       <section className="bg-[#f8f7f3] py-24 px-6">
         <div ref={gallery.ref} className="max-w-6xl mx-auto">
 
-          {/* Header */}
-          <div className="mb-14 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          {/* Section label */}
+          <div className="flex items-center gap-3 mb-12" style={fade(gallery.inView, 0)}>
+            <span className="w-6 h-px block" style={{ background: "#FAE705" }} />
+            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>Tagline &amp; Galeri</span>
+          </div>
+
+          {/* Two-column: MANTAP left — photo carousel right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {/* ── LEFT: MANTAP breakdown ── */}
             <div>
-              <div className="flex items-center gap-3 mb-5" style={fade(gallery.inView, 0)}>
-                <span className="w-6 h-px block" style={{ background: "#FAE705" }} />
-                <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>Galeri Kegiatan</span>
-              </div>
-              <h2 className="serif text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                <WordReveal text="Bersatu, Bergerak," inView={gallery.inView} delay={0.1} />
-                <br />
-                <WordReveal text="Bertumbuh." inView={gallery.inView} delay={0.55} italic />
+              {/* Tagline heading */}
+              <h2 className="serif font-bold text-slate-900 leading-none mb-1" style={{ fontSize: "clamp(2.4rem,6vw,3.8rem)", ...fade(gallery.inView, 0.05) }}>
+                BKPSDM MANTAP<span style={{ color: "#FAE705" }}>!</span>
               </h2>
-            </div>
-            <p className="text-slate-400 text-sm max-w-xs leading-relaxed" style={fade(gallery.inView, 0.4)}>
-              Dokumentasi kegiatan dan kebersamaan jajaran BKPSDM dalam melayani dan mengabdi.
-            </p>
-          </div>
+              <p className="text-slate-400 text-sm mb-8 leading-relaxed" style={fade(gallery.inView, 0.12)}>
+                Pedoman nilai dan semangat kerja seluruh jajaran BKPSDM Kabupaten Kepulauan Anambas.
+              </p>
 
-          {/* Desktop: asymmetric 3-col grid — photos kept LARGE (320px rows) */}
-          <div className="hidden md:grid gap-3"
-            style={{ gridTemplateColumns: "1.3fr 1fr 1.3fr", gridTemplateRows: "320px 320px" }}>
-
-            {/* Photo 1 — tall left */}
-            <div className="photo-card" style={{ gridRow: "1 / 3", ...fade(gallery.inView, 0.15) }}>
-              <div className="photo-img-wrap">
-                <Image src={GALLERY[0].src} alt={GALLERY[0].alt} fill sizes="35vw" className="object-cover" priority />
-              </div>
-              <div className="photo-overlay">
-                <div className="photo-caption absolute bottom-0 left-0 right-0 p-6">
-                  <span className="block text-[9px] font-bold tracking-[0.3em] uppercase mb-1.5" style={{ color: "#FAE705" }}>{GALLERY[0].tag}</span>
-                  <p className="serif text-white text-xl font-semibold leading-tight">{GALLERY[0].label}</p>
-                  <p className="text-white/55 text-xs mt-1.5 leading-relaxed">{GALLERY[0].desc}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Photo 2 — top centre */}
-            <div className="photo-card" style={fade(gallery.inView, 0.3)}>
-              <div className="photo-img-wrap">
-                <Image src={GALLERY[1].src} alt={GALLERY[1].alt} fill sizes="25vw" className="object-cover" />
-              </div>
-              <div className="photo-overlay">
-                <div className="photo-caption absolute bottom-0 left-0 right-0 p-5">
-                  <span className="block text-[9px] font-bold tracking-[0.3em] uppercase mb-1" style={{ color: "#FAE705" }}>{GALLERY[1].tag}</span>
-                  <p className="serif text-white font-semibold leading-tight">{GALLERY[1].label}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Photo 4 — tall right */}
-            <div className="photo-card" style={{ gridRow: "1 / 3", ...fade(gallery.inView, 0.15) }}>
-              <div className="photo-img-wrap">
-                <Image src={GALLERY[3].src} alt={GALLERY[3].alt} fill sizes="35vw" className="object-cover" />
-              </div>
-              <div className="photo-overlay">
-                <div className="photo-caption absolute bottom-0 left-0 right-0 p-6">
-                  <span className="block text-[9px] font-bold tracking-[0.3em] uppercase mb-1.5" style={{ color: "#FAE705" }}>{GALLERY[3].tag}</span>
-                  <p className="serif text-white text-xl font-semibold leading-tight">{GALLERY[3].label}</p>
-                  <p className="text-white/55 text-xs mt-1.5 leading-relaxed">{GALLERY[3].desc}</p>
-                </div>
+              {/* Acronym list */}
+              <div className="space-y-1">
+                {MANTAP.map((item, i) => {
+                  const isActive = i === activeMantap;
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-start gap-4 rounded-xl px-4 py-3 transition-all duration-500"
+                      style={{
+                        background: isActive ? "rgba(250,231,5,0.09)" : "transparent",
+                        borderLeft: isActive ? "3px solid #FAE705" : "3px solid transparent",
+                        ...fade(gallery.inView, 0.15 + i * 0.06),
+                      }}
+                    >
+                      <span
+                        className="serif font-bold text-2xl leading-none w-7 shrink-0 text-center transition-colors duration-500"
+                        style={{ color: isActive ? "#FAE705" : "#c9a400", marginTop: "2px" }}
+                      >
+                        {item.letter}
+                      </span>
+                      <div>
+                        <p
+                          className="font-bold text-sm transition-colors duration-500"
+                          style={{ color: isActive ? "#0d2d58" : "#475569" }}
+                        >
+                          {item.word}
+                        </p>
+                        <p className="text-slate-400 text-xs leading-relaxed mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Photo 3 — bottom centre */}
-            <div className="photo-card" style={fade(gallery.inView, 0.45)}>
-              <div className="photo-img-wrap">
-                <Image src={GALLERY[2].src} alt={GALLERY[2].alt} fill sizes="25vw" className="object-cover" />
-              </div>
-              <div className="photo-overlay">
-                <div className="photo-caption absolute bottom-0 left-0 right-0 p-5">
-                  <span className="block text-[9px] font-bold tracking-[0.3em] uppercase mb-1" style={{ color: "#FAE705" }}>{GALLERY[2].tag}</span>
-                  <p className="serif text-white font-semibold leading-tight">{GALLERY[2].label}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile: 2×2 grid */}
-          <div className="md:hidden grid grid-cols-2 gap-2.5" style={{ gridTemplateRows: "200px 200px" }}>
-            {GALLERY.map((photo, i) => (
-              <div key={photo.src} className="photo-card" style={fade(gallery.inView, 0.1 + i * 0.1)}>
-                <div className="photo-img-wrap">
-                  <Image src={photo.src} alt={photo.alt} fill sizes="50vw" className="object-cover" />
-                </div>
-                <div className="photo-overlay">
-                  <div className="photo-caption absolute bottom-0 left-0 right-0 p-4">
-                    <span className="block text-[8px] font-bold tracking-widest uppercase mb-0.5" style={{ color: "#FAE705" }}>{photo.tag}</span>
-                    <p className="serif text-white text-sm font-semibold leading-tight">{photo.label}</p>
+            {/* ── RIGHT: photo carousel ── */}
+            <div style={fade(gallery.inView, 0.25)}>
+              {/* Photo frame — portrait aspect */}
+              <div
+                className="relative rounded-2xl overflow-hidden shadow-xl"
+                style={{ aspectRatio: "4 / 5" }}
+              >
+                {GALLERY.map((photo, i) => (
+                  <div
+                    key={photo.src}
+                    className="absolute inset-0 transition-opacity duration-1000"
+                    style={{ opacity: i === activePhoto ? 1 : 0, zIndex: i === activePhoto ? 1 : 0 }}
+                  >
+                    <Image
+                      src={photo.src}
+                      alt={photo.alt}
+                      fill
+                      sizes="(max-width: 1024px) 90vw, 45vw"
+                      className="object-cover"
+                      priority={i === 0}
+                    />
+                    {/* Caption gradient */}
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: "linear-gradient(to top, rgba(6,18,32,0.80) 0%, rgba(6,18,32,0.1) 50%, transparent 100%)" }}
+                    >
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <span
+                          className="text-[9px] font-bold tracking-[0.3em] uppercase"
+                          style={{ color: "#FAE705" }}
+                        >
+                          {photo.tag}
+                        </span>
+                        <p className="serif text-white text-xl font-semibold leading-tight mt-1">{photo.label}</p>
+                        <p className="text-white/60 text-xs mt-1.5 leading-relaxed">{photo.desc}</p>
+                      </div>
+                    </div>
                   </div>
+                ))}
+
+                {/* Dot indicators (clickable) */}
+                <div className="absolute bottom-5 right-5 flex gap-1.5 z-10">
+                  {GALLERY.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setTick((t) => Math.floor(t / GALLERY.length) * GALLERY.length + i)}
+                      aria-label={`Foto ${i + 1}`}
+                      className="transition-all duration-300"
+                      style={{
+                        width: i === activePhoto ? "20px" : "6px",
+                        height: "6px",
+                        borderRadius: "3px",
+                        background: i === activePhoto ? "#FAE705" : "rgba(255,255,255,0.45)",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
+
+              {/* Counter below photo */}
+              <div className="flex items-center justify-between mt-4 px-1">
+                <p className="text-sm font-medium text-slate-600">{GALLERY[activePhoto].label}</p>
+                <p className="text-xs font-mono text-slate-300">
+                  <span className="text-slate-600 font-semibold">{activePhoto + 1}</span>
+                  <span className="mx-1">/</span>
+                  {GALLERY.length}
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
