@@ -163,7 +163,7 @@ export default function PublicHeader() {
             borderTop: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <div className="max-w-5xl mx-auto px-6 flex items-center">
+          <div className="max-w-5xl mx-auto px-6 flex items-center justify-center">
 
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
@@ -174,30 +174,13 @@ export default function PublicHeader() {
                   className={`hdr-nav-item${isActive ? " active" : ""} px-5 py-3 text-[11px] font-semibold tracking-[0.18em] uppercase`}
                   style={{
                     fontFamily: "var(--hdr-body)",
-                    color: isActive ? "#FAE705" : "rgba(255,255,255,0.5)",
+                    color: "rgba(255,255,255,0.85)",
                   }}
                 >
                   {link.label}
                 </Link>
               );
             })}
-
-            {/* Right: motto */}
-            <div className="ml-auto hidden md:flex items-center gap-3">
-              <div
-                className="hdr-grad-bar rounded-full"
-                style={{ width: 4, height: 4 }}
-              />
-              <p
-                className="text-[9px] tracking-[0.2em] uppercase"
-                style={{
-                  fontFamily: "var(--hdr-body)",
-                  color: "rgba(255,255,255,0.22)",
-                }}
-              >
-                Melayani &middot; Akuntabel &middot; Profesional
-              </p>
-            </div>
 
           </div>
         </div>

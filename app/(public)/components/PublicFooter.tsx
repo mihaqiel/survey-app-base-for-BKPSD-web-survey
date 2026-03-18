@@ -175,23 +175,6 @@ export default function PublicFooter() {
                 Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Kabupaten Kepulauan Anambas.
               </div>
 
-              {/* MANTAR motto dots */}
-              <div className="flex items-center gap-2">
-                {["M","A","N","T","A","R","!"].map((char) => (
-                  <span
-                    key={char}
-                    className="text-[10px] font-bold tracking-wider"
-                    style={{
-                      fontFamily: "var(--ftr-display)",
-                      color: char === "!" ? "rgba(255,255,255,0.3)" : "#38bdf8",
-                      opacity: 0.7,
-                    }}
-                  >
-                    {char}
-                  </span>
-                ))}
-              </div>
-
               {/* Social icons */}
               <div className="flex gap-2">
                 <SocialIcon title="Instagram" href="#">
@@ -224,29 +207,6 @@ export default function PublicFooter() {
                 ))}
               </nav>
 
-              {/* Divider */}
-              <div className="ftr-divider my-7" />
-
-              {/* Legal references */}
-              <p className="ftr-section-heading">Landasan Hukum</p>
-              <div className="flex flex-col gap-2">
-                {[
-                  "Permenpan RB No. 14 / 2017",
-                  "UU No. 25 / 2009",
-                  "PP No. 96 / 2012",
-                ].map((item) => (
-                  <p
-                    key={item}
-                    className="text-[12px] leading-snug"
-                    style={{
-                      fontFamily: "var(--ftr-body)",
-                      color: "rgba(255,255,255,0.25)",
-                    }}
-                  >
-                    {item}
-                  </p>
-                ))}
-              </div>
             </div>
 
             {/* ── COL 3: Contact ─── */}
@@ -283,28 +243,6 @@ export default function PublicFooter() {
 
               </div>
 
-              {/* Divider */}
-              <div className="ftr-divider my-7" />
-
-              {/* Logos row */}
-              <div className="flex items-center gap-4 opacity-40">
-                <Image
-                  src="/logo-anambas.png"
-                  alt="Lambang Anambas"
-                  width={28}
-                  height={32}
-                  className="object-contain brightness-0 invert"
-                  style={{ height: 28, width: "auto" }}
-                />
-                <Image
-                  src="/logo-anambas-maju.png"
-                  alt="Anambas Maju"
-                  width={60}
-                  height={28}
-                  className="object-contain brightness-0 invert"
-                  style={{ height: 24, width: "auto" }}
-                />
-              </div>
             </div>
 
           </div>
