@@ -159,8 +159,8 @@ export default function PublicHeader() {
         {/* ── NAV BAR ────────────────────────────────── */}
         <div
           style={{
-            background: "rgba(7,20,40,0.7)",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            background: "#ffffff",
+            borderTop: "1px solid rgba(13,45,88,0.08)",
           }}
         >
           <div className="max-w-5xl mx-auto px-6 flex items-center justify-center">
@@ -174,7 +174,7 @@ export default function PublicHeader() {
                   className={`hdr-nav-item${isActive ? " active" : ""} px-5 py-3 text-[11px] font-semibold tracking-[0.18em] uppercase`}
                   style={{
                     fontFamily: "var(--hdr-body)",
-                    color: "rgba(255,255,255,0.85)",
+                    color: isActive ? "#0d2d58" : "rgba(13,45,88,0.55)",
                   }}
                 >
                   {link.label}

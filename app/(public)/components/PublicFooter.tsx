@@ -260,19 +260,7 @@ export default function PublicFooter() {
             >
               &copy; {year} BKPSDM Kabupaten Kepulauan Anambas &mdash; Sistem Survei Kepuasan Masyarakat
             </p>
-            <div className="flex items-center gap-2">
-              {/* tiny animated gradient dot */}
-              <div
-                className="ftr-grad-bar rounded-full"
-                style={{ width: 6, height: 6, flexShrink: 0 }}
-              />
-              <p
-                className="text-[11px]"
-                style={{ fontFamily: "var(--ftr-body)", color: "rgba(255,255,255,0.14)" }}
-              >
-                Berdasarkan Permenpan RB No. 14 Tahun 2017
-              </p>
-            </div>
+            <div />
           </div>
         </div>
 
