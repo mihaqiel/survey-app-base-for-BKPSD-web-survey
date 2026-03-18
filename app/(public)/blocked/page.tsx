@@ -17,10 +17,18 @@ export default function BlockedPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setReason(params.get("reason") ?? "duplicate");
-    fetch("https://api.ipify.org?format=json")
-      .then(r => r.json())
-      .then(d => setIp(d.ip))
-      .catch(() => setIp("unknown"));
+    // Use server-provided IP from redirect URL — this matches exactly what is
+    // stored in the blockedIp table (server-detected, not public/NAT IP).
+    const serverIp = params.get("ip");
+    if (serverIp) {
+      setIp(serverIp);
+    } else {
+      // Fallback only when no ip param present (legacy URLs)
+      fetch("https://api.ipify.org?format=json")
+        .then(r => r.json())
+        .then(d => setIp(d.ip))
+        .catch(() => setIp("unknown"));
+    }
   }, []);
 
   const isDuplicate = reason === "duplicate";

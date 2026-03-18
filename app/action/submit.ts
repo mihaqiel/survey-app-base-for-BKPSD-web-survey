@@ -38,7 +38,7 @@ export async function submitSkmResponse(formData: FormData) {
     select: { id: true },
   });
   if (blockedIp) {
-    redirect("/blocked?reason=manual");
+    redirect(`/blocked?reason=manual&ip=${encodeURIComponent(ip)}`);
   }
 
   // 2. Duplicate check: same IP + layanan + today (24h per service)
