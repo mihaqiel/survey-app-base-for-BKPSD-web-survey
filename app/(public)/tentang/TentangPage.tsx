@@ -322,10 +322,10 @@ export default function TentangPage() {
           {/* Heading — character-by-character */}
           <h1 className="serif mb-5 leading-[1.1]">
             <span className="block text-4xl sm:text-5xl md:text-[3.8rem] font-bold text-white">
-              <CharReveal text="Badan Kepegawaian" delay={0.3} />
+              <CharReveal text="Badan Kepegawaian dan" delay={0.3} />
             </span>
             <span className="block text-4xl sm:text-5xl md:text-[3.8rem] font-normal italic" style={{ color: "rgba(255,255,255,0.7)" }}>
-              <CharReveal text="& Pengembangan SDM" delay={0.85} />
+              <CharReveal text="Pengembangan Sumber Daya Manusia" delay={0.85} />
             </span>
           </h1>
 
@@ -338,8 +338,8 @@ export default function TentangPage() {
           {/* Body */}
           <p className="char-in text-white/55 text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
             style={{ animationDelay: "1.75s" }}>
-            Berkomitmen mewujudkan aparatur sipil negara yang profesional, transparan, dan berdedikasi
-            dalam melayani masyarakat Kepulauan Anambas secara berkelanjutan.
+            Berkomitmen memberikan pelayanan yang profesional, transparan, akuntabel dalam melayani
+            masyarakat Kabupaten Kepulauan Anambas.
           </p>
         </div>
 
