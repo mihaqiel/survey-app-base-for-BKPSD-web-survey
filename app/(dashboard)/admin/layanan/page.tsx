@@ -146,6 +146,7 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
   const [loading, setLoading]         = useState(true);
   const [selectedRespondent, setSelectedRespondent] = useState<any>(null);
   const [filter, setFilter]           = useState({ jenisKelamin: "", pendidikan: "", pekerjaan: "" });
+  const [saranSearch, setSaranSearch] = useState("");
 
   useEffect(() => {
     if (!selectedPeriode) return;
@@ -160,6 +161,12 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
     if (filter.jenisKelamin && r.jenisKelamin !== filter.jenisKelamin) return false;
     if (filter.pendidikan   && r.pendidikan   !== filter.pendidikan)   return false;
     if (filter.pekerjaan    && r.pekerjaan    !== filter.pekerjaan)    return false;
+    if (saranSearch.trim()) {
+      const q = saranSearch.toLowerCase();
+      const matchNama  = r.nama?.toLowerCase().includes(q);
+      const matchSaran = r.saran?.toLowerCase().includes(q);
+      if (!matchNama && !matchSaran) return false;
+    }
     return true;
   }) ?? [];
 
@@ -265,6 +272,27 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
             {/* RESPONDEN */}
             {activeTab === "responden" && (
               <div className="p-5 space-y-3">
+                {/* Text search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Cari nama responden atau isi saran..."
+                    value={saranSearch}
+                    onChange={e => setSaranSearch(e.target.value)}
+                    className="w-full pl-9 pr-9 py-2 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-white outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition-all placeholder-gray-400"
+                  />
+                  {saranSearch && (
+                    <button
+                      onClick={() => setSaranSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Demographic filters */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   {[
@@ -280,8 +308,8 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                       {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ))}
-                  {(filter.jenisKelamin || filter.pendidikan || filter.pekerjaan) && (
-                    <button onClick={() => setFilter({ jenisKelamin: "", pendidikan: "", pekerjaan: "" })}
+                  {(filter.jenisKelamin || filter.pendidikan || filter.pekerjaan || saranSearch) && (
+                    <button onClick={() => { setFilter({ jenisKelamin: "", pendidikan: "", pekerjaan: "" }); setSaranSearch(""); }}
                       className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700">
                       <X className="w-3 h-3" />Reset
                     </button>
@@ -293,27 +321,56 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-gray-50/50 border-b border-gray-100">
-                        {["Nama", "Pegawai", "Tanggal", "IKM"].map(h => (
+                        {["Nama", "Saran", "Tanggal", "IKM"].map(h => (
                           <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {filteredRespondents.length === 0 ? (
-                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">Tidak ada data</td></tr>
-                      ) : filteredRespondents.map((r: any) => (
-                        <tr key={r.id} onClick={() => setSelectedRespondent(r)}
-                          className="hover:bg-gray-50 transition-colors cursor-pointer group">
-                          <td className="px-4 py-2.5 text-sm font-medium text-slate-900 group-hover:text-blue-600 truncate transition-colors">{r.nama}</td>
-                          <td className="px-4 py-2.5 text-sm text-slate-500 truncate">{r.pegawai}</td>
-                          <td className="px-4 py-2.5 text-sm text-slate-400">{r.tglLayanan}</td>
-                          <td className="px-4 py-2.5 text-sm font-bold" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
-                        </tr>
-                      ))}
+                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">
+                          {saranSearch ? `Tidak ada hasil untuk "${saranSearch}"` : "Tidak ada data"}
+                        </td></tr>
+                      ) : filteredRespondents.map((r: any) => {
+                        const hasSaran = r.saran && r.saran.trim() && r.saran !== "-";
+                        const highlight = saranSearch.trim()
+                          ? (text: string) => {
+                              if (!text) return <span>{text}</span>;
+                              const idx = text.toLowerCase().indexOf(saranSearch.toLowerCase());
+                              if (idx === -1) return <span>{text}</span>;
+                              return (
+                                <span>
+                                  {text.slice(0, idx)}
+                                  <mark className="bg-yellow-100 text-yellow-900 rounded px-0.5">{text.slice(idx, idx + saranSearch.length)}</mark>
+                                  {text.slice(idx + saranSearch.length)}
+                                </span>
+                              );
+                            }
+                          : (text: string) => <span>{text}</span>;
+                        return (
+                          <tr key={r.id} onClick={() => setSelectedRespondent(r)}
+                            className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                            <td className="px-4 py-2.5 text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors max-w-[100px] truncate">
+                              {highlight(r.nama)}
+                            </td>
+                            <td className="px-4 py-2.5 max-w-[160px]">
+                              {hasSaran ? (
+                                <span className="text-xs leading-relaxed text-slate-500 line-clamp-2">
+                                  {highlight(r.saran)}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-gray-300 italic">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{r.tglLayanan}</td>
+                            <td className="px-4 py-2.5 text-sm font-bold whitespace-nowrap" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-slate-400 text-center">Klik nama responden untuk melihat detail penilaian U1–U9</p>
+                <p className="text-xs text-slate-400 text-center">Klik baris untuk melihat detail penilaian U1–U9</p>
               </div>
             )}
 

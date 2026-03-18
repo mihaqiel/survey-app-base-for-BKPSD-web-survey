@@ -109,13 +109,12 @@ const PEKERJAAN = [
   "Lainnya",
 ];
 
-// Steps: 0=pilih layanan, 1=data diri, 2=pilih pegawai, 3=rating pegawai, 4-12=SKM Q1-Q9, 13=saran & kirim
+// Steps: 0=pilih layanan, 1=data diri, 2=pilih pegawai, 3-11=SKM Q1-Q9, 12=rating pegawai, 13=saran & kirim
 const TOTAL_STEPS = 14;
 const STEP_LABELS = [
   "Pilih Layanan",
   "Data Diri",
   "Pilih Pegawai",
-  "Rating Pegawai",
   "Q1 · Persyaratan",
   "Q2 · Prosedur",
   "Q3 · Waktu",
@@ -125,6 +124,7 @@ const STEP_LABELS = [
   "Q7 · Perilaku",
   "Q8 · Sarana",
   "Q9 · Pengaduan",
+  "Rating Pegawai",
   "Saran & Kirim",
 ];
 
@@ -321,8 +321,8 @@ export default function PortalForm() {
         tglLayanan
       );
     if (step === 2) return !!selectedPegawai;
-    if (step === 3) return employeeRating > 0;
-    if (step >= 4 && step <= 12) return !!answers[`u${step - 3}`];
+    if (step >= 3 && step <= 11) return !!answers[`u${step - 2}`];
+    if (step === 12) return employeeRating > 0;
     return true;
   };
 
@@ -848,24 +848,115 @@ export default function PortalForm() {
                   </div>
                 )}
 
-                {/* STEP 3: RATING PEGAWAI */}
-                {step === 3 && selectedPegawai && (
+                {/* STEPS 3–11: SKM QUESTIONS */}
+                {step >= 3 && step <= 11 && (
+                  <div className="space-y-6">
+                    {/* Question header */}
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-xs shadow-sm">
+                        {SKM_QUESTIONS[step - 3].code}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wide">
+                          Unsur {step - 2} dari 9 · {SKM_QUESTIONS[step - 3].label}
+                        </p>
+                        <p className="text-base font-semibold leading-relaxed text-slate-900">
+                          {SKM_QUESTIONS[step - 3].text}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Answer options — 2-col on mobile, 4-col on sm+ */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {SKM_OPTIONS.map((opt) => {
+                        const key = `u${step - 2}`;
+                        const selected = answers[key] === opt.val;
+                        return (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() =>
+                              setAnswers((a) => ({ ...a, [key]: opt.val }))
+                            }
+                            className={`relative py-6 border-2 rounded-xl text-center transition-all focus:outline-none active:scale-95 ${
+                              selected
+                                ? "border-blue-500 bg-blue-50 shadow-sm"
+                                : "border-gray-200 hover:border-blue-200 bg-white hover:shadow-sm"
+                            }`}
+                          >
+                            {selected && (
+                              <span className="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5 text-white" />
+                              </span>
+                            )}
+                            <span
+                              className="flex justify-center mb-2"
+                              style={{ color: selected ? opt.color : "#d1d5db" }}
+                            >
+                              {opt.icon}
+                            </span>
+                            <span
+                              className={`block text-2xl font-black mb-0.5 ${selected ? "text-blue-700" : "text-gray-300"}`}
+                            >
+                              {opt.val}
+                            </span>
+                            <span
+                              className={`block text-xs font-semibold ${selected ? "text-blue-600" : "text-gray-400"}`}
+                            >
+                              {opt.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Progress dots */}
+                    <div className="flex items-center gap-2 justify-center pt-2">
+                      {SKM_QUESTIONS.map((q, i) => {
+                        const isCurrent = i === step - 3;
+                        const isDone = !!answers[`u${i + 1}`];
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-1">
+                            <div
+                              className={`rounded-full transition-all duration-300 ${
+                                isCurrent
+                                  ? "w-6 h-2 bg-blue-600"
+                                  : isDone
+                                    ? "w-2 h-2 bg-green-500"
+                                    : "w-2 h-2 bg-gray-200"
+                              }`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-center text-xs text-gray-400 font-medium">
+                      {Object.keys(answers).length} dari 9 pertanyaan dijawab
+                    </p>
+                  </div>
+                )}
+
+                {/* STEP 12: RATING PEGAWAI */}
+                {step === 12 && selectedPegawai && (
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3 mb-2">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">
+                    <div className="flex items-center gap-4 bg-gradient-to-r from-blue-50 to-slate-50 border border-blue-100 rounded-xl px-5 py-4 mb-2">
+                      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 text-base font-bold text-white shadow-sm">
                         {selectedPegawai.nama
                           .split(" ")
-                          .map((w) => w[0])
+                          .map((w: string) => w[0])
                           .slice(0, 2)
                           .join("")
                           .toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-400">
+                        <p className="text-xs font-semibold text-blue-500">
                           Pegawai yang Melayani
                         </p>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p className="text-base font-bold text-slate-900">
                           {selectedPegawai.nama}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Semua 9 unsur SKM telah dijawab ✓
                         </p>
                       </div>
                     </div>
@@ -877,76 +968,6 @@ export default function PortalForm() {
                       value={employeeRating}
                       onChange={setEmployeeRating}
                     />
-                  </div>
-                )}
-
-                {/* STEPS 4–12: SKM QUESTIONS */}
-                {step >= 4 && step <= 12 && (
-                  <div className="space-y-6">
-                    <div className="flex items-start gap-3 mb-2">
-                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0 text-blue-600 font-bold text-xs">
-                        {SKM_QUESTIONS[step - 4].code}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-blue-600 mb-1">
-                          {SKM_QUESTIONS[step - 4].label}
-                        </p>
-                        <p className="text-base font-semibold leading-relaxed text-slate-900">
-                          {SKM_QUESTIONS[step - 4].text}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {SKM_OPTIONS.map((opt) => {
-                        const key = `u${step - 3}`;
-                        const selected = answers[key] === opt.val;
-                        return (
-                          <button
-                            key={opt.val}
-                            type="button"
-                            onClick={() =>
-                              setAnswers((a) => ({ ...a, [key]: opt.val }))
-                            }
-                            className={`py-5 border rounded-xl text-center transition-all focus:outline-none ${
-                              selected
-                                ? "border-blue-200 bg-blue-50"
-                                : "border-gray-200 hover:border-blue-200 bg-white"
-                            }`}
-                          >
-                            <span
-                              className={`flex justify-center mb-1 ${selected ? "text-blue-600" : "text-gray-300"}`}
-                            >
-                              {opt.icon}
-                            </span>
-                            <span
-                              className={`block text-xl font-bold ${selected ? "text-blue-700" : "text-gray-400"}`}
-                            >
-                              {opt.val}
-                            </span>
-                            <span
-                              className={`block text-xs font-semibold mt-1 ${selected ? "text-blue-600" : "text-gray-400"}`}
-                            >
-                              {opt.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Progress dots */}
-                    <div className="flex items-center gap-1.5 justify-center pt-2">
-                      {SKM_QUESTIONS.map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${
-                            i === step - 4
-                              ? "w-5 bg-blue-600"
-                              : answers[`u${i + 1}`]
-                                ? "w-3 bg-slate-900"
-                                : "w-1.5 bg-gray-200"
-                          }`}
-                        />
-                      ))}
-                    </div>
                   </div>
                 )}
 
@@ -974,45 +995,109 @@ export default function PortalForm() {
                         </p>
                       </div>
                       <div className="divide-y divide-gray-50">
-                        {[
-                          {
-                            icon: <ClipboardList className="w-4 h-4" />,
-                            label: "Layanan",
-                            val: selectedLayanan?.nama,
-                          },
-                          {
-                            icon: <User className="w-4 h-4" />,
-                            label: "Responden",
-                            val: `${nama} · ${usia} thn · ${jenisKelamin}`,
-                          },
-                          {
-                            icon: <UserCheck className="w-4 h-4" />,
-                            label: "Pegawai",
-                            val: `${selectedPegawai?.nama} · ${employeeRating > 0 ? `${employeeRating}★` : "—"}`,
-                          },
-                          {
-                            icon: <CheckCircle2 className="w-4 h-4" />,
-                            label: "Penilaian",
-                            val: `${Object.keys(answers).length} dari 9 unsur dijawab`,
-                          },
-                        ].map((row) => (
-                          <div
-                            key={row.label}
-                            className="px-5 py-3 flex items-start gap-4"
-                          >
-                            <span className="text-blue-600 mt-0.5 shrink-0">
-                              {row.icon}
-                            </span>
-                            <div>
-                              <p className="text-xs font-semibold text-slate-400">
-                                {row.label}
-                              </p>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {row.val}
-                              </p>
-                            </div>
+                        {/* Layanan */}
+                        <div className="px-5 py-3 flex items-start gap-4">
+                          <span className="text-blue-600 mt-0.5 shrink-0">
+                            <ClipboardList className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-400">Layanan</p>
+                            <p className="text-sm font-semibold text-slate-900">{selectedLayanan?.nama}</p>
                           </div>
-                        ))}
+                        </div>
+                        {/* Responden */}
+                        <div className="px-5 py-3 flex items-start gap-4">
+                          <span className="text-blue-600 mt-0.5 shrink-0">
+                            <User className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-400">Responden</p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {nama} · {usia} thn · {jenisKelamin}
+                            </p>
+                          </div>
+                        </div>
+                        {/* Pegawai */}
+                        <div className="px-5 py-3 flex items-start gap-4">
+                          <span className="text-blue-600 mt-0.5 shrink-0">
+                            <UserCheck className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-400">Pegawai</p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {selectedPegawai?.nama} ·{" "}
+                              {employeeRating > 0
+                                ? Array.from({ length: 5 }, (_, i) => (
+                                    <Star
+                                      key={i}
+                                      className="inline w-3 h-3"
+                                      style={{
+                                        color: i < employeeRating ? "#f59e0b" : "#e2e8f0",
+                                        fill: i < employeeRating ? "#f59e0b" : "none",
+                                      }}
+                                    />
+                                  ))
+                                : "—"}
+                            </p>
+                          </div>
+                        </div>
+                        {/* U1-U9 answers grid */}
+                        <div className="px-5 py-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-blue-600 shrink-0">
+                              <CheckCircle2 className="w-4 h-4" />
+                            </span>
+                            <p className="text-xs font-semibold text-slate-400">
+                              Penilaian 9 Unsur SKM
+                            </p>
+                            <span className="ml-auto text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                              {Object.keys(answers).length}/9 dijawab
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {SKM_QUESTIONS.map((q, i) => {
+                              const val = answers[`u${i + 1}`];
+                              const opt = SKM_OPTIONS.find((o) => o.val === val);
+                              return (
+                                <div
+                                  key={q.code}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                                    val
+                                      ? "border-gray-100 bg-gray-50"
+                                      : "border-dashed border-gray-200 bg-white"
+                                  }`}
+                                >
+                                  <span
+                                    className="shrink-0"
+                                    style={{ color: opt ? opt.color : "#d1d5db" }}
+                                  >
+                                    {opt ? (
+                                      <span className="[&>svg]:w-3.5 [&>svg]:h-3.5">
+                                        {opt.icon}
+                                      </span>
+                                    ) : (
+                                      <MinusCircle className="w-3.5 h-3.5 text-gray-300" />
+                                    )}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-slate-500 leading-none">
+                                      {q.code}
+                                    </p>
+                                    <p className="text-xs text-slate-400 truncate">{q.label}</p>
+                                  </div>
+                                  {val && (
+                                    <span
+                                      className="ml-auto text-xs font-black shrink-0"
+                                      style={{ color: opt?.color }}
+                                    >
+                                      {val}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1055,7 +1140,11 @@ export default function PortalForm() {
                       disabled={!canProceed()}
                       className="flex-1 py-3 bg-slate-900 text-white font-semibold text-sm rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all group flex items-center justify-center gap-1.5"
                     >
-                      {step === 12 ? "Lanjut ke Saran" : "Lanjut"}
+                      {step === 11
+                        ? "Lanjut ke Rating Pegawai"
+                        : step === 12
+                          ? "Lanjut ke Saran & Kirim"
+                          : "Lanjut"}
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1 group-disabled:translate-x-0" />
                     </button>
                   </div>
