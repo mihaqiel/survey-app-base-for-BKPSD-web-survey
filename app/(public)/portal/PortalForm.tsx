@@ -279,7 +279,7 @@ export default function PortalForm() {
         /* ── Sidebar ── */
         .sidebar-item { display:flex; align-items:center; gap:9px; padding:7px 12px; border-radius:9px; transition:all .18s; font-size:12px; font-weight:600; }
         .sidebar-item.done    { color:#64748b; }
-        .sidebar-item.current { background:#fef9c3; color:#92400e; }
+        .sidebar-item.current { background:#0d2d58; color:#ffffff; }
         .sidebar-item.pending { color:#cbd5e1; }
 
         /* ── Answer cards (light) ── */
@@ -386,7 +386,7 @@ export default function PortalForm() {
                 <p className="text-xs font-bold text-slate-600" style={{ fontFamily:"var(--pf-body)" }}>
                   {STEP_LABELS[step]}
                 </p>
-                <p className="text-xs font-black" style={{ color:"#92400e", fontFamily:"var(--pf-body)" }}>{pct}%</p>
+                <p className="text-xs font-black" style={{ color:"#0d2d58", fontFamily:"var(--pf-body)" }}>{pct}%</p>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
                 <div className="h-full grad-bar rounded-full transition-all duration-700" style={{ width:`${pct}%` }} />
@@ -401,8 +401,8 @@ export default function PortalForm() {
           {/* SIDEBAR */}
           <aside className="hidden lg:block w-48 shrink-0 sticky top-24">
             <div className="rounded-2xl overflow-hidden bg-white shadow-sm" style={{ border:"1px solid #fde047" }}>
-              <div className="px-4 py-3" style={{ borderBottom:"1px solid #fef9c3", background:"#fffce8" }}>
-                <p className="text-[10px] font-black tracking-[.18em] uppercase text-amber-700" style={{ fontFamily:"var(--pf-body)" }}>
+              <div className="px-4 py-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.1)", background:"#0d2d58" }}>
+                <p className="text-[10px] font-black tracking-[.18em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.6)" }}>
                   Tahapan Survei
                 </p>
               </div>
@@ -413,8 +413,8 @@ export default function PortalForm() {
                     <div key={i} className={`sidebar-item ${cur?"current":done?"done":"pending"}`} style={{ fontFamily:"var(--pf-body)" }}>
                       <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded-md text-[10px] font-bold"
                         style={{
-                          background: cur?"#fef08a":done?"#dcfce7":"#f1f5f9",
-                          color: cur?"#92400e":done?"#16a34a":"#cbd5e1",
+                          background: cur?"rgba(250,231,5,0.2)":done?"#dcfce7":"#f1f5f9",
+                          color: cur?"#FAE705":done?"#16a34a":"#cbd5e1",
                         }}
                       >
                         {done ? <Check className="w-3 h-3"/> : i+1}
@@ -431,12 +431,12 @@ export default function PortalForm() {
           <div className="flex-1 min-w-0">
             <div ref={contentRef} className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border:"1px solid #fde047" }}>
               {/* Card header */}
-              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid #fef9c3", background:"#fffce8" }}>
+              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}>
                 <div>
-                  <p className="text-[10px] font-black tracking-[.18em] uppercase text-amber-600 mb-0.5" style={{ fontFamily:"var(--pf-body)" }}>
+                  <p className="text-[10px] font-black tracking-[.18em] uppercase mb-0.5" style={{ fontFamily:"var(--pf-body)", color:"rgba(250,231,5,0.8)" }}>
                     Langkah {step+1} dari {TOTAL_STEPS}
                   </p>
-                  <p className="text-lg font-bold text-slate-900" style={{ fontFamily:"var(--pf-display)" }}>
+                  <p className="text-lg font-bold text-white" style={{ fontFamily:"var(--pf-display)" }}>
                     {STEP_LABELS[step]}
                   </p>
                 </div>
@@ -732,7 +732,7 @@ export default function PortalForm() {
                       {/* Question heading */}
                       <div>
                         <div className="flex items-center gap-2.5 mb-3">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide" style={{ background:"#fef9c3", color:"#92400e", fontFamily:"var(--pf-body)" }}>
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide" style={{ background:"#0d2d58", color:"#FAE705", fontFamily:"var(--pf-body)" }}>
                             {SKM_QUESTIONS[step-3].code}
                           </span>
                           <span className="text-[10px] font-bold tracking-[.18em] uppercase text-slate-400" style={{ fontFamily:"var(--pf-body)" }}>
