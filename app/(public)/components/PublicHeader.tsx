@@ -78,8 +78,8 @@ export default function PublicHeader() {
           background: linear-gradient(
             to bottom,
             transparent 0%,
-            rgba(255,255,255,0.18) 30%,
-            rgba(255,255,255,0.18) 70%,
+            rgba(13,45,88,0.2) 30%,
+            rgba(13,45,88,0.2) 70%,
             transparent 100%
           );
         }
@@ -90,9 +90,9 @@ export default function PublicHeader() {
           ${playfair.variable} ${dmSans.variable}
           sticky top-0 z-50
           transition-all duration-500
-          ${scrolled ? "shadow-[0_6px_40px_rgba(0,0,0,0.5)]" : ""}
+          ${scrolled ? "shadow-[0_4px_24px_rgba(13,45,88,0.12)]" : ""}
         `}
-        style={{ background: "#0d1b2a" }}
+        style={{ background: "#ffffff" }}
       >
         {/* ── TOP ACCENT ─────────────────────────────── */}
         <div className="hdr-grad-bar" style={{ height: 3 }} />
@@ -131,7 +131,7 @@ export default function PublicHeader() {
                 className="text-[9px] tracking-[0.22em] uppercase"
                 style={{
                   fontFamily: "var(--hdr-body)",
-                  color: "rgba(250,231,5,0.45)",
+                  color: "rgba(13,45,88,0.55)",
                   letterSpacing: "0.22em",
                 }}
               >
