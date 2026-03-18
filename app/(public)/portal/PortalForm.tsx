@@ -228,15 +228,9 @@ export default function PortalForm() {
     >
       {/* ══ GLOBAL CSS ═══════════════════════════════════════ */}
       <style>{`
-        /* ── Warm animated background ── */
-        @keyframes warmFlow {
-          0%,100% { background-position: 0% 50%; }
-          50%      { background-position: 100% 50%; }
-        }
+        /* ── Clean white background ── */
         .portal-warm-bg {
-          background: linear-gradient(-45deg, #fffce0, #ffffff, #fef9c3, #fffbea, #ffffff, #fff7d6);
-          background-size: 600% 600%;
-          animation: warmFlow 14s ease infinite;
+          background: #ffffff;
         }
 
         /* ── Gradient accent bar ── */
@@ -318,9 +312,9 @@ export default function PortalForm() {
         /* ── Sticky nav bar ── */
         .sticky-nav {
           position:fixed; bottom:0; left:0; right:0; z-index:50;
-          background:rgba(255,252,224,0.95);
+          background:rgba(255,255,255,0.95);
           backdrop-filter:blur(16px);
-          border-top:1.5px solid rgba(250,231,5,.35);
+          border-top:1px solid #e2e8f0;
           padding:10px 0;
           box-shadow:0 -4px 24px rgba(0,0,0,.07);
         }
@@ -339,11 +333,16 @@ export default function PortalForm() {
           letter-spacing:.03em; border:none; cursor:pointer; transition:all .2s;
         }
         .btn-next:not(:disabled) {
-          background: linear-gradient(-45deg,#fbbf24,#FAE705,#fde047);
-          color:#0d1b2a;
-          box-shadow:0 4px 18px rgba(250,231,5,.4);
+          background: #0d2d58;
+          color: white;
+          border-left: 4px solid #FAE705;
+          box-shadow: 0 4px 18px rgba(13,45,88,.25);
         }
-        .btn-next:not(:disabled):hover { box-shadow:0 6px 28px rgba(250,231,5,.55); transform:translateY(-1px); }
+        .btn-next:not(:disabled):hover {
+          background: #0a2245;
+          box-shadow: 0 6px 28px rgba(13,45,88,.35);
+          transform: translateY(-1px);
+        }
         .btn-next:disabled { background:#f1f5f9; color:#cbd5e1; cursor:not-allowed; }
 
         /* ── Layanan dropdown ── */
@@ -369,9 +368,9 @@ export default function PortalForm() {
         <div
           className="sticky top-0 z-30"
           style={{
-            background: "rgba(255,253,230,0.92)",
+            background: "rgba(255,255,255,0.95)",
             backdropFilter: "blur(14px)",
-            borderBottom: "1.5px solid rgba(250,231,5,.3)",
+            borderBottom: "1px solid #e2e8f0",
             boxShadow: "0 2px 12px rgba(0,0,0,.06)",
           }}
         >
@@ -895,9 +894,10 @@ export default function PortalForm() {
                       <button onClick={handleSubmit} disabled={submitting}
                         className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-3 transition-all"
                         style={{
-                          background: submitting ? "#f1f5f9" : "linear-gradient(-45deg,#fbbf24,#FAE705,#fde047)",
-                          color: submitting ? "#94a3b8" : "#0d1b2a",
-                          boxShadow: submitting ? "none" : "0 6px 24px rgba(250,231,5,.4)",
+                          background: submitting ? "#f1f5f9" : "#0d2d58",
+                          color: submitting ? "#94a3b8" : "white",
+                          borderLeft: submitting ? "none" : "4px solid #FAE705",
+                          boxShadow: submitting ? "none" : "0 6px 24px rgba(13,45,88,.25)",
                           fontFamily:"var(--pf-body)",
                           cursor: submitting ? "not-allowed" : "pointer",
                         }}
