@@ -3,9 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
+const NAV_LINKS = [
+  { href: "/",        label: "Beranda" },
+  { href: "/tentang", label: "Tentang Kami" },
+];
 
 export default function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -58,15 +65,28 @@ export default function PublicHeader() {
         </div>
       </Link>
 
-      {/* TITLE BAR */}
+      {/* NAV BAR */}
       <div className="bg-slate-900">
-        <div className="max-w-4xl mx-auto px-6 py-2 flex items-center justify-between">
-          <p className="text-xs font-semibold tracking-wide text-white">
-            Portal Survei Kepuasan Masyarakat (SKM)
-          </p>
-          <p className="text-xs font-medium text-white/50 hidden sm:block">
-            Permenpan RB No. 14 Tahun 2017
-          </p>
+        <div className="max-w-4xl mx-auto px-6 flex items-center gap-1">
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative px-4 py-2.5 text-xs font-semibold tracking-wide transition-colors duration-200 ${
+                  isActive
+                    ? "text-[#FAE705]"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                {link.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#FAE705] rounded-full" />
+                )}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </header>
