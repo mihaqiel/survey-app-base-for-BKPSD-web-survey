@@ -250,6 +250,10 @@ export default function TentangPage() {
           background-size: 36px 36px;
         }
 
+        /* ═══ MANTAP rows ═══ */
+        .mantap-row .mantap-letter { color:#1e40af; transition:color 0.3s ease; }
+        .mantap-row:hover .mantap-letter { color:#38bdf8; }
+
         /* ═══ Photo cards ═══ */
         .photo-card { overflow:hidden; border-radius:1rem; position:relative; }
         .photo-img-wrap { position:absolute; inset:0; transition:transform 0.75s cubic-bezier(.25,.1,.25,1); }
@@ -342,7 +346,7 @@ export default function TentangPage() {
             <span className="block text-4xl sm:text-5xl md:text-[3.8rem] font-bold text-white">
               <CharReveal text="Badan Kepegawaian dan" delay={0.3} />
             </span>
-            <span className="block text-4xl sm:text-5xl md:text-[3.8rem] font-normal italic" style={{ color: "rgba(255,255,255,0.7)" }}>
+            <span className="block font-normal italic whitespace-nowrap" style={{ fontSize: "clamp(1.5rem, 3.6vw, 2.6rem)", color: "rgba(255,255,255,0.7)" }}>
               <CharReveal text="Pengembangan Sumber Daya Manusia" delay={0.85} />
             </span>
           </h1>
@@ -390,7 +394,7 @@ export default function TentangPage() {
             <div>
               {/* Tagline heading */}
               <h2 className="serif font-bold text-slate-900 leading-none mb-1" style={{ fontSize: "clamp(2.4rem,6vw,3.8rem)", ...fade(gallery.inView, 0.05) }}>
-                BKPSDM MANTAP<span style={{ color: "#FAE705" }}>!</span>
+                BKPSDM MANTAP!
               </h2>
               <p className="text-slate-400 text-sm mb-8 leading-relaxed" style={fade(gallery.inView, 0.12)}>
                 Pedoman nilai dan semangat kerja seluruh jajaran BKPSDM Kabupaten Kepulauan Anambas.
@@ -403,16 +407,16 @@ export default function TentangPage() {
                   return (
                     <div
                       key={i}
-                      className="flex items-start gap-4 rounded-xl px-4 py-3 transition-all duration-500"
+                      className="mantap-row flex items-start gap-4 rounded-xl px-4 py-3 transition-all duration-500"
                       style={{
-                        background: isActive ? "rgba(250,231,5,0.09)" : "transparent",
-                        borderLeft: isActive ? "3px solid #FAE705" : "3px solid transparent",
+                        background: isActive ? "rgba(56,189,248,0.08)" : "transparent",
+                        borderLeft: isActive ? "3px solid #38bdf8" : "3px solid transparent",
                         ...fade(gallery.inView, 0.15 + i * 0.06),
                       }}
                     >
                       <span
-                        className="serif font-bold text-2xl leading-none w-7 shrink-0 text-center transition-colors duration-500"
-                        style={{ color: isActive ? "#FAE705" : "#c9a400", marginTop: "2px" }}
+                        className="mantap-letter serif font-bold text-2xl leading-none w-7 shrink-0 text-center"
+                        style={{ color: isActive ? "#38bdf8" : undefined, marginTop: "2px" }}
                       >
                         {item.letter}
                       </span>
