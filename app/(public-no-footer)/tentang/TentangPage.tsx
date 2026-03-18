@@ -437,10 +437,10 @@ export default function TentangPage() {
 
             {/* ── RIGHT: photo carousel ── */}
             <div style={fade(gallery.inView, 0.25)}>
-              {/* Photo frame — portrait aspect */}
+              {/* Photo frame — landscape 4:3, object-contain so no one is cropped */}
               <div
                 className="relative rounded-2xl overflow-hidden shadow-xl"
-                style={{ aspectRatio: "4 / 5" }}
+                style={{ aspectRatio: "4 / 3", background: "#0d1b2a" }}
               >
                 {GALLERY.map((photo, i) => (
                   <div
@@ -453,7 +453,7 @@ export default function TentangPage() {
                       alt={photo.alt}
                       fill
                       sizes="(max-width: 1024px) 90vw, 45vw"
-                      className="object-cover"
+                      className="object-contain"
                       priority={i === 0}
                     />
                     {/* Caption gradient */}
