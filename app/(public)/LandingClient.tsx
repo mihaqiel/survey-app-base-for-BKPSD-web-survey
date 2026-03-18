@@ -174,7 +174,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
         @keyframes orbA     { 0%,100%{transform:translate(0,0)scale(1)} 40%{transform:translate(28px,-20px)scale(1.09)} 70%{transform:translate(-16px,26px)scale(0.92)} }
         @keyframes orbB     { 0%,100%{transform:translate(0,0)scale(1)} 35%{transform:translate(-26px,22px)scale(1.07)} 75%{transform:translate(24px,-14px)scale(0.93)} }
         @keyframes orbC     { 0%,100%{transform:translate(0,0)scale(1)} 50%{transform:translate(18px,30px)scale(1.11)} }
-        @keyframes logoRing { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
         @keyframes pulseGlow {
           0%,100% { box-shadow: 0 0 0 0 rgba(250,231,5,0); }
           50%     { box-shadow: 0 0 40px 8px rgba(250,231,5,0.12); }
@@ -211,10 +210,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           background: rgba(255,255,255,0.04);
           backdrop-filter: blur(8px);
           animation: pulseGlow 4s ease-in-out infinite;
-        }
-        .logo-ring-spin {
-          border: 1.5px dashed rgba(250,231,5,0.2);
-          animation: logoRing 24s linear infinite;
         }
 
         /* ═══ Progress bar ═══ */
@@ -383,19 +378,14 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
           {/* RIGHT: rotating logo showcase */}
           <div className="flex items-center justify-center">
-            <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]">
+            <div className="relative w-[380px] h-[380px] sm:w-[440px] sm:h-[440px]">
 
-              {/* Outer spinning dashed ring */}
-              <div
-                className="logo-ring-spin absolute inset-0 rounded-full"
-              />
-
-              {/* Inner glass frame */}
-              <div className="logo-ring absolute inset-[14px] rounded-full flex items-center justify-center">
+              {/* Glass frame only — no spinning ring, no dot indicators */}
+              <div className="logo-ring absolute inset-0 rounded-full flex items-center justify-center">
                 {HERO_LOGOS.map((logo, idx) => (
                   <div
                     key={logo.src}
-                    className="absolute inset-0 flex items-center justify-center p-10 transition-all duration-1000 ease-in-out"
+                    className="absolute inset-0 flex items-center justify-center p-12 transition-all duration-1000 ease-in-out"
                     style={{
                       opacity: logoIndex === idx ? 1 : 0,
                       transform: logoIndex === idx ? "scale(1)" : "scale(0.88)",
@@ -408,24 +398,9 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                       width={logo.w}
                       height={logo.h}
                       className="object-contain drop-shadow-2xl"
-                      style={{ maxHeight: "160px", maxWidth: "100%" }}
+                      style={{ maxHeight: "220px", maxWidth: "100%" }}
                     />
                   </div>
-                ))}
-              </div>
-
-              {/* Dot indicators */}
-              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {HERO_LOGOS.map((_, i) => (
-                  <span
-                    key={i}
-                    className="block rounded-full transition-all duration-300"
-                    style={{
-                      width: i === logoIndex ? "18px" : "6px",
-                      height: "6px",
-                      background: i === logoIndex ? "#FAE705" : "rgba(255,255,255,0.3)",
-                    }}
-                  />
                 ))}
               </div>
             </div>
