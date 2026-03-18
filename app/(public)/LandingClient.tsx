@@ -2,167 +2,603 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { BarChart3, ShieldCheck, Smartphone, QrCode, KeyRound, ClipboardList, CheckCircle2 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { BarChart3, ShieldCheck, QrCode, Smartphone, KeyRound, ClipboardList, CheckCircle2, ChevronDown } from "lucide-react";
+import { Playfair_Display, DM_Sans } from "next/font/google";
 
+/* ── Fonts ─────────────────────────────────────── */
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-display",
+});
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
+});
+
+/* ── Data ─────────────────────────────────────── */
 const HERO_LOGOS = [
-  { src: "/logo-anambas.png", alt: "Lambang Kepulauan Anambas", width: 240, height: 260 },
-  { src: "/logo-anambas-maju.png", alt: "Anambas Maju", width: 400, height: 200 },
-  { src: "/logo-bkpsdm.png", alt: "BKPSDM Anambas", width: 360, height: 200 }
+  { src: "/logo-anambas.png",      alt: "Lambang Kepulauan Anambas", w: 200, h: 220 },
+  { src: "/logo-anambas-maju.png", alt: "Anambas Maju — Energi Baru", w: 340, h: 170 },
+  { src: "/logo-bkpsdm.png",       alt: "BKPSDM Anambas",            w: 280, h: 160 },
 ];
 
+const FEATURES = [
+  {
+    icon: <BarChart3 className="w-6 h-6" />,
+    title: "Real-time IKM",
+    desc: "Perhitungan Indeks Kepuasan Masyarakat secara otomatis dan akurat berdasarkan setiap respons yang masuk.",
+  },
+  {
+    icon: <ShieldCheck className="w-6 h-6" />,
+    title: "Sesuai Regulasi",
+    desc: "Menggunakan 9 unsur pelayanan standar Kementerian PANRB sesuai Permenpan RB Nomor 14 Tahun 2017.",
+  },
+  {
+    icon: <QrCode className="w-6 h-6" />,
+    title: "Akses QR Code",
+    desc: "Kemudahan akses survei bagi responden melalui pemindaian QR Code yang tersedia di loket pelayanan.",
+  },
+];
+
+const STEPS = [
+  { step: "01", icon: <Smartphone className="w-6 h-6" />,   title: "Pindai QR Code",    desc: "Temukan QR Code di loket pelayanan BKPSDM lalu pindai menggunakan kamera ponsel Anda." },
+  { step: "02", icon: <KeyRound    className="w-6 h-6" />,   title: "Masukkan Token",    desc: "Ketik kode akses dari QR Code ke dalam kolom token pada portal survei digital." },
+  { step: "03", icon: <ClipboardList className="w-6 h-6" />, title: "Isi Formulir",      desc: "Berikan penilaian jujur terhadap 9 unsur pelayanan yang telah Anda terima." },
+  { step: "04", icon: <CheckCircle2 className="w-6 h-6" />,  title: "Kirim Survei",      desc: "Tekan kirim — data Anda tersimpan aman dan langsung diproses sistem." },
+];
+
+const STATS_BAR = [
+  { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan RB" },
+  { val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis"    },
+  { val: "QR",  label: "Akses Mudah",     sub: "Pindai & Isi Survei"  },
+];
+
+/* ── Hooks ─────────────────────────────────────── */
+function useInView(threshold = 0.12) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setInView(true); },
+      { threshold },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, inView };
+}
+
+/* ── Sub-components ─────────────────────────────── */
+function CharReveal({ text, delay = 0 }: { text: string; delay?: number }) {
+  return (
+    <span aria-label={text}>
+      {text.split("").map((ch, i) => (
+        <span
+          key={i}
+          className="char-in inline-block"
+          style={{ animationDelay: `${delay + i * 0.028}s` }}
+          aria-hidden
+        >
+          {ch === " " ? "\u00A0" : ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function WordReveal({ text, inView, delay = 0, italic = false }: {
+  text: string; inView: boolean; delay?: number; italic?: boolean;
+}) {
+  return (
+    <span>
+      {text.split(" ").map((word, i) => (
+        <span
+          key={i}
+          className="inline-block"
+          style={{
+            opacity: inView ? 1 : 0,
+            transform: inView ? "translateY(0)" : "translateY(22px)",
+            transition: `opacity 0.6s ease ${delay + i * 0.09}s, transform 0.6s ease ${delay + i * 0.09}s`,
+          }}
+        >
+          {italic ? <em>{word}</em> : word}{"\u00A0"}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/* ── Page ─────────────────────────────────────── */
 export default function LandingClient({ surveyToken }: { surveyToken: string }) {
   const surveyHref = surveyToken ? `/enter?token=${surveyToken}` : "/enter";
-  const [logoIndex, setLogoIndex] = useState(0);
 
+  const [progress, setProgress]     = useState(0);
+  const [logoIndex, setLogoIndex]   = useState(0);
+
+  const features = useInView(0.08);
+  const howto    = useInView(0.08);
+  const cta      = useInView(0.08);
+
+  /* scroll progress */
   useEffect(() => {
-    const timer = setInterval(() => {
-      setLogoIndex((prev) => (prev + 1) % HERO_LOGOS.length);
-    }, 3000);
-    return () => clearInterval(timer);
+    const onScroll = () => {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(docH > 0 ? (window.scrollY / docH) * 100 : 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /* logo carousel */
+  useEffect(() => {
+    const t = setInterval(() => setLogoIndex((p) => (p + 1) % HERO_LOGOS.length), 3500);
+    return () => clearInterval(t);
+  }, []);
+
+  const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
+    opacity: inView ? 1 : 0,
+    transform: inView ? "translate(0,0)" : axis === "y" ? `translateY(${dist}px)` : `translateX(${-dist}px)`,
+    transition: `opacity 0.65s ease ${delay}s, transform 0.65s ease ${delay}s`,
+  });
+
   return (
-    <div className="text-slate-900 font-sans flex flex-col min-h-screen bg-slate-50">
+    <div
+      className={`${playfair.variable} ${dmSans.variable} text-slate-900`}
+      style={{ fontFamily: "var(--font-body, sans-serif)" }}
+    >
+      <style>{`
+        /* ═══ Keyframes ═══ */
+        @keyframes heroGrad {
+          0%   { background-position: 0%   50%; }
+          25%  { background-position: 100% 50%; }
+          50%  { background-position: 100% 0%;  }
+          75%  { background-position: 0%  100%; }
+          100% { background-position: 0%   50%; }
+        }
+        @keyframes charIn {
+          from { opacity:0; transform:translateY(36px) rotateX(-20deg); filter:blur(5px); }
+          to   { opacity:1; transform:translateY(0)    rotateX(0deg);   filter:blur(0);  }
+        }
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @keyframes bounceY  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
+        @keyframes orbA     { 0%,100%{transform:translate(0,0)scale(1)} 40%{transform:translate(28px,-20px)scale(1.09)} 70%{transform:translate(-16px,26px)scale(0.92)} }
+        @keyframes orbB     { 0%,100%{transform:translate(0,0)scale(1)} 35%{transform:translate(-26px,22px)scale(1.07)} 75%{transform:translate(24px,-14px)scale(0.93)} }
+        @keyframes orbC     { 0%,100%{transform:translate(0,0)scale(1)} 50%{transform:translate(18px,30px)scale(1.11)} }
+        @keyframes logoRing { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+        @keyframes pulseGlow {
+          0%,100% { box-shadow: 0 0 0 0 rgba(250,231,5,0); }
+          50%     { box-shadow: 0 0 40px 8px rgba(250,231,5,0.12); }
+        }
 
-      {/* HERO */}
-      <section className="bg-white relative overflow-hidden border-b border-gray-100">
-        <div className="absolute right-0 top-0 w-[500px] h-[500px] rounded-full bg-[#FAE705]/10 blur-[80px] pointer-events-none translate-x-1/2 -translate-y-1/2" />
-        <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32 flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
-          
-          {/* Left Text */}
-          <div className="max-w-3xl lg:w-3/5">
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-6">
-              Survei Kepuasan<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600">Masyarakat</span>
+        /* ═══ Hero gradient ═══ */
+        .hero-grad {
+          background: linear-gradient(-45deg,
+            #0d2d58, #1565c0, #38bdf8, #FAE705, #38bdf8, #0d2d58, #091a33
+          );
+          background-size: 400% 400%;
+          animation: heroGrad 18s ease infinite;
+        }
+
+        /* ═══ Typography ═══ */
+        .serif { font-family: var(--font-display, Georgia, serif); }
+        .char-in { animation: charIn 0.65s cubic-bezier(0.22,1,0.36,1) both; opacity: 0; }
+
+        /* ═══ Orbs ═══ */
+        .orb-a { animation: orbA 10s ease-in-out infinite; }
+        .orb-b { animation: orbB 13s ease-in-out infinite; animation-delay: -5s; }
+        .orb-c { animation: orbC  8s ease-in-out infinite; animation-delay: -3s; }
+        .bounce { animation: bounceY 2.2s ease-in-out infinite; }
+
+        /* ═══ Dot grid ═══ */
+        .dot-grid {
+          background-image: radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1px);
+          background-size: 36px 36px;
+        }
+
+        /* ═══ Logo frame ═══ */
+        .logo-ring {
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.04);
+          backdrop-filter: blur(8px);
+          animation: pulseGlow 4s ease-in-out infinite;
+        }
+        .logo-ring-spin {
+          border: 1.5px dashed rgba(250,231,5,0.2);
+          animation: logoRing 24s linear infinite;
+        }
+
+        /* ═══ Progress bar ═══ */
+        .prog-bar {
+          background: linear-gradient(90deg, #FAE705, #38bdf8, #FAE705);
+          background-size: 200% auto;
+          animation: shimmer 2.5s linear infinite;
+        }
+
+        /* ═══ Feature cards ═══ */
+        .feat-card {
+          background: #fff;
+          border: 1px solid #f1f5f9;
+          border-radius: 1.25rem;
+          padding: 2rem;
+          transition: box-shadow .3s ease, border-color .3s ease, transform .3s ease;
+        }
+        .feat-card:hover {
+          box-shadow: 0 8px 32px rgba(56,189,248,.14);
+          border-color: rgba(56,189,248,.3);
+          transform: translateY(-4px);
+        }
+        .feat-icon {
+          width: 52px; height: 52px;
+          border-radius: .7rem;
+          background: #0d2d58;
+          color: #FAE705;
+          display: flex; align-items: center; justify-content: center;
+          transition: background .3s ease, color .3s ease;
+          flex-shrink: 0;
+        }
+        .feat-card:hover .feat-icon { background: #38bdf8; color: #0d2d58; }
+
+        /* ═══ Steps ═══ */
+        .step-num {
+          font-family: var(--font-display, Georgia, serif);
+          font-size: 4.5rem; font-weight: 700; line-height: 1;
+          color: #f1f5f9;
+          transition: color .4s ease;
+        }
+        .step-wrap:hover .step-num { color: rgba(56,189,248,.22); }
+        .step-icon-ring {
+          width: 48px; height: 48px; border-radius: 50%;
+          background: #fff; border: 2px solid #e2e8f0;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 1px 4px rgba(0,0,0,.07);
+          transition: border-color .3s ease, box-shadow .3s ease;
+        }
+        .step-wrap:hover .step-icon-ring {
+          border-color: #38bdf8;
+          box-shadow: 0 0 0 4px rgba(56,189,248,.12);
+        }
+
+        /* ═══ CTA section ═══ */
+        .cta-grad {
+          background: linear-gradient(-45deg, #0d2d58, #0d1b2a, #091a33, #0d2d58);
+          background-size: 300% 300%;
+          animation: heroGrad 14s ease infinite;
+        }
+        .cta-btn {
+          background: #FAE705;
+          color: #0d1b2a;
+          font-weight: 700;
+          padding: 1.1rem 2.5rem;
+          border-radius: .75rem;
+          font-size: 1rem;
+          border: none;
+          cursor: pointer;
+          transition: background .25s ease, transform .2s ease, box-shadow .3s ease;
+          display: inline-flex; align-items: center; gap: .6rem;
+        }
+        .cta-btn:hover {
+          background: #eacc00;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 32px rgba(250,231,5,.25);
+        }
+        .cta-btn:active { transform: scale(.97); }
+
+        /* ═══ Section label ═══ */
+        .section-label { display:flex; align-items:center; gap:.75rem; }
+        .section-label-line { width:1.5rem; height:1px; background:#FAE705; display:block; }
+
+        /* ═══ HR ═══ */
+        .hr-tri { height:1px; background:linear-gradient(90deg,transparent,#FAE705 30%,#38bdf8 70%,transparent); }
+      `}</style>
+
+      {/* ── Scroll progress ── */}
+      <div
+        className="fixed top-0 left-0 z-50 h-[3px] prog-bar transition-all duration-75"
+        style={{ width: `${progress}%` }}
+      />
+
+      {/* ════════════════════════════════════
+          HERO
+      ════════════════════════════════════ */}
+      <section className="hero-grad relative min-h-screen flex items-center overflow-hidden px-6">
+
+        {/* Orbs */}
+        <div className="orb-a pointer-events-none absolute top-[15%] right-[8%]  w-[460px] h-[460px] rounded-full blur-[130px]" style={{ background: "rgba(250,231,5,0.18)" }} />
+        <div className="orb-b pointer-events-none absolute bottom-[20%] left-[4%] w-[400px] h-[400px] rounded-full blur-[120px]" style={{ background: "rgba(56,189,248,0.18)" }} />
+        <div className="orb-c pointer-events-none absolute top-[50%] left-[40%]  w-[300px] h-[300px] rounded-full blur-[90px]"  style={{ background: "rgba(13,45,88,0.40)"   }} />
+
+        {/* Dot grid */}
+        <div className="dot-grid pointer-events-none absolute inset-0" />
+
+        {/* Dark overlay */}
+        <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(6,18,32,0.60)" }} />
+
+        {/* Watermark */}
+        <div className="serif pointer-events-none select-none absolute inset-0 flex items-center justify-center overflow-hidden" aria-hidden>
+          <span className="text-[20vw] font-bold tracking-widest whitespace-nowrap" style={{ color: "rgba(255,255,255,0.022)" }}>
+            SKM
+          </span>
+        </div>
+
+        {/* ── Content grid ── */}
+        <div className="relative z-10 max-w-6xl mx-auto w-full py-28 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+          {/* LEFT: text + buttons */}
+          <div>
+            {/* Overline */}
+            <div className="char-in section-label mb-8" style={{ animationDelay: "0.1s" }}>
+              <span className="section-label-line" />
+              <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
+                BKPSDM Kab. Kepulauan Anambas
+              </span>
+            </div>
+
+            {/* Heading */}
+            <h1 className="serif mb-6 leading-[1.08]">
+              <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
+                <CharReveal text="Survei Kepuasan" delay={0.3} />
+              </span>
+              <span className="block font-normal italic" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", color: "rgba(255,255,255,0.72)" }}>
+                <CharReveal text="Masyarakat" delay={0.9} />
+              </span>
             </h1>
-            <p className="text-slate-500 text-lg md:text-xl max-w-xl mb-10 leading-relaxed">
-              Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten Kepulauan Anambas. Transparan, akuntabel, dan terukur.
+
+            {/* Subtitle */}
+            <p
+              className="char-in text-white/55 text-sm sm:text-base max-w-lg leading-relaxed mb-10"
+              style={{ animationDelay: "1.7s" }}
+            >
+              Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten
+              Kepulauan Anambas. Transparan, akuntabel, dan terukur.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href={surveyHref}
-                className="group px-8 py-4 bg-[#FAE705] text-slate-900 text-base font-bold rounded-xl transition-all duration-300 hover:bg-[#eacc00] hover:shadow-xl hover:shadow-[#FAE705]/20 hover:-translate-y-0.5 active:scale-[0.98]">
-                <span className="flex items-center justify-center gap-2">
-                  Mulai Survei
-                  <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
-                </span>
+
+            {/* Buttons */}
+            <div className="char-in flex flex-col sm:flex-row gap-4" style={{ animationDelay: "1.9s" }}>
+              <Link
+                href={surveyHref}
+                className="cta-btn text-center justify-center"
+              >
+                Mulai Survei
+                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
               </Link>
-              <Link href="/login"
-                className="group px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 text-base font-bold rounded-xl hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 active:scale-[0.98]">
-                <span className="flex items-center justify-center gap-2">
-                  Masuk Dashboard
-                </span>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-semibold text-sm text-white/80 border border-white/20 hover:bg-white/10 hover:text-white transition-all duration-300"
+                style={{ backdropFilter: "blur(6px)", background: "rgba(255,255,255,0.06)" }}
+              >
+                Masuk Dashboard
               </Link>
             </div>
           </div>
 
-          {/* Right Animated Logo Container */}
-          <div className="lg:w-2/5 flex items-center justify-center w-full relative h-[300px] md:h-[400px]">
-             {HERO_LOGOS.map((logo, idx) => (
-                <div key={logo.src} className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ease-in-out ${logoIndex === idx ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"}`}>
-                  <Image 
-                    src={logo.src} 
-                    alt={logo.alt} 
-                    width={logo.width} 
-                    height={logo.height}
-                    className="object-contain drop-shadow-2xl mix-blend-multiply"
-                    style={{ maxHeight: "100%", maxWidth: "100%" }}
-                  />
-                </div>
-             ))}
-          </div>
+          {/* RIGHT: rotating logo showcase */}
+          <div className="flex items-center justify-center">
+            <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]">
 
-        </div>
-      </section>
+              {/* Outer spinning dashed ring */}
+              <div
+                className="logo-ring-spin absolute inset-0 rounded-full"
+              />
 
-      {/* STATS BAR */}
-      <section className="bg-slate-900 border-b border-slate-800">
-        <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 sm:divide-x divide-slate-800 gap-6 sm:gap-0">
-          {[
-            { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan RB" },
-            { val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis" },
-            { val: "QR",  label: "Akses Mudah",     sub: "Pindai & Isi Survei" },
-          ].map((item) => (
-            <div key={item.label} className="px-8 first:pl-0 last:pr-0">
-              <p className="text-4xl font-bold text-white">{item.val}</p>
-              <p className="text-sm font-bold text-[#FAE705] mt-1">{item.label}</p>
-              <p className="text-xs text-slate-400 mt-1">{item.sub}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section className="max-w-5xl mx-auto px-6 py-24 w-full bg-slate-50">
-        <div className="mb-16 text-center max-w-2xl mx-auto">
-          <p className="text-sm font-bold text-[#eacc00] uppercase tracking-wider mb-3">Tentang Sistem</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Fitur Utama SKM</h2>
-          <p className="text-slate-500">Meningkatkan kualitas pelayanan publik melalui evaluasi yang komprehensif.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: <BarChart3 className="w-6 h-6" />, title: "Real-time IKM", desc: "Perhitungan Indeks Kepuasan Masyarakat secara otomatis dan akurat berdasarkan setiap respons yang masuk." },
-            { icon: <ShieldCheck className="w-6 h-6" />, title: "Sesuai Regulasi", desc: "Menggunakan 9 unsur pelayanan standar Kementerian PANRB sesuai Permenpan RB Nomor 14 Tahun 2017." },
-            { icon: <QrCode className="w-6 h-6" />, title: "Akses QR Code", desc: "Kemudahan akses survei bagi responden melalui pemindaian QR Code yang tersedia di loket pelayanan." },
-          ].map((f) => (
-            <div key={f.title}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1">
-              <div className="w-14 h-14 rounded-xl bg-[#FAE705]/20 text-[#d4b500] flex items-center justify-center mb-6">
-                {f.icon}
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-3">{f.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* HOW TO */}
-      <section className="bg-white border-y border-gray-100 relative overflow-hidden">
-        <div className="absolute left-0 bottom-0 w-[500px] h-[500px] rounded-full bg-slate-100 blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2" />
-        <div className="relative max-w-5xl mx-auto px-6 py-24 w-full">
-          <div className="mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">Cara Pengisian Survei</h2>
-            <div className="w-20 h-1.5 bg-[#FAE705] mt-6 rounded-full" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { step: "01", icon: <Smartphone className="w-6 h-6 text-slate-700" />, title: "Pindai QR Code", desc: "Temukan QR Code di loket pelayanan BKPSDM lalu pindai." },
-              { step: "02", icon: <KeyRound className="w-6 h-6 text-slate-700" />, title: "Masukkan Token", desc: "Ketik kode akses dari QR Code ke dalam portal survei." },
-              { step: "03", icon: <ClipboardList className="w-6 h-6 text-slate-700" />, title: "Isi Formulir", desc: "Beri rating layanan dan nilai 9 unsur pelayanan." },
-              { step: "04", icon: <CheckCircle2 className="w-6 h-6 text-slate-700" />, title: "Kirim Survei", desc: "Data Anda langsung tersimpan dan aman." },
-            ].map((item) => (
-              <div key={item.step} className="relative group">
-                <div className="text-6xl font-black text-slate-100 absolute -top-4 -left-2 z-0 transition-colors duration-300 group-hover:text-[#FAE705]/20">{item.step}</div>
-                <div className="relative z-10 pt-6">
-                  <div className="w-12 h-12 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center mb-4 shadow-sm">
-                    {item.icon}
+              {/* Inner glass frame */}
+              <div className="logo-ring absolute inset-[14px] rounded-full flex items-center justify-center">
+                {HERO_LOGOS.map((logo, idx) => (
+                  <div
+                    key={logo.src}
+                    className="absolute inset-0 flex items-center justify-center p-10 transition-all duration-1000 ease-in-out"
+                    style={{
+                      opacity: logoIndex === idx ? 1 : 0,
+                      transform: logoIndex === idx ? "scale(1)" : "scale(0.88)",
+                      pointerEvents: logoIndex === idx ? "auto" : "none",
+                    }}
+                  >
+                    <Image
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={logo.w}
+                      height={logo.h}
+                      className="object-contain drop-shadow-2xl"
+                      style={{ maxHeight: "160px", maxWidth: "100%" }}
+                    />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
+                ))}
+              </div>
+
+              {/* Dot indicators */}
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {HERO_LOGOS.map((_, i) => (
+                  <span
+                    key={i}
+                    className="block rounded-full transition-all duration-300"
+                    style={{
+                      width: i === logoIndex ? "18px" : "6px",
+                      height: "6px",
+                      background: i === logoIndex ? "#FAE705" : "rgba(255,255,255,0.3)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div
+          className="absolute bottom-9 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
+          style={{ color: "rgba(255,255,255,0.3)" }}
+        >
+          <span className="text-[9px] tracking-[0.32em] uppercase">Gulir</span>
+          <div className="bounce"><ChevronDown className="w-4 h-4" /></div>
+        </div>
+
+        {/* Bottom gradient bleed */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#f8f7f3]" />
+      </section>
+
+      {/* ════════════════════════════════════
+          STATS BAR
+      ════════════════════════════════════ */}
+      <section style={{ background: "#0d1b2a", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-3">
+          {STATS_BAR.map((item, i) => (
+            <div
+              key={item.label}
+              className="px-8 py-4 first:pl-0 last:pr-0"
+              style={{
+                borderRight: i < STATS_BAR.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+              }}
+            >
+              <p className="serif text-4xl md:text-5xl font-bold" style={{ color: "#FAE705" }}>{item.val}</p>
+              <p className="text-sm font-semibold text-white mt-2 tracking-wide">{item.label}</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{item.sub}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════
+          FEATURES
+      ════════════════════════════════════ */}
+      <section className="py-24 px-6" style={{ background: "#f8f7f3" }}>
+        <div ref={features.ref} className="max-w-5xl mx-auto">
+
+          {/* Label */}
+          <div className="section-label mb-4" style={fade(features.inView, 0)}>
+            <span className="section-label-line" />
+            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
+              Fitur Sistem
+            </span>
+          </div>
+
+          {/* Heading */}
+          <div className="mb-4">
+            <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900">
+              <WordReveal text="Fitur Utama SKM" inView={features.inView} delay={0.05} />
+            </h2>
+          </div>
+          <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-14" style={fade(features.inView, 0.3)}>
+            Meningkatkan kualitas pelayanan publik melalui evaluasi yang komprehensif dan transparan.
+          </p>
+
+          <div className="hr-tri mb-14" />
+
+          {/* Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {FEATURES.map((f, i) => (
+              <div key={f.title} className="feat-card" style={fade(features.inView, 0.15 + i * 0.1)}>
+                <div className="feat-icon mb-6">{f.icon}</div>
+                <h3 className="serif text-lg font-bold text-slate-900 mb-3">{f.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-5xl mx-auto px-6 py-24 w-full">
-        <div className="bg-slate-900 rounded-3xl overflow-hidden relative shadow-2xl">
-          <div className="absolute right-0 top-0 w-96 h-96 rounded-full bg-[#FAE705]/20 blur-[80px] pointer-events-none translate-x-1/3 -translate-y-1/4" />
-          <div className="relative px-10 py-16 flex flex-col items-center text-center gap-8">
-            <div className="max-w-xl">
-              <h3 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Bagikan Pendapat Anda</h3>
-              <p className="text-base text-slate-400">Survei ini bersifat rahasia dan sangat membantu kami meningkatkan kualitas pelayanan bagi masyarakat.</p>
+      {/* ════════════════════════════════════
+          HOW TO
+      ════════════════════════════════════ */}
+      <section className="py-24 px-6 bg-white" style={{ borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" }}>
+        <div ref={howto.ref} className="max-w-5xl mx-auto">
+
+          {/* Label */}
+          <div className="section-label mb-4" style={fade(howto.inView, 0)}>
+            <span className="section-label-line" />
+            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
+              Panduan
+            </span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900 mb-3">
+            <WordReveal text="Cara Pengisian Survei" inView={howto.inView} delay={0.05} />
+          </h2>
+          <div className="w-14 h-[3px] rounded-full mb-14" style={{ background: "#FAE705", ...fade(howto.inView, 0.3) }} />
+
+          {/* Steps grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+            {STEPS.map((item, i) => (
+              <div key={item.step} className="step-wrap relative" style={fade(howto.inView, 0.1 + i * 0.1)}>
+                {/* Ghost step number */}
+                <div className="step-num absolute -top-3 -left-1 z-0 select-none" aria-hidden>
+                  {item.step}
+                </div>
+                {/* Content */}
+                <div className="relative z-10 pt-8">
+                  <div className="step-icon-ring mb-5" style={{ color: "#334155" }}>
+                    {item.icon}
+                  </div>
+                  <h3 className="serif font-bold text-slate-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                </div>
+                {/* Connector line (not on last) */}
+                {i < STEPS.length - 1 && (
+                  <div
+                    className="hidden md:block absolute top-12 right-0 translate-x-1/2 w-full h-px"
+                    style={{ background: "linear-gradient(90deg,#e2e8f0,transparent)" }}
+                    aria-hidden
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════
+          CTA
+      ════════════════════════════════════ */}
+      <section className="py-24 px-6" style={{ background: "#f8f7f3" }}>
+        <div ref={cta.ref} className="max-w-5xl mx-auto">
+          <div className="cta-grad relative overflow-hidden rounded-3xl shadow-2xl">
+
+            {/* Orb inside CTA */}
+            <div
+              className="orb-a pointer-events-none absolute right-[-6%] top-[-30%] w-80 h-80 rounded-full blur-[90px]"
+              style={{ background: "rgba(250,231,5,0.22)" }}
+            />
+            <div
+              className="orb-b pointer-events-none absolute left-[-4%] bottom-[-20%] w-64 h-64 rounded-full blur-[80px]"
+              style={{ background: "rgba(56,189,248,0.18)" }}
+            />
+            <div className="dot-grid pointer-events-none absolute inset-0" style={{ opacity: 0.5 }} />
+
+            <div className="relative z-10 px-10 py-20 flex flex-col items-center text-center gap-8">
+              {/* Overline */}
+              <div className="section-label justify-center" style={fade(cta.inView, 0)}>
+                <span className="section-label-line" />
+                <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
+                  Sampaikan Pendapat Anda
+                </span>
+                <span className="section-label-line" />
+              </div>
+
+              {/* Heading */}
+              <h2 className="serif text-3xl md:text-4xl font-bold text-white max-w-xl leading-tight" style={fade(cta.inView, 0.1)}>
+                Bantu Kami Meningkatkan Kualitas Layanan
+              </h2>
+              <p className="text-white/50 text-sm max-w-md leading-relaxed" style={fade(cta.inView, 0.2)}>
+                Survei ini bersifat rahasia. Setiap respons Anda membantu BKPSDM memberikan pelayanan yang lebih baik bagi masyarakat Kepulauan Anambas.
+              </p>
+
+              {/* Button */}
+              <div style={fade(cta.inView, 0.3)}>
+                <Link href={surveyHref} className="cta-btn">
+                  Isi Survei Sekarang
+                  <span aria-hidden>→</span>
+                </Link>
+              </div>
             </div>
-            <Link href={surveyHref}
-              className="group px-10 py-5 bg-[#FAE705] text-slate-900 text-lg font-bold rounded-xl hover:bg-[#eacc00] hover:shadow-[0_0_40px_-10px_rgba(250,231,5,0.5)] transition-all duration-300 active:scale-[0.98]">
-              <span className="flex items-center gap-3">
-                Isi Survei Sekarang
-                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
-              </span>
-            </Link>
           </div>
         </div>
       </section>
