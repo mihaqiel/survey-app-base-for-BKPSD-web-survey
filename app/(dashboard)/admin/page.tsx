@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { getAdminDashboardStats, getAllPeriode } from "@/app/action/admin";
+import { getAdminDashboardStats, getAllPeriode, getAllLayanan } from "@/app/action/admin";
 import { logout } from "@/app/action/auth";
 import Link from "next/link";
 import DashboardChartsV2 from "./components/DashboardChartsV2";
@@ -18,9 +18,16 @@ interface ServiceStat {
   count: number;
 }
 
-export default async function AdminDashboard() {
-  const stats   = await getAdminDashboardStats();
-  const periodes = await getAllPeriode();
+export default async function AdminDashboard(props: {
+  searchParams: Promise<{ periode?: string }>;
+}) {
+  const { periode: periodeId } = await props.searchParams;
+  const [stats, periodes, layananRaw] = await Promise.all([
+    getAdminDashboardStats(periodeId),
+    getAllPeriode(),
+    getAllLayanan(),
+  ]);
+  const layananList = layananRaw.map((l: { id: string; nama: string }) => ({ id: l.id, nama: l.nama }));
 
   if (!stats) {
     return (
@@ -92,6 +99,8 @@ export default async function AdminDashboard() {
         pills={pills}
         periodLabel={periodLabel}
         periodes={periodes}
+        layananList={layananList}
+        selectedPeriodeId={periodeId}
         logoutAction={logout}
         ringkasanContent={
           <RingkasanTab

@@ -18,15 +18,27 @@ type EmployeeStat = {
 // ----------------------------------------------------------------------
 // 1. DASHBOARD OVERVIEW
 // ----------------------------------------------------------------------
-export async function getAdminDashboardStats() {
-  // Active period is for label/display only — dashboard shows ALL data across all periods
+export async function getAdminDashboardStats(periodeId?: string) {
+  // Active period for label fallback only — data filter is controlled by periodeId param
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
+
+  // Build filter: periodeId provided = filter that period, omitted = all data
+  const responFilter: { periodeId?: string } = periodeId ? { periodeId } : {};
+
+  // Resolve display label
+  let periodLabel = "Semua Data";
+  if (periodeId) {
+    const sel = await prisma.periode.findUnique({ where: { id: periodeId }, select: { label: true } });
+    periodLabel = sel?.label ?? "Periode Dipilih";
+  } else if (activePeriod) {
+    periodLabel = `Semua Data · ${activePeriod.label} aktif`;
+  }
 
   const services = await prisma.layanan.findMany({
     orderBy: { nama: "asc" },
     include: {
       respon: {
-        // No periodeId filter — all responses across all periods
+        where: responFilter,
         select: {
           u1: true, u2: true, u3: true, u4: true, u5: true,
           u6: true, u7: true, u8: true, u9: true,
@@ -54,7 +66,7 @@ export async function getAdminDashboardStats() {
   }
 
   const allRespon = await prisma.respon.findMany({
-    // No periodeId filter — all responses
+    where: responFilter,
     select: {
       createdAt: true, u1: true, u2: true, u3: true,
       u4: true, u5: true, u6: true, u7: true, u8: true, u9: true,
@@ -100,8 +112,9 @@ export async function getAdminDashboardStats() {
     .map(e => ({ id: e.id, nama: e.nama || "Unknown", count: e.count, ikm: parseFloat(((e.totalScore / (9 * e.count)) * 25).toFixed(2)) }))
     .sort((a, b) => b.ikm - a.ikm);
 
-  // ── Recent responses (all periods)
+  // ── Recent responses
   const recentRaw = await prisma.respon.findMany({
+    where: responFilter,
     include: { layanan: { select: { nama: true } } },
     orderBy: { createdAt: "desc" },
     take: 10,
@@ -118,19 +131,22 @@ export async function getAdminDashboardStats() {
     };
   });
 
-  // ── Gender data (all periods)
+  // ── Gender data
   const genderRaw = await prisma.respon.groupBy({
     by: ["jenisKelamin"],
+    where: responFilter,
     _count: { id: true },
   });
   const gender = genderRaw.map((g: any) => ({ label: g.jenisKelamin || "Lainnya", count: g._count.id }));
 
-  // ── Date range across all responses
+  // ── Date range
   const firstRespon = await prisma.respon.findFirst({
+    where: responFilter,
     orderBy: { createdAt: "asc" },
     select: { createdAt: true },
   });
   const lastRespon = await prisma.respon.findFirst({
+    where: responFilter,
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });
@@ -138,7 +154,7 @@ export async function getAdminDashboardStats() {
   const fmt = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
   return {
-    periodLabel: activePeriod?.label ?? "Semua Data",
+    periodLabel,
     periodStart: firstRespon ? fmt(new Date(firstRespon.createdAt)) : "",
     periodEnd:   lastRespon  ? fmt(new Date(lastRespon.createdAt))  : "",
     totalResponses,
@@ -325,7 +341,38 @@ export async function getPeriodeComparisonData(periodeIds: string[]) {
 }
 
 // ----------------------------------------------------------------------
-// 10. LAYANAN DETAIL WITH RESPONDENTS (for Layanan SKM tabs)
+// 10. LAYANAN × PERIOD COMPARISON (for Riwayat tab layanan comparison)
+// ----------------------------------------------------------------------
+export async function getLayananPeriodeComparison(layananId: string, periodeIds: string[]) {
+  if (!layananId || !periodeIds.length) return { layananNama: "", data: [] };
+
+  const [layanan, periods] = await Promise.all([
+    prisma.layanan.findUnique({ where: { id: layananId }, select: { nama: true } }),
+    prisma.periode.findMany({ where: { id: { in: periodeIds } }, select: { id: true, label: true } }),
+  ]);
+
+  const data = await Promise.all(
+    periods.map(async (p: { id: string; label: string }) => {
+      const respon = await prisma.respon.findMany({
+        where: { periodeId: p.id, layananId },
+        select: { u1: true, u2: true, u3: true, u4: true, u5: true, u6: true, u7: true, u8: true, u9: true },
+      });
+      const count = respon.length;
+      let ikm = 0;
+      if (count > 0) {
+        const total = respon.reduce((acc: number, r: UnsurFields) =>
+          acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
+        ikm = parseFloat(((total / (9 * count)) * 25).toFixed(2));
+      }
+      return { periodeId: p.id, label: p.label, ikm, count };
+    })
+  );
+
+  return { layananNama: layanan?.nama ?? "", data };
+}
+
+// ----------------------------------------------------------------------
+// 11. LAYANAN DETAIL WITH RESPONDENTS (for Layanan SKM tabs)
 // ----------------------------------------------------------------------
 export async function getLayananWithRespondents(layananId: string) {
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
