@@ -87,7 +87,58 @@ const initialState = { success: undefined as true | undefined, error: undefined 
 export default function PengaduanClient() {
   const [progress, setProgress] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, action, isPending] = useActionState(submitPengaduan, initialState);
+
+  // File / drag state
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  function handleFile(file: File | null | undefined) {
+    setFileError(null);
+    if (!file) { clearFile(); return; }
+    if (!file.type.startsWith("image/")) {
+      setFileError("File harus berupa gambar (JPG, PNG, dsb).");
+      clearFile(); return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFileError("Ukuran gambar tidak boleh lebih dari 5 MB.");
+      clearFile(); return;
+    }
+    setFileName(file.name);
+    setFileSize((file.size / 1024 / 1024).toFixed(2) + " MB");
+    const reader = new FileReader();
+    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function clearFile() {
+    setPreview(null); setFileName(null); setFileSize(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault(); e.stopPropagation();
+    setDragActive(true);
+  }
+  function onDragLeave(e: React.DragEvent) {
+    e.preventDefault(); e.stopPropagation();
+    setDragActive(false);
+  }
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault(); e.stopPropagation();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && fileInputRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInputRef.current.files = dt.files;
+    }
+    handleFile(file);
+  }
 
   const formSection  = useInView(0.06);
   const featSection  = useInView(0.08);
@@ -107,7 +158,9 @@ export default function PengaduanClient() {
   useEffect(() => {
     if (state.success && formRef.current) {
       formRef.current.reset();
+      clearFile();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
 
   const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
@@ -281,7 +334,12 @@ export default function PengaduanClient() {
           cursor:pointer; background:#fafbfc;
           transition:border-color .25s ease, background .25s ease;
         }
-        .upload-zone:hover { border-color:#38bdf8; background:rgba(56,189,248,.04); }
+        .upload-zone:hover, .upload-zone.drag-over { border-color:#38bdf8; background:rgba(56,189,248,.06); }
+        .upload-zone.drag-over { border-style:solid; }
+        .upload-preview {
+          border:1.5px solid #e2e8f0; border-radius:.875rem;
+          overflow:hidden; background:#fafbfc;
+        }
 
         /* ═══ Submit button ═══ */
         .submit-btn {
@@ -537,20 +595,78 @@ export default function PengaduanClient() {
                     <label className="form-label">
                       Foto Bukti <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional · maks. 5 MB)</span>
                     </label>
-                    <label htmlFor="gambar-input" className="upload-zone">
-                      <Upload className="w-7 h-7" style={{ color: "#94a3b8" }} />
-                      <p className="text-sm font-medium" style={{ color: "#64748b" }}>Klik untuk unggah gambar</p>
-                      <p className="text-xs" style={{ color: "#94a3b8" }}>JPG, PNG, WEBP</p>
-                    </label>
-                    <input id="gambar-input" name="gambar" type="file" accept="image/*"
+
+                    {preview ? (
+                      /* ── Preview state ── */
+                      <div className="upload-preview">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={preview} alt="Preview foto bukti"
+                          className="w-full object-cover"
+                          style={{ maxHeight: "200px" }} />
+                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ background: "#0d2d58" }}>
+                              <Upload className="w-4 h-4" style={{ color: "#FAE705" }} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-slate-700 truncate">{fileName}</p>
+                              <p className="text-[11px]" style={{ color: "#94a3b8" }}>{fileSize}</p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={clearFile}
+                            className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
+                            style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
+                            Hapus
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ── Drop / click zone ── */
+                      <div
+                        className={`upload-zone${dragActive ? " drag-over" : ""}`}
+                        onDragOver={onDragOver}
+                        onDragEnter={onDragOver}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => e.key === "Enter" && fileInputRef.current?.click()}
+                        aria-label="Unggah foto bukti"
+                      >
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 transition-colors"
+                          style={{ background: dragActive ? "rgba(56,189,248,.12)" : "#f1f5f9" }}>
+                          <Upload className="w-6 h-6 transition-colors"
+                            style={{ color: dragActive ? "#38bdf8" : "#94a3b8" }} />
+                        </div>
+                        {dragActive ? (
+                          <p className="text-sm font-semibold" style={{ color: "#38bdf8" }}>Lepaskan untuk mengunggah</p>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium" style={{ color: "#64748b" }}>
+                              Seret & lepas gambar di sini
+                            </p>
+                            <p className="text-xs" style={{ color: "#94a3b8" }}>
+                              atau <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
+                            </p>
+                          </>
+                        )}
+                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>JPG, PNG, WEBP · Maks. 5 MB</p>
+                      </div>
+                    )}
+
+                    {fileError && (
+                      <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: "#dc2626" }}>
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {fileError}
+                      </p>
+                    )}
+
+                    <input ref={fileInputRef} id="gambar-input" name="gambar" type="file" accept="image/*"
                       className="sr-only"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f && f.size > 5 * 1024 * 1024) {
-                          alert("Ukuran file terlalu besar. Maksimal 5 MB.");
-                          e.target.value = "";
-                        }
-                      }} />
+                      onChange={(e) => handleFile(e.target.files?.[0])} />
                   </div>
 
                   {/* Submit */}
