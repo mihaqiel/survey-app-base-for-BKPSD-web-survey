@@ -11,14 +11,17 @@ import {
 } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
 import { loginAlertTemplate } from "@/lib/email-templates";
+import { getLoginLimiter } from "@/lib/ratelimit";
 
-// Pre-hash the admin password at module load so we can use bcrypt.compare().
-// In production, store a bcrypt hash in the database instead of env plaintext.
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? "admin";
-const ADMIN_PASSWORD_HASH = bcrypt.hashSync(
-  process.env.ADMIN_PASSWORD ?? "bkpsd2026",
-  12,
-);
+/** Resolve admin credentials at call time — never at module load (avoids build errors). */
+function getAdminCredentials(): { username: string; passwordHash: string } {
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required");
+  }
+  return { username, passwordHash: bcrypt.hashSync(password, 12) };
+}
 
 export async function login(formData: FormData) {
   const username = formData.get("username") as string;
@@ -28,6 +31,15 @@ export async function login(formData: FormData) {
     redirect("/login?error=InvalidCredentials");
   }
 
+  // Rate limit: 5 attempts per 15 minutes per IP
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { success } = await getLoginLimiter().limit(ip);
+  if (!success) {
+    redirect("/login?error=TooManyAttempts");
+  }
+
+  const { username: ADMIN_USERNAME, passwordHash: ADMIN_PASSWORD_HASH } = getAdminCredentials();
   const usernameMatch = username === ADMIN_USERNAME;
   const passwordMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
 
@@ -36,7 +48,7 @@ export async function login(formData: FormData) {
     cookieStore.set(COOKIE_NAME, await createSessionToken(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: MAX_AGE,
       path: "/",
     });

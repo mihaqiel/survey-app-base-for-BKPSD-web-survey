@@ -2,9 +2,17 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { getPinLimiter } from "@/lib/ratelimit";
 
 // ── PIN Verification ──────────────────────────────────────────────────────────
 export async function verifyDeletePin(pin: string): Promise<{ success: boolean; error?: string }> {
+  // Rate limit: 3 attempts per hour per IP
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { success: allowed } = await getPinLimiter().limit(ip);
+  if (!allowed) return { success: false, error: "Terlalu banyak percobaan PIN. Coba lagi dalam 1 jam." };
+
   const correctPin = process.env.DELETE_PIN;
   if (!correctPin) return { success: false, error: "DELETE_PIN belum dikonfigurasi di server." };
   if (pin !== correctPin) return { success: false, error: "PIN salah. Coba lagi." };

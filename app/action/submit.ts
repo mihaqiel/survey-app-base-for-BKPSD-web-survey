@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email";
 import { unblockRequestTemplate } from "@/lib/email-templates";
+import { getSubmitLimiter } from "@/lib/ratelimit";
 
 // EMPLOYEE SEARCH
 export async function searchPegawai(query: string) {
@@ -33,6 +34,10 @@ export async function submitSkmResponse(formData: FormData) {
 
   const layananId = formData.get("layananId") as string;
   const today = todayWib();
+
+  // 0. Rate limit: 30 submissions per hour per IP
+  const { success: allowed } = await getSubmitLimiter().limit(ip);
+  if (!allowed) redirect("/blocked?reason=ratelimit");
 
   // 1. Check if IP is manually blocked in DB
   const blockedIp = await prisma.blockedIp.findUnique({
@@ -70,35 +75,59 @@ export async function submitSkmResponse(formData: FormData) {
 
   // 4. Validate required fields
   const pegawaiId     = formData.get("pegawaiId") as string;
-  const nama          = formData.get("nama") as string;
   const tglLayananStr = formData.get("tglLayanan") as string;
 
-  if (!layananId || !pegawaiId || !nama || !tglLayananStr) {
-    throw new Error("Missing required fields");
+  if (!layananId || !pegawaiId || !tglLayananStr) {
+    throw new Error("Kolom wajib tidak lengkap.");
   }
 
-  // 5. Parse fields
-  const getInt = (key: string) => parseInt(formData.get(key) as string) || 0;
+  // 5. Parse and validate fields
+  const clamp = (s: FormDataEntryValue | null, max: number) =>
+    ((s as string)?.trim() ?? "").slice(0, max);
+
+  const nama = clamp(formData.get("nama"), 100);
+  if (!nama) throw new Error("Nama tidak boleh kosong.");
+
+  const validateScore = (key: string): number => {
+    const val = parseInt(formData.get(key) as string);
+    if (isNaN(val) || val < 1 || val > 4) throw new Error(`${key} harus antara 1-4`);
+    return val;
+  };
+
   const getOptionalInt = (key: string): number | null => {
     const val = parseInt(formData.get(key) as string);
     return isNaN(val) ? null : val;
   };
 
+  const usia = parseInt(formData.get("usia") as string);
+  if (isNaN(usia) || usia < 1 || usia > 120) throw new Error("Usia tidak valid.");
+
   let pekerjaan = formData.get("pekerjaan") as string;
   if (pekerjaan === "Lainnya") {
-    const custom = (formData.get("pekerjaan_custom") as string)?.trim();
-    if (!custom) throw new Error("Pekerjaan custom is required");
+    const custom = clamp(formData.get("pekerjaan_custom"), 100);
+    if (!custom) throw new Error("Isian pekerjaan wajib diisi.");
     pekerjaan = custom;
   }
 
   const isDifabel        = formData.get("isDifabel") as string;
   const jenisDisabilitas = isDifabel === "Ya"
-    ? (formData.get("jenisDisabilitas") as string) || null
+    ? clamp(formData.get("jenisDisabilitas"), 100) || null
     : null;
 
   const rating = getOptionalInt("rating");
+  const saran  = clamp(formData.get("saran"), 1000) || null;
 
   // 6. Save to database
+  let u1: number, u2: number, u3: number, u4: number, u5: number,
+      u6: number, u7: number, u8: number, u9: number;
+  try {
+    u1 = validateScore("u1"); u2 = validateScore("u2"); u3 = validateScore("u3");
+    u4 = validateScore("u4"); u5 = validateScore("u5"); u6 = validateScore("u6");
+    u7 = validateScore("u7"); u8 = validateScore("u8"); u9 = validateScore("u9");
+  } catch {
+    throw new Error("Semua nilai penilaian harus diisi dengan angka 1-4.");
+  }
+
   await prisma.respon.create({
     data: {
       periodeId:  activePeriod.id,
@@ -106,17 +135,15 @@ export async function submitSkmResponse(formData: FormData) {
       pegawaiId,
       nama,
       tglLayanan:       new Date(tglLayananStr),
-      usia:             getInt("usia"),
-      jenisKelamin:     formData.get("jenisKelamin") as string,
-      pendidikan:       formData.get("pendidikan") as string,
+      usia,
+      jenisKelamin:     clamp(formData.get("jenisKelamin"), 50),
+      pendidikan:       clamp(formData.get("pendidikan"), 50),
       pekerjaan,
       isDifabel,
       jenisDisabilitas,
-      u1: getInt("u1"), u2: getInt("u2"), u3: getInt("u3"),
-      u4: getInt("u4"), u5: getInt("u5"), u6: getInt("u6"),
-      u7: getInt("u7"), u8: getInt("u8"), u9: getInt("u9"),
+      u1, u2, u3, u4, u5, u6, u7, u8, u9,
       rating,
-      saran:     (formData.get("saran") as string) || null,
+      saran,
       ipAddress: ip,
     },
   });

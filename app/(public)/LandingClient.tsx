@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { BarChart3, ShieldCheck, QrCode, Smartphone, KeyRound, ClipboardList, CheckCircle2, ChevronDown } from "lucide-react";
 import { Playfair_Display, DM_Sans } from "next/font/google";
@@ -21,12 +20,6 @@ const dmSans = DM_Sans({
 });
 
 /* ── Data ─────────────────────────────────────── */
-const HERO_LOGOS = [
-  { src: "/logo-anambas.png",      alt: "Lambang Kepulauan Anambas", w: 200, h: 220 },
-  { src: "/logo-anambas-maju.png", alt: "Anambas Maju — Energi Baru", w: 340, h: 170 },
-  { src: "/logo-bkpsdm.png",       alt: "BKPSDM Anambas",            w: 280, h: 160 },
-];
-
 const FEATURES = [
   {
     icon: <BarChart3 className="w-6 h-6" />,
@@ -119,8 +112,7 @@ function WordReveal({ text, inView, delay = 0, italic = false }: {
 export default function LandingClient({ surveyToken }: { surveyToken: string }) {
   const surveyHref = surveyToken ? `/enter?token=${surveyToken}` : "/enter";
 
-  const [progress, setProgress]     = useState(0);
-  const [logoIndex, setLogoIndex]   = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const features = useInView(0.08);
   const howto    = useInView(0.08);
@@ -134,12 +126,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  /* logo carousel */
-  useEffect(() => {
-    const t = setInterval(() => setLogoIndex((p) => (p + 1) % HERO_LOGOS.length), 3500);
-    return () => clearInterval(t);
   }, []);
 
   const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
@@ -313,83 +299,53 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           </span>
         </div>
 
-        {/* ── Content grid ── */}
-        <div className="relative z-10 max-w-6xl mx-auto w-full py-28 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* ── Content — centered single column ── */}
+        <div className="relative z-10 max-w-3xl mx-auto w-full py-28 flex flex-col items-center text-center">
 
-          {/* LEFT: text + buttons */}
-          <div>
-            {/* Overline */}
-            <div className="char-in section-label mb-8" style={{ animationDelay: "0.1s" }}>
-              <span className="section-label-line" />
-              <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
-                BKPSDM Kab. Kepulauan Anambas
-              </span>
-            </div>
-
-            {/* Heading */}
-            <h1 className="serif mb-6 leading-[1.08]">
-              <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
-                <CharReveal text="Survei Kepuasan" delay={0.3} />
-              </span>
-              <span className="block font-normal italic" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", color: "rgba(255,255,255,0.72)" }}>
-                <CharReveal text="Masyarakat" delay={0.9} />
-              </span>
-            </h1>
-
-            {/* Subtitle */}
-            <p
-              className="char-in text-white/55 text-sm sm:text-base max-w-lg leading-relaxed mb-10"
-              style={{ animationDelay: "1.7s" }}
-            >
-              Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten
-              Kepulauan Anambas. Transparan, akuntabel, dan terukur.
-            </p>
-
-            {/* Buttons */}
-            <div className="char-in flex flex-col sm:flex-row gap-4" style={{ animationDelay: "1.9s" }}>
-              <Link
-                href={surveyHref}
-                className="cta-btn text-center justify-center"
-              >
-                Mulai Survei
-                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-semibold text-sm text-white/80 border border-white/20 hover:bg-white/10 hover:text-white transition-all duration-300"
-                style={{ backdropFilter: "blur(6px)", background: "rgba(255,255,255,0.06)" }}
-              >
-                Masuk Dashboard
-              </Link>
-            </div>
+          {/* Overline */}
+          <div className="char-in section-label justify-center mb-8" style={{ animationDelay: "0.1s" }}>
+            <span className="section-label-line" />
+            <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
+              BKPSDM Kab. Kepulauan Anambas
+            </span>
+            <span className="section-label-line" />
           </div>
 
-          {/* RIGHT: rotating logo showcase */}
-          <div className="flex items-center justify-center">
-            <div className="relative w-[380px] h-[380px] sm:w-[440px] sm:h-[440px]">
+          {/* Heading */}
+          <h1 className="serif mb-6 leading-[1.08]">
+            <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
+              <CharReveal text="Survei Kepuasan" delay={0.3} />
+            </span>
+            <span className="block font-normal italic" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", color: "rgba(255,255,255,0.72)" }}>
+              <CharReveal text="Masyarakat" delay={0.9} />
+            </span>
+          </h1>
 
-              {/* Logo crossfade — no ring, no frame */}
-              {HERO_LOGOS.map((logo, idx) => (
-                <div
-                  key={logo.src}
-                  className="absolute inset-0 flex items-center justify-center transition-all duration-1000 ease-in-out"
-                  style={{
-                    opacity: logoIndex === idx ? 1 : 0,
-                    transform: logoIndex === idx ? "scale(1)" : "scale(0.88)",
-                    pointerEvents: logoIndex === idx ? "auto" : "none",
-                  }}
-                >
-                  <Image
-                    src={logo.src}
-                    alt={logo.alt}
-                    width={logo.w}
-                    height={logo.h}
-                    className="object-contain drop-shadow-2xl"
-                    style={{ maxHeight: "220px", maxWidth: "100%" }}
-                  />
-                </div>
-              ))}
-            </div>
+          {/* Subtitle */}
+          <p
+            className="char-in text-white/55 text-sm sm:text-base max-w-lg leading-relaxed mb-10"
+            style={{ animationDelay: "1.7s" }}
+          >
+            Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten
+            Kepulauan Anambas. Transparan, akuntabel, dan terukur.
+          </p>
+
+          {/* Buttons */}
+          <div className="char-in flex flex-col sm:flex-row gap-4 justify-center" style={{ animationDelay: "1.9s" }}>
+            <Link
+              href={surveyHref}
+              className="cta-btn text-center justify-center"
+            >
+              Mulai Survei
+              <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl font-semibold text-sm text-white/80 border border-white/20 hover:bg-white/10 hover:text-white transition-all duration-300"
+              style={{ backdropFilter: "blur(6px)", background: "rgba(255,255,255,0.06)" }}
+            >
+              Masuk Dashboard
+            </Link>
           </div>
         </div>
 

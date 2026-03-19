@@ -132,7 +132,7 @@ export default function PortalForm() {
   const [saran,           setSaran]           = useState("");
 
   const contentRef  = useRef<HTMLDivElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/layanan").then(r=>r.json()).then(setLayananList);

@@ -6,9 +6,17 @@ import SkmForm from "./SkmForm";
 export default async function AssessmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // 1. Security Check
+  // 1. Security Check — cookie must exist and reference an active period
   const cookieStore = await cookies();
-  if (!cookieStore.get("skm_token")) redirect("/enter");
+  const periodeId = cookieStore.get("skm_token")?.value;
+  if (!periodeId) redirect("/enter");
+
+  // Verify the period in the cookie is still active (prevents use of stale sessions)
+  const activePeriod = await prisma.periode.findFirst({
+    where: { id: periodeId, status: "AKTIF" },
+    select: { id: true },
+  });
+  if (!activePeriod) redirect("/enter");
 
   // 2. Fetch Service Details
   const service = await prisma.layanan.findUnique({
