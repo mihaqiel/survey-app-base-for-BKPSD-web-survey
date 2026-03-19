@@ -5,17 +5,22 @@ import { login } from "@/app/action/auth";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Lock, ShieldAlert } from "lucide-react";
 
+const ERROR_MESSAGES: Record<string, string> = {
+  InvalidCredentials: "Username atau password salah.",
+  TooManyAttempts:   "Terlalu banyak percobaan login. Coba lagi dalam 15 menit.",
+};
+
 function ErrorMessage() {
   const searchParams = useSearchParams();
-  const isError = searchParams.get("error");
-  if (!isError) return null;
+  const errorCode = searchParams.get("error");
+  if (!errorCode) return null;
+
+  const message = ERROR_MESSAGES[errorCode] ?? "Terjadi kesalahan. Silakan coba lagi.";
 
   return (
     <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3 mb-6">
       <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-      <p className="text-red-600 text-sm font-medium">
-        Username atau password salah
-      </p>
+      <p className="text-red-600 text-sm font-medium">{message}</p>
     </div>
   );
 }

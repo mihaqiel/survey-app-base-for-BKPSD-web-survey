@@ -2,7 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import bcrypt from "bcryptjs";
+import { timingSafeEqual } from "crypto";
 import {
   createSessionToken,
   verifySessionToken,
@@ -13,14 +13,26 @@ import { sendEmail } from "@/lib/email";
 import { loginAlertTemplate } from "@/lib/email-templates";
 import { getLoginLimiter } from "@/lib/ratelimit";
 
+/** Constant-time string comparison — prevents timing attacks on credential checks. */
+function safeEqual(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) return false;
+    return timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve admin credentials at call time — never at module load (avoids build errors). */
-function getAdminCredentials(): { username: string; passwordHash: string } {
+function getAdminCredentials(): { username: string; password: string } {
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
   if (!username || !password) {
     throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required");
   }
-  return { username, passwordHash: bcrypt.hashSync(password, 12) };
+  return { username, password };
 }
 
 export async function login(formData: FormData) {
@@ -39,9 +51,9 @@ export async function login(formData: FormData) {
     redirect("/login?error=TooManyAttempts");
   }
 
-  const { username: ADMIN_USERNAME, passwordHash: ADMIN_PASSWORD_HASH } = getAdminCredentials();
-  const usernameMatch = username === ADMIN_USERNAME;
-  const passwordMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+  const { username: ADMIN_USERNAME, password: ADMIN_PASSWORD } = getAdminCredentials();
+  const usernameMatch = safeEqual(username, ADMIN_USERNAME);
+  const passwordMatch = safeEqual(password, ADMIN_PASSWORD);
 
   if (usernameMatch && passwordMatch) {
     const cookieStore = await cookies();
