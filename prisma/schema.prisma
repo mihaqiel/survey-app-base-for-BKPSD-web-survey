@@ -107,3 +107,18 @@ model BlockedIp {
   messageAt    DateTime?
   messageEmail String?  // optional email for reply
 }
+
+// PUBLIC COMPLAINTS (Pengaduan Masyarakat)
+model Pengaduan {
+  id          String   @id @default(cuid())
+  nama        String
+  email       String
+  telepon     String?
+  judul       String
+  isi         String
+  gambar      Bytes?
+  gambarType  String?  // e.g. "image/jpeg"
+  gambarName  String?
+  status      String   @default("BARU") // BARU | DIPROSES | SELESAI
+  createdAt   DateTime @default(now())
+}

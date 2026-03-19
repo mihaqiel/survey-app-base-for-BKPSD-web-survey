@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   X,
+  MessageSquareWarning,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -130,6 +131,12 @@ export default function Sidebar() {
           <Users className="w-4 h-4" />,
         )}
         <div className="mx-5 my-3 border-t border-gray-100" />
+        {navItem(
+          "/admin/pengaduan",
+          "Pengaduan",
+          false,
+          <MessageSquareWarning className="w-4 h-4" />,
+        )}
         {navItem(
           "/admin/ip",
           "IP Spam Block",

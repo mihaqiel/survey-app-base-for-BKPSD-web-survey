@@ -21,8 +21,9 @@ const dmSans = DM_Sans({
 });
 
 const NAV_LINKS = [
-  { href: "/",        label: "Beranda"     },
-  { href: "/tentang", label: "Tentang Kami" },
+  { href: "/",           label: "Beranda"      },
+  { href: "/tentang",    label: "Tentang Kami" },
+  { href: "/pengaduan",  label: "Pengaduan"    },
 ];
 
 export default function PublicHeader() {

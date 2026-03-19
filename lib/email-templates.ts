@@ -207,7 +207,99 @@ export function unblockApprovedTemplate(opts: {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Survey Submission Confirmation → sent to respondent (optional, use case 4)
+// 4. Pengaduan Masyarakat — Confirmation to complainant
+// ---------------------------------------------------------------------------
+
+export function pengaduanConfirmTemplate(opts: {
+  nama: string;
+  judul: string;
+}): { subject: string; html: string } {
+  const subject = "[BKPSDM] Pengaduan Anda Telah Diterima";
+  const html = wrap(`
+    <h2 style="margin:0 0 8px;font-size:20px;color:${BRAND_NAVY};">Pengaduan Berhasil Dikirim</h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+      Terima kasih, <strong>${opts.nama}</strong>. Pengaduan Anda telah kami terima dan akan segera ditindaklanjuti oleh tim BKPSDM Kabupaten Kepulauan Anambas.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">Judul Pengaduan</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.judul}</span>
+        </td>
+      </tr>
+    </table>
+
+    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:16px 20px;">
+      <p style="margin:0;font-size:13px;color:#166534;line-height:1.6;">
+        Tim kami akan memproses pengaduan ini dan menghubungi Anda jika diperlukan informasi tambahan.
+        Terima kasih atas kepercayaan Anda kepada BKPSDM Kab. Kepulauan Anambas.
+      </p>
+    </div>
+  `);
+  return { subject, html };
+}
+
+// ---------------------------------------------------------------------------
+// 5. Pengaduan Masyarakat — Notification to admin
+// ---------------------------------------------------------------------------
+
+export function pengaduanNotifTemplate(opts: {
+  nama: string;
+  email: string;
+  telepon?: string;
+  judul: string;
+  isi: string;
+}): { subject: string; html: string } {
+  const subject = `[BKPSDM] Pengaduan Baru: ${opts.judul}`;
+  const html = wrap(`
+    <h2 style="margin:0 0 8px;font-size:20px;color:${BRAND_NAVY};">Pengaduan Masyarakat Baru</h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+      Telah masuk pengaduan baru dari masyarakat. Silakan tinjau dan proses melalui panel admin.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid #e8eaf0;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">Nama Pelapor</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.nama}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid #e8eaf0;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">Email</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.email}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid #e8eaf0;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">No. Telepon</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.telepon ?? "<em style='color:#9ca3af;font-weight:400;'>tidak disertakan</em>"}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid #e8eaf0;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">Judul Pengaduan</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.judul}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Isi Pengaduan</span>
+          <div style="font-size:14px;color:#374151;line-height:1.6;background:#ffffff;border:1px solid #e8eaf0;border-radius:6px;padding:12px 14px;white-space:pre-wrap;">${opts.isi}</div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+      Untuk memproses pengaduan ini, buka <strong>Panel Admin → Pengaduan</strong>.
+    </p>
+  `);
+  return { subject, html };
+}
+
+// ---------------------------------------------------------------------------
+// 6. Survey Submission Confirmation → sent to respondent (optional, use case 4)
 // ---------------------------------------------------------------------------
 
 export function surveyConfirmationTemplate(opts: {
