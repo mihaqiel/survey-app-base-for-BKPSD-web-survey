@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import { unblockApprovedTemplate } from "@/lib/email-templates";
 
 async function isAdmin(): Promise<boolean> {
   const c = await cookies();
@@ -76,7 +78,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       update: { reason: reason || "manual", blockedAt: new Date() },
     });
   } else if (action === "unblock") {
+    // Fetch email BEFORE deletion — the record is gone after deleteMany
+    const record = await prisma.blockedIp.findUnique({
+      where: { ip },
+      select: { messageEmail: true },
+    });
+
     await prisma.blockedIp.deleteMany({ where: { ip } });
+
+    // Fire-and-forget confirmation to the user who submitted the unblock request
+    if (record?.messageEmail) {
+      const approvedAt = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+      const { subject, html } = unblockApprovedTemplate({ ip, approvedAt });
+      void sendEmail({ to: record.messageEmail, subject, html });
+    }
   } else {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }

@@ -4,6 +4,8 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { sendEmail } from "@/lib/email";
+import { unblockRequestTemplate } from "@/lib/email-templates";
 
 // EMPLOYEE SEARCH
 export async function searchPegawai(query: string) {
@@ -141,6 +143,18 @@ export async function submitUnblockRequest(formData: FormData) {
       messageEmail: email || null,
     },
   });
+
+  // Fire-and-forget unblock request notification to admin
+  if (process.env.ADMIN_EMAIL) {
+    const requestedAt = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+    const { subject, html } = unblockRequestTemplate({
+      ip,
+      message,
+      userEmail: email || undefined,
+      requestedAt,
+    });
+    void sendEmail({ to: process.env.ADMIN_EMAIL, subject, html });
+  }
 
   return { ok: true };
 }

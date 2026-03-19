@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import {
@@ -9,6 +9,8 @@ import {
   COOKIE_NAME,
   MAX_AGE,
 } from "@/lib/session";
+import { sendEmail } from "@/lib/email";
+import { loginAlertTemplate } from "@/lib/email-templates";
 
 // Pre-hash the admin password at module load so we can use bcrypt.compare().
 // In production, store a bcrypt hash in the database instead of env plaintext.
@@ -38,6 +40,16 @@ export async function login(formData: FormData) {
       maxAge: MAX_AGE,
       path: "/",
     });
+
+    // Fire-and-forget login security alert to ADMIN_EMAIL
+    if (process.env.ADMIN_EMAIL) {
+      const headerList = await headers();
+      const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      const timestamp = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+      const { subject, html } = loginAlertTemplate({ username, timestamp, ip });
+      void sendEmail({ to: process.env.ADMIN_EMAIL, subject, html });
+    }
+
     redirect("/admin");
   } else {
     redirect("/login?error=InvalidCredentials");
