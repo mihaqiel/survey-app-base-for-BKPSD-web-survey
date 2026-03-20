@@ -64,7 +64,7 @@ export async function GET() {
         ikm:      parseFloat(((total / (9 * count)) * 25).toFixed(1)),
       }))
       .sort((a, b) => b.ikm - a.ikm)
-      .slice(0, 3)
+      .slice(0, 5)
       .map(s => ({ ...s, category: ikmCategory(s.ikm) }));
 
     return NextResponse.json({

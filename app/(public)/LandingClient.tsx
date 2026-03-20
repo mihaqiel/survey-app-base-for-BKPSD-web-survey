@@ -201,14 +201,34 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
     setBarsMounted(false);
   }, [activePanel, ikmLoading, ikmServices]);
 
-  /* Generate QR when panel first opens */
+  /* Generate QR with BKPSDM logo overlay when panel first opens */
   useEffect(() => {
     if (activePanel !== "qr" || qrDataUrl || !surveyToken) return;
     import("qrcode").then(({ default: QRCode }) => {
-      QRCode.toDataURL(`${window.location.origin}/enter?token=${surveyToken}`, {
-        width: 220, margin: 2, errorCorrectionLevel: "H",
+      const size = 320;
+      const canvas = document.createElement("canvas");
+      QRCode.toCanvas(canvas, `${window.location.origin}/enter?token=${surveyToken}`, {
+        width: size, margin: 2, errorCorrectionLevel: "H",
         color: { dark: "#0f172a", light: "#ffffff" },
-      }).then(setQrDataUrl);
+      }).then(() => {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { setQrDataUrl(canvas.toDataURL()); return; }
+        const logo = new Image();
+        logo.crossOrigin = "anonymous";
+        logo.onload = () => {
+          const logoSize = size * 0.22;
+          const cx = size / 2, cy = size / 2;
+          /* White circle background so QR modules don't show through */
+          ctx.beginPath();
+          ctx.arc(cx, cy, logoSize * 0.62, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+          ctx.drawImage(logo, cx - logoSize / 2, cy - logoSize / 2, logoSize, logoSize);
+          setQrDataUrl(canvas.toDataURL());
+        };
+        logo.onerror = () => setQrDataUrl(canvas.toDataURL());
+        logo.src = "/logo-bkpsdm.png";
+      });
     });
   }, [activePanel, surveyToken, qrDataUrl]);
 
@@ -590,11 +610,11 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                   <h3 className="serif text-2xl font-bold text-white mb-6">
                     9 Unsur Survei Kepuasan Masyarakat
                   </h3>
-                  <div className="space-y-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                     {UNSUR_SKM.map((u) => (
                       <div key={u.num} className="flex gap-3 items-start">
                         <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
+                          className="text-xs font-bold px-2.5 py-1 rounded shrink-0 mt-0.5"
                           style={{
                             border:     "1px solid rgba(250,231,5,0.4)",
                             color:      "#FAE705",
@@ -604,9 +624,9 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                           {u.num}
                         </span>
                         <div>
-                          <p className="text-sm font-semibold text-white leading-tight">{u.nama}</p>
-                          <p className="text-[11px] mt-0.5 leading-relaxed"
-                             style={{ color: "rgba(255,255,255,0.45)" }}>
+                          <p className="text-base font-semibold text-white leading-tight">{u.nama}</p>
+                          <p className="text-sm mt-1 leading-relaxed"
+                             style={{ color: "rgba(255,255,255,0.52)" }}>
                             {u.desc}
                           </p>
                         </div>
@@ -653,37 +673,45 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                         </div>
                       </div>
 
-                      {/* Top 3 bars */}
-                      <div className="space-y-5">
-                        {ikmServices.map((s, idx) => (
-                          <div key={s.nama}>
-                            <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-sm text-white/80 flex items-center gap-2">
-                                <span className="text-base leading-none">
-                                  {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
+                      {/* Top 5 layanan */}
+                      <div>
+                        <p className="text-[10px] font-semibold tracking-[0.25em] uppercase mb-4"
+                           style={{ color: "rgba(255,255,255,0.38)" }}>
+                          Layanan Unggulan
+                        </p>
+                        <div className="space-y-4">
+                          {ikmServices.map((s, idx) => (
+                            <div key={s.nama}>
+                              <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-sm text-white/80 flex items-center gap-2">
+                                  <span className="text-base leading-none shrink-0">
+                                    {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉"
+                                      : <span className="text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                                              style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}>#{idx + 1}</span>}
+                                  </span>
+                                  {s.nama}
                                 </span>
-                                {s.nama}
-                              </span>
-                              <span className="serif text-sm font-bold" style={goldGradText}>
-                                {s.ikm}
-                              </span>
+                                <span className="serif text-sm font-bold shrink-0 ml-2" style={goldGradText}>
+                                  {s.ikm}
+                                </span>
+                              </div>
+                              <div className="h-1.5 rounded-full overflow-hidden"
+                                   style={{ background: "rgba(255,255,255,0.08)" }}>
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    background: "linear-gradient(90deg, #FAE705, #f59e0b)",
+                                    width:      barsMounted ? `${(s.ikm / 100) * 100}%` : "0%",
+                                    transition: `width 0.7s ease ${idx * 0.12}s`,
+                                  }}
+                                />
+                              </div>
+                              <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+                                {s.count} responden · {s.category}
+                              </p>
                             </div>
-                            <div className="h-1.5 rounded-full overflow-hidden"
-                                 style={{ background: "rgba(255,255,255,0.08)" }}>
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  background: "linear-gradient(90deg, #FAE705, #f59e0b)",
-                                  width:      barsMounted ? `${(s.ikm / 100) * 100}%` : "0%",
-                                  transition: `width 0.7s ease ${idx * 0.15}s`,
-                                }}
-                              />
-                            </div>
-                            <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
-                              {s.count} responden · {s.category}
-                            </p>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}
@@ -710,30 +738,21 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                       Memuat QR Code…
                     </p>
                   ) : (
-                    <div className="flex flex-col sm:flex-row items-start gap-8">
-                      {/* QR */}
-                      <div className="p-3 rounded-2xl shadow-xl shrink-0"
-                           style={{ background: "#ffffff" }}>
+                    <div className="flex flex-col items-center gap-5">
+                      {/* QR — large, logo embedded in center via canvas */}
+                      <div
+                        className="p-4 rounded-2xl shadow-2xl"
+                        style={{ background: "#ffffff" }}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={qrDataUrl} alt="QR Code Survei SKM"
-                             className="w-36 h-36 sm:w-40 sm:h-40" />
+                             className="w-60 h-60 sm:w-72 sm:h-72" />
                       </div>
-                      {/* Info */}
-                      <div className="flex flex-col gap-3 justify-center">
-                        <p className="text-white font-semibold">Pindai untuk mulai survei</p>
-                        <p className="text-sm leading-relaxed"
-                           style={{ color: "rgba(255,255,255,0.55)" }}>
-                          Arahkan kamera ponsel ke QR Code, atau kunjungi tautan berikut:
+                      <div className="text-center">
+                        <p className="text-white font-semibold text-base">Pindai untuk mulai survei</p>
+                        <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.50)" }}>
+                          Arahkan kamera ponsel Anda ke kode di atas
                         </p>
-                        <a href={surveyUrl} className="text-[11px] font-mono break-all hover:underline"
-                           style={{ color: "rgba(56,189,248,0.85)" }}
-                           target="_blank" rel="noopener noreferrer">
-                          {surveyUrl}
-                        </a>
-                        <Link href={surveyHref} className="cta-btn mt-1 self-start text-sm"
-                              style={{ padding: "0.7rem 1.5rem" }}>
-                          Mulai Survei →
-                        </Link>
                       </div>
                     </div>
                   )}
