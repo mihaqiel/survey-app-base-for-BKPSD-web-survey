@@ -10,6 +10,14 @@ const securityHeaders = [
 
 const nextConfig = {
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
+
+  // 5 files × 5 MB each = 25 MB max — raise Server Action body size limit.
+  // Default is 1 MB which is far too small for file attachments.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "25mb",
+    },
+  },
 };
 
 export default nextConfig;
