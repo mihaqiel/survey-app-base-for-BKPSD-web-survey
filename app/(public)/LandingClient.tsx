@@ -143,9 +143,10 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
   const features = useInView(0.08);
   const howto    = useInView(0.08);
   const cta      = useInView(0.08);
+  const stats    = useInView(0.15);
 
   /* ── Stats bar state ── */
-  const [activePanel, setActivePanel] = useState<"unsur" | "ikm" | "qr" | null>(null);
+  const [activePanel, setActivePanel] = useState<"unsur" | "ikm" | "qr">("unsur");
 
   /* IKM panel */
   const [ikmServices,  setIkmServices]  = useState<IkmService[]>([]);
@@ -211,9 +212,9 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
     });
   }, [activePanel, surveyToken, qrDataUrl]);
 
-  /* Toggle helper */
+  /* Select panel — clicking a different item switches; clicking same keeps it */
   function togglePanel(id: "unsur" | "ikm" | "qr") {
-    setActivePanel(prev => (prev === id ? null : id));
+    setActivePanel(id);
   }
 
   const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
@@ -244,10 +245,9 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           75%  { background-position: 0%  100%; }
           100% { background-position: 0%   50%; }
         }
-        @keyframes statsGrad {
-          0%   { background-position: 0%   50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0%   50%; }
+        @keyframes panelSwitch {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes charIn {
           from { opacity:0; transform:translateY(36px) rotateX(-20deg); filter:blur(5px); }
@@ -275,12 +275,15 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           animation: heroGrad 18s ease infinite;
         }
 
-        /* ═══ Stats gradient — navy ↔ deep blue ═══ */
-        .stats-grad {
-          background: linear-gradient(-45deg, #0d1b2a, #0d2d58, #1565c0, #0d2d58, #0d1b2a);
-          background-size: 400% 400%;
-          animation: statsGrad 12s ease infinite;
+        /* ═══ Stat left-column button ═══ */
+        .stat-btn.active {
+          border-left: 3px solid #FAE705 !important;
+          background: rgba(255,255,255,0.06) !important;
         }
+        .stat-btn:not(.active) { border-left: 3px solid transparent; }
+
+        /* ═══ Panel switch animation ═══ */
+        .panel-switch { animation: panelSwitch 0.35s cubic-bezier(0.22,1,0.36,1) both; }
 
         /* ═══ Typography ═══ */
         .serif { font-family: var(--font-display, Georgia, serif); }
@@ -489,132 +492,168 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
       </section>
 
       {/* ════════════════════════════════════
-          STATS BAR — animated gradient, interactive
+          STATS — full page, 2-column, dark navy
       ════════════════════════════════════ */}
-      <section className="stats-grad" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="max-w-5xl mx-auto px-6">
+      <section
+        ref={stats.ref}
+        style={{
+          background:  "#0d1b2a",
+          minHeight:   "100vh",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+        }}
+        className="flex items-center"
+      >
+        <div className="w-full max-w-5xl mx-auto px-6 py-16 flex flex-col md:flex-row gap-0">
 
-          {/* ── Three stat buttons ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3">
+          {/* ── LEFT COLUMN — three stat buttons ── */}
+          <div
+            className="md:w-[38%] flex flex-col border-b md:border-b-0 md:border-r pb-8 md:pb-0 md:pr-12"
+            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+          >
+            {/* Section overline — animates in from left */}
+            <div
+              style={{
+                opacity:    stats.inView ? 1 : 0,
+                transform:  stats.inView ? "translateX(0)" : "translateX(-30px)",
+                transition: "opacity 0.6s ease 0.05s, transform 0.6s ease 0.05s",
+                marginBottom: "2rem",
+              }}
+            >
+              <p className="text-[10px] font-semibold tracking-[0.3em] uppercase"
+                 style={{ color: "#FAE705" }}>
+                Tentang Sistem
+              </p>
+            </div>
+
             {STATS_BAR.map((item, i) => (
               <button
                 key={item.id}
                 onClick={() => togglePanel(item.id)}
                 className={`stat-btn${activePanel === item.id ? " active" : ""}`}
                 style={{
-                  borderRight: i < STATS_BAR.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                  /* Slide in from left, staggered */
+                  opacity:    stats.inView ? 1 : 0,
+                  transform:  stats.inView ? "translateX(0)" : "translateX(-40px)",
+                  transition: `opacity 0.65s ease ${0.1 + i * 0.13}s, transform 0.65s ease ${0.1 + i * 0.13}s, background 0.25s ease`,
+                  borderBottom: i < STATS_BAR.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                  paddingLeft:  "1.25rem",
+                  paddingTop:   "1.4rem",
+                  paddingBottom: "1.4rem",
+                  paddingRight: "1rem",
                 }}
               >
-                {/* Value — gold gradient text matching TentangKami typography */}
-                <p
-                  className="serif text-5xl md:text-6xl font-bold leading-none"
-                  style={goldGradText}
-                >
+                {/* Value */}
+                <p className="serif text-5xl md:text-6xl font-bold leading-none" style={goldGradText}>
                   {item.val}
                 </p>
-
                 {/* Label */}
-                <p className="text-sm font-semibold text-white mt-3 tracking-wide">
+                <p className="text-sm font-semibold text-white mt-2 tracking-wide">
                   {item.label}
                 </p>
-
                 {/* Sub */}
-                <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.50)" }}>
+                <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
                   {item.sub}
                 </p>
-
-                {/* Chevron indicator */}
-                <div className="mt-3">
-                  <span
-                    className="text-[9px] tracking-widest"
-                    style={{
-                      color:      activePanel === item.id ? "#FAE705" : "rgba(255,255,255,0.28)",
-                      display:    "inline-block",
-                      transform:  activePanel === item.id ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s ease, color 0.3s ease",
-                    }}
-                  >
-                    ▼
-                  </span>
-                </div>
+                {/* Active arrow */}
+                <p
+                  className="text-[9px] mt-2 tracking-widest"
+                  style={{
+                    color:      activePanel === item.id ? "#FAE705" : "rgba(255,255,255,0.22)",
+                    transition: "color 0.25s ease",
+                  }}
+                >
+                  {activePanel === item.id ? "▶" : "·"}
+                </p>
               </button>
             ))}
           </div>
 
-          {/* ── Expandable panel ── */}
+          {/* ── RIGHT COLUMN — text content only ── */}
           <div
+            className="md:w-[62%] md:pl-12 pt-8 md:pt-0 flex flex-col justify-center"
             style={{
-              maxHeight:  activePanel ? 560 : 0,
-              opacity:    activePanel ? 1   : 0,
-              overflow:   "hidden",
-              transition: "max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease",
+              opacity:    stats.inView ? 1 : 0,
+              transform:  stats.inView ? "translateX(0)" : "translateX(30px)",
+              transition: "opacity 0.7s ease 0.35s, transform 0.7s ease 0.35s",
             }}
           >
-            <div
-              className="py-8 px-2"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.10)" }}
-            >
+            {/* Content keyed to activePanel so CSS animation re-triggers on switch */}
+            <div key={activePanel} className="panel-switch">
 
-              {/* ── 9 UNSUR PANEL ── */}
+              {/* ── 9 UNSUR ── */}
               {activePanel === "unsur" && (
-                <div className="panel-content">
-                  <p className="text-[10px] font-semibold tracking-[0.3em] uppercase mb-5"
+                <>
+                  <p className="text-[10px] font-semibold tracking-[0.3em] uppercase mb-2"
                      style={{ color: "#FAE705" }}>
-                    9 Unsur SKM — Permenpan-RB No. 14 Tahun 2017
+                    Permenpan-RB No. 14 Tahun 2017
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <h3 className="serif text-2xl font-bold text-white mb-6">
+                    9 Unsur Survei Kepuasan Masyarakat
+                  </h3>
+                  <div className="space-y-3.5">
                     {UNSUR_SKM.map((u) => (
                       <div key={u.num} className="flex gap-3 items-start">
                         <span
                           className="text-[10px] font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
                           style={{
-                            border:  "1px solid rgba(250,231,5,0.4)",
-                            color:   "#FAE705",
-                            background: "rgba(250,231,5,0.08)",
+                            border:     "1px solid rgba(250,231,5,0.4)",
+                            color:      "#FAE705",
+                            background: "rgba(250,231,5,0.07)",
                           }}
                         >
                           {u.num}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-white leading-tight">{u.nama}</p>
-                          <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                          <p className="text-[11px] mt-0.5 leading-relaxed"
+                             style={{ color: "rgba(255,255,255,0.45)" }}>
                             {u.desc}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </>
               )}
 
-              {/* ── IKM PANEL ── */}
+              {/* ── IKM ── */}
               {activePanel === "ikm" && (
-                <div className="panel-content">
+                <>
+                  <p className="text-[10px] font-semibold tracking-[0.3em] uppercase mb-2"
+                     style={{ color: "#FAE705" }}>
+                    Skor Periode Aktif
+                  </p>
+                  <h3 className="serif text-2xl font-bold text-white mb-6">
+                    Indeks Kepuasan Masyarakat
+                  </h3>
+
                   {ikmLoading ? (
-                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
                       Memuat data IKM…
                     </p>
                   ) : !ikmActive ? (
-                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      Belum ada survei aktif. Data IKM akan muncul setelah periode survei dibuka.
+                    <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Belum ada survei aktif. Skor IKM akan ditampilkan setelah periode survei dibuka oleh administrator.
                     </p>
                   ) : (
                     <>
-                      {/* Overall */}
-                      <div className="flex flex-wrap items-baseline gap-3 mb-6">
-                        <span className="serif text-5xl font-bold" style={goldGradText}>
+                      {/* Overall score */}
+                      <div className="flex flex-wrap items-baseline gap-3 mb-8">
+                        <span className="serif text-6xl font-bold" style={goldGradText}>
                           {ikmOverall}
                         </span>
-                        <span className="text-white/60 text-sm">IKM Keseluruhan</span>
-                        <span
-                          className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
-                          style={{ background: "rgba(250,231,5,0.15)", color: "#FAE705" }}
-                        >
-                          {ikmCat}
-                        </span>
+                        <div>
+                          <p className="text-white/60 text-sm">IKM Keseluruhan</p>
+                          <span
+                            className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
+                            style={{ background: "rgba(250,231,5,0.15)", color: "#FAE705" }}
+                          >
+                            {ikmCat}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Top 3 layanan */}
+                      {/* Top 3 bars */}
                       <div className="space-y-5">
                         {ikmServices.map((s, idx) => (
                           <div key={s.nama}>
@@ -625,18 +664,12 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                                 </span>
                                 {s.nama}
                               </span>
-                              <span
-                                className="serif text-sm font-bold"
-                                style={goldGradText}
-                              >
+                              <span className="serif text-sm font-bold" style={goldGradText}>
                                 {s.ikm}
                               </span>
                             </div>
-                            {/* Animated bar */}
-                            <div
-                              className="h-1.5 rounded-full overflow-hidden"
-                              style={{ background: "rgba(255,255,255,0.08)" }}
-                            >
+                            <div className="h-1.5 rounded-full overflow-hidden"
+                                 style={{ background: "rgba(255,255,255,0.08)" }}>
                               <div
                                 className="h-full rounded-full"
                                 style={{
@@ -654,73 +687,62 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                       </div>
                     </>
                   )}
-                </div>
+                </>
               )}
 
-              {/* ── QR PANEL ── */}
+              {/* ── QR ── */}
               {activePanel === "qr" && (
-                <div className="panel-content flex flex-col sm:flex-row items-center sm:items-start gap-8">
+                <>
+                  <p className="text-[10px] font-semibold tracking-[0.3em] uppercase mb-2"
+                     style={{ color: "#FAE705" }}>
+                    Akses Survei
+                  </p>
+                  <h3 className="serif text-2xl font-bold text-white mb-6">
+                    QR Code Periode Aktif
+                  </h3>
+
                   {!surveyToken ? (
-                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      Tidak ada survei aktif saat ini. QR Code akan tersedia saat periode survei dibuka.
+                    <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Tidak ada survei aktif saat ini. QR Code akan tersedia saat periode survei dibuka oleh administrator.
                     </p>
                   ) : !qrDataUrl ? (
-                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
                       Memuat QR Code…
                     </p>
                   ) : (
-                    <>
-                      {/* QR image */}
-                      <div
-                        className="p-3 rounded-2xl shadow-xl shrink-0"
-                        style={{ background: "#ffffff" }}
-                      >
+                    <div className="flex flex-col sm:flex-row items-start gap-8">
+                      {/* QR */}
+                      <div className="p-3 rounded-2xl shadow-xl shrink-0"
+                           style={{ background: "#ffffff" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={qrDataUrl}
-                          alt="QR Code Survei SKM"
-                          className="w-36 h-36 sm:w-44 sm:h-44"
-                        />
+                        <img src={qrDataUrl} alt="QR Code Survei SKM"
+                             className="w-36 h-36 sm:w-40 sm:h-40" />
                       </div>
-
                       {/* Info */}
-                      <div className="flex flex-col justify-center gap-2">
-                        <p
-                          className="text-[10px] font-semibold tracking-[0.3em] uppercase"
-                          style={{ color: "#FAE705" }}
-                        >
-                          Survei Aktif
+                      <div className="flex flex-col gap-3 justify-center">
+                        <p className="text-white font-semibold">Pindai untuk mulai survei</p>
+                        <p className="text-sm leading-relaxed"
+                           style={{ color: "rgba(255,255,255,0.55)" }}>
+                          Arahkan kamera ponsel ke QR Code, atau kunjungi tautan berikut:
                         </p>
-                        <p className="text-white font-semibold">
-                          Pindai untuk mulai survei
-                        </p>
-                        <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-                          Arahkan kamera ponsel ke QR Code di atas, atau kunjungi tautan berikut:
-                        </p>
-                        <a
-                          href={surveyUrl}
-                          className="text-[11px] font-mono break-all mt-1 hover:underline"
-                          style={{ color: "rgba(56,189,248,0.85)" }}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={surveyUrl} className="text-[11px] font-mono break-all hover:underline"
+                           style={{ color: "rgba(56,189,248,0.85)" }}
+                           target="_blank" rel="noopener noreferrer">
                           {surveyUrl}
                         </a>
-                        <Link
-                          href={surveyHref}
-                          className="cta-btn mt-3 self-start text-sm"
-                          style={{ padding: "0.7rem 1.5rem" }}
-                        >
+                        <Link href={surveyHref} className="cta-btn mt-1 self-start text-sm"
+                              style={{ padding: "0.7rem 1.5rem" }}>
                           Mulai Survei →
                         </Link>
                       </div>
-                    </>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
             </div>
           </div>
+
         </div>
       </section>
 
