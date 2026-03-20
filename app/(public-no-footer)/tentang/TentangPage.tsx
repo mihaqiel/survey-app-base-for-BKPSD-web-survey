@@ -37,12 +37,6 @@ const MANTAP = [
   { letter: "!", word: "Semangat",    desc: "Keyakinan penuh, semangat, serta energi positif dalam menjalankan tugas pelayanan publik." },
 ];
 
-const STATS = [
-  { value: "2008", label: "Tahun Berdiri",  sub: "Bersama Kab. Anambas"     },
-  { value: "9",    label: "Unsur SKM",      sub: "Standar Permenpan-RB"      },
-  { value: "5",    label: "Unit Layanan",   sub: "Kepegawaian dan SDM"      },
-  { value: "100",  label: "% Digital",      sub: "Layanan berbasis digital" },
-];
 
 const PILLARS = [
   { num: "01", title: "Visi",  body: "Terwujudnya aparatur sipil negara yang profesional, kompeten, dan berintegritas di Kabupaten Kepulauan Anambas." },
@@ -74,37 +68,6 @@ function useInView(threshold = 0.12) {
   return { ref, inView };
 }
 
-function useCountUp(target: string, duration = 1800) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [display, setDisplay] = useState("0");
-  const started = useRef(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || started.current) return;
-      started.current = true;
-      const num = parseInt(target);
-      const suffix = target.replace(/[0-9]/g, "");
-      if (isNaN(num)) { setDisplay(target); return; }
-      const fps = 60;
-      const total = Math.round((duration / 1000) * fps);
-      let frame = 0;
-      const tick = () => {
-        frame++;
-        const t = Math.min(frame / total, 1);
-        const eased = 1 - Math.pow(1 - t, 3);
-        setDisplay(frame >= total ? target : Math.floor(eased * num) + suffix);
-        if (frame < total) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [target, duration]);
-  return { ref, display };
-}
-
 /* ── Sub-components ─────────────────────────────── */
 function CharReveal({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
   return (
@@ -134,17 +97,6 @@ function WordReveal({ text, inView, delay = 0, className }: {
         </span>
       ))}
     </span>
-  );
-}
-
-function StatItem({ value, label, sub }: { value: string; label: string; sub: string }) {
-  const { ref, display } = useCountUp(value);
-  return (
-    <div ref={ref} className="px-6 md:px-8 py-6 text-center">
-      <p className="serif gold-text text-5xl md:text-6xl font-bold leading-none min-h-[1.2em]">{display}</p>
-      <p className="text-xs font-semibold text-slate-800 mt-3 tracking-wide">{label}</p>
-      <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
-    </div>
   );
 }
 
@@ -497,15 +449,6 @@ export default function TentangPage() {
             </div>
 
           </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          STATS — count-up animation
-      ════════════════════════════════════ */}
-      <section className="bg-white border-y border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-          {STATS.map((s) => <StatItem key={s.label} {...s} />)}
         </div>
       </section>
 
