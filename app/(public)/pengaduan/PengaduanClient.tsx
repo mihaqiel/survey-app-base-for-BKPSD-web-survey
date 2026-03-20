@@ -103,6 +103,9 @@ export default function PengaduanClient() {
   const fileInputsRef = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null]);
   const [state, action, isPending] = useActionState(submitPengaduan, initialState);
 
+  // Success overlay state
+  const [submitted, setSubmitted] = useState(false);
+
   // Multi-file state
   const [fileItems, setFileItems] = useState<FileItem[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -189,12 +192,13 @@ export default function PengaduanClient() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Reset form after success
+  // Reset form after success + show success card
   useEffect(() => {
     if (state.success && formRef.current) {
       formRef.current.reset();
       setFileItems([]);
       fileInputsRef.current.forEach((inp) => { if (inp) inp.value = ""; });
+      setSubmitted(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
@@ -366,7 +370,7 @@ export default function PengaduanClient() {
         .upload-zone {
           border:2px dashed #e2e8f0; border-radius:.875rem;
           display:flex; flex-direction:column; align-items:center;
-          justify-content:center; gap:.625rem; padding:2.5rem 1rem;
+          justify-content:center; gap:.5rem; padding:1.25rem 1rem;
           cursor:pointer; background:#fafbfc;
           transition:border-color .25s ease, background .25s ease;
         }
@@ -482,25 +486,25 @@ export default function PengaduanClient() {
       {/* ════════════════════════════════════
           FORM + GUARANTEES (2-column)
       ════════════════════════════════════ */}
-      <section id="form" className="py-24 px-6" style={{ background: "#f8f7f3" }}>
-        <div ref={formSection.ref} className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+      <section id="form" className="py-10 px-6" style={{ background: "#f8f7f3" }}>
+        <div ref={formSection.ref} className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
 
           {/* LEFT — label, heading, guarantees */}
           <div>
-            <div className="flex items-center gap-3 mb-5" style={fade(formSection.inView, 0)}>
+            <div className="flex items-center gap-3 mb-3" style={fade(formSection.inView, 0)}>
               <span className="section-label-line" />
               <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
                 Formulir Pengaduan
               </span>
             </div>
 
-            <h2 className="serif text-4xl font-bold text-slate-900 mb-6 leading-tight">
+            <h2 className="serif text-3xl font-bold text-slate-900 mb-3 leading-tight">
               <WordReveal text="Suarakan" inView={formSection.inView} delay={0.1} />
               <br />
               <WordReveal text="Aspirasi Anda" inView={formSection.inView} delay={0.32} />
             </h2>
 
-            <p className="text-slate-500 leading-relaxed text-sm mb-8" style={fade(formSection.inView, 0.45)}>
+            <p className="text-slate-500 leading-relaxed text-sm mb-4" style={fade(formSection.inView, 0.45)}>
               Isi kolom di bawah ini untuk menyampaikan pengaduan Anda. Pastikan informasi
               yang diberikan akurat agar dapat kami tindaklanjuti dengan tepat.
             </p>
@@ -518,12 +522,50 @@ export default function PengaduanClient() {
             </div>
           </div>
 
-          {/* RIGHT — form card */}
+          {/* RIGHT — form card or success card */}
           <div style={fade(formSection.inView, 0.2)}>
+            {/* ── Success card (replaces form after submission) ── */}
+            {submitted && (
+              <div
+                className="rounded-2xl overflow-hidden flex flex-col items-center text-center px-8 py-12 gap-5"
+                style={{ background: "#0d1b2a", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                {/* Icon */}
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(250,231,5,0.12)", border: "2px solid rgba(250,231,5,0.4)" }}
+                >
+                  <CheckCircle2 className="w-8 h-8" style={{ color: "#FAE705" }} />
+                </div>
+                {/* Heading */}
+                <div>
+                  <p className="serif text-2xl font-bold text-white mb-2">
+                    Pengaduan Berhasil Dikirim
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    Terima kasih. Konfirmasi telah dikirim ke email Anda.
+                    Tim kami akan segera menindaklanjuti dalam 1×24 jam kerja.
+                  </p>
+                </div>
+                {/* Reset button */}
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="mt-2 inline-flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+                  style={{ background: "#FAE705", color: "#0d1b2a" }}
+                >
+                  <Send className="w-4 h-4" />
+                  Kirim Pengaduan Baru
+                </button>
+              </div>
+            )}
+
+            {/* ── Form card (hidden after submission) ── */}
+            {!submitted && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
               {/* Card header */}
-              <div className="px-7 py-5 border-b border-gray-100" style={{ background: "#0d2d58" }}>
+              <div className="px-6 py-3 border-b border-gray-100" style={{ background: "#0d2d58" }}>
                 <p className="text-[10px] font-semibold tracking-[0.28em] uppercase" style={{ color: "rgba(250,231,5,0.7)" }}>
                   Formulir Pengaduan
                 </p>
@@ -532,31 +574,17 @@ export default function PengaduanClient() {
                 </p>
               </div>
 
-              <div className="px-7 py-7">
-                {/* Success */}
-                {state.success && (
-                  <div className="flex items-start gap-3 rounded-xl p-4 mb-5 border"
-                    style={{ background: "#f0fdf4", borderColor: "#86efac" }}>
-                    <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#16a34a" }} />
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: "#166534" }}>Pengaduan Berhasil Dikirim</p>
-                      <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#15803d" }}>
-                        Terima kasih. Konfirmasi dikirim ke email Anda. Tim kami akan segera menindaklanjuti.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
+              <div className="px-6 py-4">
                 {/* Error */}
                 {state.error && (
-                  <div className="flex items-start gap-3 rounded-xl p-4 mb-5 border"
+                  <div className="flex items-start gap-3 rounded-xl p-4 mb-4 border"
                     style={{ background: "#fef2f2", borderColor: "#fca5a5" }}>
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: "#dc2626" }} />
                     <p className="text-sm" style={{ color: "#991b1b" }}>{state.error}</p>
                   </div>
                 )}
 
-                <form ref={formRef} action={action} encType="multipart/form-data" className="space-y-4">
+                <form ref={formRef} action={action} encType="multipart/form-data" className="space-y-3">
                   {/* Name + Email row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -599,7 +627,7 @@ export default function PengaduanClient() {
                     <label className="form-label">
                       Isi Pengaduan <span style={{ color: "#ef4444" }}>*</span>
                     </label>
-                    <textarea name="isi" required maxLength={2000} rows={5}
+                    <textarea name="isi" required maxLength={2000} rows={4}
                       placeholder="Jelaskan pengaduan Anda secara detail — apa yang terjadi, kapan, dan di mana..."
                       className="form-input"
                       style={{ resize: "none", lineHeight: 1.6 }} />
@@ -683,9 +711,9 @@ export default function PengaduanClient() {
                         onKeyDown={(e) => e.key === "Enter" && triggerRef.current?.click()}
                         aria-label="Tambah lampiran bukti"
                       >
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-1 transition-colors"
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
                           style={{ background: dragActive ? "rgba(56,189,248,.12)" : "#f1f5f9" }}>
-                          <Upload className="w-5 h-5 transition-colors"
+                          <Upload className="w-4 h-4 transition-colors"
                             style={{ color: dragActive ? "#38bdf8" : "#94a3b8" }} />
                         </div>
                         {dragActive ? (
@@ -763,6 +791,7 @@ export default function PengaduanClient() {
                 </form>
               </div>
             </div>
+            )} {/* end !submitted */}
           </div>
         </div>
       </section>
