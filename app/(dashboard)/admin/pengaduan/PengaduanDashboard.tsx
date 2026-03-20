@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquareWarning, ChevronDown, ChevronUp, Paperclip, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquareWarning, ChevronDown, ChevronUp, Paperclip, FileText, X, ZoomIn } from "lucide-react";
 
 type Lampiran = {
   id: string;
@@ -40,6 +40,15 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
   const [data, setData]       = useState<Complaint[]>(initialData);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightbox) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightbox(null); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightbox]);
 
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id);
@@ -161,30 +170,56 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
                       <p className="text-xs text-slate-400 mb-2">
                         Lampiran Bukti ({p.lampiran.length})
                       </p>
-                      <div className="flex flex-wrap gap-3">
-                        {p.lampiran.map((l) =>
-                          l.mimeType.startsWith("image/") ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              key={l.id}
-                              src={`/api/pengaduan/${p.id}/gambar?lid=${l.id}`}
-                              alt={l.nama}
-                              className="max-h-48 rounded-lg border border-gray-200 object-contain"
-                            />
-                          ) : (
+
+                      {/* Image grid */}
+                      {p.lampiran.some((l) => l.mimeType.startsWith("image/")) && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+                          {p.lampiran.filter((l) => l.mimeType.startsWith("image/")).map((l) => {
+                            const src = `/api/pengaduan/${p.id}/gambar?lid=${l.id}`;
+                            return (
+                              <button
+                                key={l.id}
+                                type="button"
+                                onClick={() => setLightbox({ src, alt: l.nama })}
+                                className="group relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-slate-50 hover:border-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={src}
+                                  alt={l.nama}
+                                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                />
+                                {/* Hover overlay */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                                  <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                                </div>
+                                {/* Filename tooltip */}
+                                <p className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] text-white bg-black/50 truncate translate-y-full group-hover:translate-y-0 transition-transform">
+                                  {l.nama}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Non-image files */}
+                      {p.lampiran.some((l) => !l.mimeType.startsWith("image/")) && (
+                        <div className="flex flex-wrap gap-2">
+                          {p.lampiran.filter((l) => !l.mimeType.startsWith("image/")).map((l) => (
                             <a
                               key={l.id}
                               href={`/api/pengaduan/${p.id}/gambar?lid=${l.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
                             >
-                              <FileText className="w-4 h-4 text-slate-400" />
-                              {l.nama}
+                              <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[140px]">{l.nama}</span>
                             </a>
-                          )
-                        )}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -217,6 +252,40 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
           );
         })}
       </div>
+
+      {/* ── Lightbox ── */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightbox.src}
+              alt={lightbox.alt}
+              className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+            />
+
+            {/* Filename caption */}
+            <p className="mt-2 text-center text-xs text-white/60 truncate">{lightbox.alt}</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

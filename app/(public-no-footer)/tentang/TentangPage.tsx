@@ -38,10 +38,39 @@ const MANTAP = [
 ];
 
 
-const PILLARS = [
-  { num: "01", title: "Visi",  body: "Terwujudnya aparatur sipil negara yang profesional, kompeten, dan berintegritas di Kabupaten Kepulauan Anambas." },
-  { num: "02", title: "Misi",  body: "Meningkatkan kualitas sumber daya manusia ASN melalui pendidikan, pelatihan, dan pengembangan kompetensi yang berkelanjutan." },
-  { num: "03", title: "Nilai", body: "Integritas · Profesionalisme · Akuntabilitas · Inovasi · Pelayanan Prima sebagai landasan kerja seluruh jajaran BKPSDM." },
+const PILLARS: {
+  num: string;
+  title: string;
+  body?: string;
+  items?: string[];
+}[] = [
+  {
+    num: "01",
+    title: "Visi",
+    body: "Kabupaten Kepulauan Anambas Berdaya Saing, Inovatif, Agamis, Unggul di Bidang Maritim Menuju Masyarakat dan Sejahtera.",
+  },
+  {
+    num: "02",
+    title: "Misi",
+    items: [
+      "Meningkatkan Sumber Daya Manusia (SDM) yang inovatif dan berdaya saing menuju masyarakat yang agamis, berbudaya, dan mengedepankan nilai-nilai luhur;",
+      "Meningkatkan daya saing ekonomi melalui pembangunan infrastruktur yang merata dan berkeadilan;",
+      "Pelayanan prima melalui reformasi birokrasi;",
+      "Memperkuat pengembangan ekonomi berbasis maritim, pariwisata untuk mendukung percepatan pertumbuhan ekonomi;",
+      "Meningkatkan kualitas kesehatan, pendidikan, pemberdayaan masyarakat dan penanganan kemiskinan.",
+    ],
+  },
+  {
+    num: "03",
+    title: "Nilai",
+    items: [
+      "Integritas",
+      "Profesionalisme",
+      "Akuntabilitas",
+      "Inovasi",
+      "Pelayanan Prima",
+    ],
+  },
 ];
 
 const LEGAL = [
@@ -455,18 +484,18 @@ export default function TentangPage() {
       {/* ════════════════════════════════════
           PILLARS — Visi / Misi / Nilai
       ════════════════════════════════════ */}
-      <section className="py-24 px-6 relative overflow-hidden" style={{ background: "#0d1b2a" }}>
+      <section className="min-h-screen flex flex-col justify-center px-6 py-20 relative overflow-hidden" style={{ background: "#0d1b2a" }}>
         {/* Background glows */}
         <div className="pointer-events-none absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[160px]" style={{ background: "rgba(56,189,248,0.07)"  }} />
         <div className="pointer-events-none absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full blur-[140px]" style={{ background: "rgba(250,231,5,0.06)"  }} />
 
-        <div ref={pillars.ref} className="relative max-w-5xl mx-auto">
+        <div ref={pillars.ref} className="relative max-w-5xl mx-auto w-full">
           <div className="flex items-center gap-3 mb-14" style={fade(pillars.inView, 0, "x")}>
             <span className="w-6 h-px block" style={{ background: "#FAE705" }} />
             <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#FAE705" }}>Profil Organisasi</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 items-start">
             {PILLARS.map((p, i) => (
               <div key={p.num} className="pillar-card" style={fade(pillars.inView, 0.1 + i * 0.15)}>
                 <span className="serif block leading-none mb-5" style={{ fontSize: "5.5rem", fontWeight: 700, color: "rgba(255,255,255,0.05)" }}>
@@ -474,7 +503,36 @@ export default function TentangPage() {
                 </span>
                 <h3 className="serif text-2xl font-bold text-white mb-3">{p.title}</h3>
                 <span className="block w-8 h-px mb-5" style={{ background: "#FAE705" }} />
-                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{p.body}</p>
+
+                {/* Simple body text (Visi) */}
+                {p.body && (
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>{p.body}</p>
+                )}
+
+                {/* Numbered / bullet list (Misi & Nilai) */}
+                {p.items && p.title === "Misi" && (
+                  <ol className="space-y-3">
+                    {p.items.map((item, j) => (
+                      <li key={j} className="flex gap-3 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        <span className="shrink-0 font-bold tabular-nums" style={{ color: "rgba(250,231,5,0.55)", minWidth: "1.25rem" }}>
+                          {String(j + 1).padStart(2, "0")}
+                        </span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+
+                {p.items && p.title === "Nilai" && (
+                  <div className="flex flex-col gap-2.5">
+                    {p.items.map((item, j) => (
+                      <div key={j} className="flex items-center gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#FAE705" }} />
+                        <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

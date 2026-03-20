@@ -366,16 +366,7 @@ export default function PengaduanClient() {
           margin-bottom:.5rem;
         }
 
-        /* ═══ Upload zone ═══ */
-        .upload-zone {
-          border:2px dashed #e2e8f0; border-radius:.875rem;
-          display:flex; flex-direction:column; align-items:center;
-          justify-content:center; gap:.5rem; padding:1.25rem 1rem;
-          cursor:pointer; background:#fafbfc;
-          transition:border-color .25s ease, background .25s ease;
-        }
-        .upload-zone:hover, .upload-zone.drag-over { border-color:#38bdf8; background:rgba(56,189,248,.06); }
-        .upload-zone.drag-over { border-style:solid; }
+        /* ═══ Upload preview ═══ */
         .upload-preview {
           border:1.5px solid #e2e8f0; border-radius:.875rem;
           overflow:hidden; background:#fafbfc;
@@ -487,7 +478,7 @@ export default function PengaduanClient() {
           FORM + GUARANTEES (2-column)
       ════════════════════════════════════ */}
       <section id="form" className="py-10 px-6" style={{ background: "#f8f7f3" }}>
-        <div ref={formSection.ref} className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        <div ref={formSection.ref} className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
 
           {/* LEFT — label, heading, guarantees */}
           <div>
@@ -523,11 +514,11 @@ export default function PengaduanClient() {
           </div>
 
           {/* RIGHT — form card or success card */}
-          <div style={fade(formSection.inView, 0.2)}>
+          <div className="flex flex-col" style={fade(formSection.inView, 0.2)}>
             {/* ── Success card (replaces form after submission) ── */}
             {submitted && (
               <div
-                className="rounded-2xl overflow-hidden flex flex-col items-center text-center px-8 py-12 gap-5"
+                className="flex-1 rounded-2xl overflow-hidden flex flex-col items-center justify-center text-center px-8 py-12 gap-5"
                 style={{ background: "#0d1b2a", border: "1px solid rgba(255,255,255,0.07)" }}
               >
                 {/* Icon */}
@@ -603,23 +594,23 @@ export default function PengaduanClient() {
                     </div>
                   </div>
 
-                  {/* Phone */}
-                  <div>
-                    <label className="form-label">
-                      No. Telepon <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional)</span>
-                    </label>
-                    <input name="telepon" type="tel" maxLength={30}
-                      placeholder="08xx-xxxx-xxxx" className="form-input" />
-                  </div>
-
-                  {/* Subject */}
-                  <div>
-                    <label className="form-label">
-                      Judul Pengaduan <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input name="judul" type="text" required maxLength={200}
-                      placeholder="Ringkasan singkat pengaduan Anda"
-                      className="form-input" />
+                  {/* Phone + Subject row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">
+                        No. Telepon <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional)</span>
+                      </label>
+                      <input name="telepon" type="tel" maxLength={30}
+                        placeholder="08xx-xxxx-xxxx" className="form-input" />
+                    </div>
+                    <div>
+                      <label className="form-label">
+                        Judul Pengaduan <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <input name="judul" type="text" required maxLength={200}
+                        placeholder="Ringkasan singkat pengaduan Anda"
+                        className="form-input" />
+                    </div>
                   </div>
 
                   {/* Body */}
@@ -627,7 +618,7 @@ export default function PengaduanClient() {
                     <label className="form-label">
                       Isi Pengaduan <span style={{ color: "#ef4444" }}>*</span>
                     </label>
-                    <textarea name="isi" required maxLength={2000} rows={4}
+                    <textarea name="isi" required maxLength={2000} rows={3}
                       placeholder="Jelaskan pengaduan Anda secara detail — apa yang terjadi, kapan, dan di mana..."
                       className="form-input"
                       style={{ resize: "none", lineHeight: 1.6 }} />
@@ -697,42 +688,28 @@ export default function PengaduanClient() {
                       </div>
                     )}
 
-                    {/* ── Drop / click zone (hidden when full) ── */}
+                    {/* ── Compact add-file button (hidden when full) ── */}
                     {fileItems.length < 5 && (
-                      <div
-                        className={`upload-zone${dragActive ? " drag-over" : ""}`}
+                      <button
+                        type="button"
+                        onClick={() => triggerRef.current?.click()}
                         onDragOver={onDragOver}
                         onDragEnter={onDragOver}
                         onDragLeave={onDragLeave}
                         onDrop={onDrop}
-                        onClick={() => triggerRef.current?.click()}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === "Enter" && triggerRef.current?.click()}
                         aria-label="Tambah lampiran bukti"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-200"
+                        style={{
+                          color: dragActive ? "#38bdf8" : "#64748b",
+                          border: `1px dashed ${dragActive ? "#38bdf8" : "#cbd5e1"}`,
+                          background: dragActive ? "rgba(56,189,248,.06)" : "transparent",
+                        }}
                       >
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-                          style={{ background: dragActive ? "rgba(56,189,248,.12)" : "#f1f5f9" }}>
-                          <Upload className="w-4 h-4 transition-colors"
-                            style={{ color: dragActive ? "#38bdf8" : "#94a3b8" }} />
-                        </div>
-                        {dragActive ? (
-                          <p className="text-sm font-semibold" style={{ color: "#38bdf8" }}>
-                            Lepaskan untuk menambahkan
-                          </p>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium" style={{ color: "#64748b" }}>
-                              Seret dan lepas atau{" "}
-                              <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
-                            </p>
-                          </>
-                        )}
-                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>
-                          JPG · PNG · PDF · DOC · Maks. 5 MB ·{" "}
-                          <strong style={{ color: "#94a3b8" }}>{5 - fileItems.length} slot tersisa</strong>
-                        </p>
-                      </div>
+                        <Upload className="w-3 h-3 shrink-0" />
+                        {dragActive
+                          ? "Lepaskan file di sini"
+                          : `+ Lampiran · ${5 - fileItems.length} tersisa · maks. 5 MB`}
+                      </button>
                     )}
 
                     {/* Max reached badge */}
