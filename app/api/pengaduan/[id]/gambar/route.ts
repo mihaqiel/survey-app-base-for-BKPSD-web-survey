@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
 
+// GET /api/pengaduan/[id]/gambar?lid=<lampiranId>
+// Serves a single attachment binary for admin view.
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const deny = await requireAdmin();
@@ -11,20 +13,25 @@ export async function GET(
 
   try {
     const { id } = await params;
-    const p = await prisma.pengaduan.findUnique({
-      where: { id },
-      select: { gambar: true, gambarType: true, gambarName: true },
+    const lid = req.nextUrl.searchParams.get("lid");
+
+    if (!lid) {
+      return new NextResponse(null, { status: 400 });
+    }
+
+    const lampiran = await prisma.pengaduanLampiran.findFirst({
+      where: { id: lid, pengaduanId: id },
     });
 
-    if (!p?.gambar) {
+    if (!lampiran) {
       return new NextResponse(null, { status: 404 });
     }
 
-    const isImage = (p.gambarType ?? "").startsWith("image/");
-    return new NextResponse(p.gambar, {
+    const isImage = lampiran.mimeType.startsWith("image/");
+    return new NextResponse(lampiran.data, {
       headers: {
-        "Content-Type": p.gambarType ?? "application/octet-stream",
-        "Content-Disposition": `${isImage ? "inline" : "attachment"}; filename="${p.gambarName ?? "file"}"`,
+        "Content-Type": lampiran.mimeType,
+        "Content-Disposition": `${isImage ? "inline" : "attachment"}; filename="${lampiran.nama}"`,
         "Cache-Control": "private, max-age=3600",
       },
     });

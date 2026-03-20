@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
-import { getApiLimiter } from "@/lib/ratelimit";
 
-// GET /api/pengaduan — list all complaints (admin only)
+// GET /api/pengaduan — list all complaints (admin only, no binary data)
 export async function GET() {
   const deny = await requireAdmin();
   if (deny) return deny;
@@ -17,11 +16,12 @@ export async function GET() {
         telepon: true,
         judul: true,
         isi: true,
-        gambarName: true,
-        gambarType: true,
         status: true,
         createdAt: true,
-        // exclude gambar bytes from list view
+        lampiran: {
+          select: { id: true, mimeType: true, nama: true, urutan: true },
+          orderBy: { urutan: "asc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

@@ -110,15 +110,24 @@ model BlockedIp {
 
 // PUBLIC COMPLAINTS (Pengaduan Masyarakat)
 model Pengaduan {
-  id          String   @id @default(cuid())
+  id        String              @id @default(cuid())
+  nama      String
+  email     String
+  telepon   String?
+  judul     String
+  isi       String
+  status    String              @default("BARU") // BARU | DIPROSES | SELESAI
+  createdAt DateTime            @default(now())
+  lampiran  PengaduanLampiran[]
+}
+
+// COMPLAINT ATTACHMENTS (up to 5 per complaint)
+model PengaduanLampiran {
+  id          String    @id @default(cuid())
+  pengaduanId String
+  data        Bytes
+  mimeType    String
   nama        String
-  email       String
-  telepon     String?
-  judul       String
-  isi         String
-  gambar      Bytes?
-  gambarType  String?  // e.g. "image/jpeg"
-  gambarName  String?
-  status      String   @default("BARU") // BARU | DIPROSES | SELESAI
-  createdAt   DateTime @default(now())
+  urutan      Int       @default(0)
+  pengaduan   Pengaduan @relation(fields: [pengaduanId], references: [id], onDelete: Cascade)
 }

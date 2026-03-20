@@ -81,63 +81,99 @@ function WordReveal({ text, inView, delay = 0, italic = false }: {
   );
 }
 
+/* ── FileItem type ───────────────────────────── */
+interface FileItem {
+  id: string;
+  file: File;
+  preview: string | null;  // base64 data URL for images
+  name: string;
+  size: string;            // "1.23 MB"
+  isImage: boolean;
+}
+
 /* ── Page ─────────────────────────────────────── */
 const initialState = { success: undefined as true | undefined, error: undefined as string | undefined };
 
 export default function PengaduanClient() {
   const [progress, setProgress] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Trigger ref: powers the OS file-picker dialog (not submitted to server)
+  const triggerRef = useRef<HTMLInputElement>(null);
+  // Form refs: 5 hidden inputs named lampiran_0…lampiran_4 that carry files in FormData
+  const fileInputsRef = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null]);
   const [state, action, isPending] = useActionState(submitPengaduan, initialState);
 
-  // File / drag state
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [fileSize, setFileSize] = useState<string | null>(null);
+  // Multi-file state
+  const [fileItems, setFileItems] = useState<FileItem[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
 
-  function handleFile(file: File | null | undefined) {
+  /** Sync the 5 hidden file inputs to the current items array (compacted, 0-indexed). */
+  function syncInputs(items: FileItem[]) {
+    fileInputsRef.current.forEach((input, i) => {
+      if (!input) return;
+      if (items[i]) {
+        const dt = new DataTransfer();
+        dt.items.add(items[i].file);
+        input.files = dt.files;
+      } else {
+        input.value = "";
+      }
+    });
+  }
+
+  /** Add one or more files to the list (respects 5-file cap + 5 MB per file). */
+  function addFiles(raw: File[]) {
     setFileError(null);
-    if (!file) { clearFile(); return; }
-    if (file.size > 5 * 1024 * 1024) {
-      setFileError("Ukuran file tidak boleh lebih dari 5 MB.");
-      clearFile(); return;
+    const remaining = 5 - fileItems.length;
+    if (remaining <= 0) { setFileError("Maksimal 5 lampiran diizinkan."); return; }
+    const toAdd = raw.slice(0, remaining);
+    if (raw.length > remaining) {
+      setFileError(`Hanya ${remaining} slot tersisa — ${raw.length - remaining} file diabaikan.`);
     }
-    setFileName(file.name);
-    setFileSize((file.size / 1024 / 1024).toFixed(2) + " MB");
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => setPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setPreview("__file__");
+    const newItems: FileItem[] = [];
+    for (const file of toAdd) {
+      if (file.size > 5 * 1024 * 1024) {
+        setFileError(`"${file.name}" melebihi batas 5 MB.`);
+        continue;
+      }
+      const isImage = file.type.startsWith("image/");
+      const item: FileItem = {
+        id: Math.random().toString(36).slice(2),
+        file, preview: null,
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2) + " MB",
+        isImage,
+      };
+      if (isImage) {
+        const reader = new FileReader();
+        const iid = item.id;
+        reader.onload = (e) =>
+          setFileItems((prev) =>
+            prev.map((p) => p.id === iid ? { ...p, preview: e.target?.result as string } : p),
+          );
+        reader.readAsDataURL(file);
+      }
+      newItems.push(item);
     }
+    const allItems = [...fileItems, ...newItems];
+    setFileItems(allItems);
+    syncInputs(allItems);
   }
 
-  function clearFile() {
-    setPreview(null); setFileName(null); setFileSize(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  /** Remove the file at index `idx` and compact remaining files into the hidden inputs. */
+  function removeFile(idx: number) {
+    const next = fileItems.filter((_, i) => i !== idx);
+    setFileItems(next);
+    syncInputs(next);
   }
 
-  function onDragOver(e: React.DragEvent) {
-    e.preventDefault(); e.stopPropagation();
-    setDragActive(true);
-  }
-  function onDragLeave(e: React.DragEvent) {
-    e.preventDefault(); e.stopPropagation();
-    setDragActive(false);
-  }
+  function onDragOver(e: React.DragEvent) { e.preventDefault(); e.stopPropagation(); setDragActive(true); }
+  function onDragLeave(e: React.DragEvent) { e.preventDefault(); e.stopPropagation(); setDragActive(false); }
   function onDrop(e: React.DragEvent) {
     e.preventDefault(); e.stopPropagation();
     setDragActive(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && fileInputRef.current) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInputRef.current.files = dt.files;
-    }
-    handleFile(file);
+    addFiles(Array.from(e.dataTransfer.files));
   }
 
   const formSection  = useInView(0.06);
@@ -158,7 +194,8 @@ export default function PengaduanClient() {
   useEffect(() => {
     if (state.success && formRef.current) {
       formRef.current.reset();
-      clearFile();
+      setFileItems([]);
+      fileInputsRef.current.forEach((inp) => { if (inp) inp.value = ""; });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
@@ -590,94 +627,115 @@ export default function PengaduanClient() {
                     <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>Maksimal 2.000 karakter</p>
                   </div>
 
-                  {/* Upload */}
+                  {/* Upload — multi-file (max 5, max 5 MB each) */}
                   <div>
                     <label className="form-label">
-                      Lampiran Bukti <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional · maks. 5 MB)</span>
+                      Lampiran Bukti{" "}
+                      <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                        (opsional · maks. 5 file · 5 MB/file)
+                      </span>
                     </label>
 
-                    {preview ? (
-                      preview === "__file__" ? (
-                        /* ── Non-image file card ── */
-                        <div className="upload-preview">
-                          <div className="flex items-center gap-3 px-4 py-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                              style={{ background: "#0d2d58" }}>
-                              <FileText className="w-5 h-5" style={{ color: "#FAE705" }} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-slate-700 truncate">{fileName}</p>
-                              <p className="text-[11px]" style={{ color: "#94a3b8" }}>{fileSize}</p>
-                            </div>
-                            <button type="button" onClick={clearFile}
-                              className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
-                              style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
-                              Hapus
+                    {/* ── Thumbnail grid ── */}
+                    {fileItems.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {fileItems.map((item, i) => (
+                          <div key={item.id} className="relative group" style={{ width: 72 }}>
+                            {item.isImage ? (
+                              item.preview ? (
+                                <div className="w-[72px] h-[72px] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={item.preview}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                /* Loading preview spinner */
+                                <div className="w-[72px] h-[72px] rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-200 border-t-sky-400 spin" />
+                                </div>
+                              )
+                            ) : (
+                              /* Non-image file tile */
+                              <div className="w-[72px] h-[72px] rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-1 p-2">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ background: "#0d2d58" }}>
+                                  <FileText className="w-4 h-4" style={{ color: "#FAE705" }} />
+                                </div>
+                                <p className="text-[8px] text-slate-400 text-center w-full truncate leading-tight">
+                                  {item.size}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Filename below thumbnail */}
+                            <p className="text-[8px] text-slate-400 mt-0.5 text-center w-full leading-tight px-0.5 truncate">
+                              {item.name.length > 10 ? item.name.slice(0, 8) + "…" : item.name}
+                            </p>
+
+                            {/* Remove button — visible on hover */}
+                            <button
+                              type="button"
+                              onClick={() => removeFile(i)}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-[11px] leading-none opacity-0 group-hover:opacity-100 transition-opacity"
+                              style={{ background: "#ef4444" }}
+                              aria-label={`Hapus ${item.name}`}
+                            >
+                              ×
                             </button>
                           </div>
-                        </div>
-                      ) : (
-                        /* ── Image preview ── */
-                        <div className="upload-preview">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={preview} alt="Preview foto bukti"
-                            className="w-full object-cover"
-                            style={{ maxHeight: "200px" }} />
-                          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style={{ background: "#0d2d58" }}>
-                                <Upload className="w-4 h-4" style={{ color: "#FAE705" }} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-slate-700 truncate">{fileName}</p>
-                                <p className="text-[11px]" style={{ color: "#94a3b8" }}>{fileSize}</p>
-                              </div>
-                            </div>
-                            <button type="button" onClick={clearFile}
-                              className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
-                              style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
-                              Hapus
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    ) : (
-                      /* ── Drop / click zone ── */
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ── Drop / click zone (hidden when full) ── */}
+                    {fileItems.length < 5 && (
                       <div
                         className={`upload-zone${dragActive ? " drag-over" : ""}`}
                         onDragOver={onDragOver}
                         onDragEnter={onDragOver}
                         onDragLeave={onDragLeave}
                         onDrop={onDrop}
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => triggerRef.current?.click()}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={e => e.key === "Enter" && fileInputRef.current?.click()}
-                        aria-label="Unggah lampiran bukti"
+                        onKeyDown={(e) => e.key === "Enter" && triggerRef.current?.click()}
+                        aria-label="Tambah lampiran bukti"
                       >
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 transition-colors"
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-1 transition-colors"
                           style={{ background: dragActive ? "rgba(56,189,248,.12)" : "#f1f5f9" }}>
-                          <Upload className="w-6 h-6 transition-colors"
+                          <Upload className="w-5 h-5 transition-colors"
                             style={{ color: dragActive ? "#38bdf8" : "#94a3b8" }} />
                         </div>
                         {dragActive ? (
-                          <p className="text-sm font-semibold" style={{ color: "#38bdf8" }}>Lepaskan untuk mengunggah</p>
+                          <p className="text-sm font-semibold" style={{ color: "#38bdf8" }}>
+                            Lepaskan untuk menambahkan
+                          </p>
                         ) : (
                           <>
                             <p className="text-sm font-medium" style={{ color: "#64748b" }}>
-                              Seret &amp; lepas file di sini
-                            </p>
-                            <p className="text-xs" style={{ color: "#94a3b8" }}>
-                              atau <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
+                              Seret &amp; lepas atau{" "}
+                              <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
                             </p>
                           </>
                         )}
-                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>JPG, PNG, PDF, DOC · Maks. 5 MB</p>
+                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>
+                          JPG · PNG · PDF · DOC · Maks. 5 MB ·{" "}
+                          <strong style={{ color: "#94a3b8" }}>{5 - fileItems.length} slot tersisa</strong>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Max reached badge */}
+                    {fileItems.length >= 5 && (
+                      <div className="flex items-center gap-2 p-3 rounded-xl"
+                        style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#16a34a" }} />
+                        <p className="text-xs font-medium" style={{ color: "#166534" }}>
+                          Maksimal 5 lampiran telah tercapai
+                        </p>
                       </div>
                     )}
 
@@ -687,10 +745,26 @@ export default function PengaduanClient() {
                       </p>
                     )}
 
-                    <input ref={fileInputRef} id="gambar-input" name="gambar" type="file"
+                    {/* Trigger: opens file-picker dialog only (not submitted) */}
+                    <input
+                      ref={triggerRef}
+                      type="file"
+                      multiple
                       accept="image/*,.pdf,.doc,.docx,.xlsx,.xls,.csv,.txt"
                       className="sr-only"
-                      onChange={(e) => handleFile(e.target.files?.[0])} />
+                      onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
+                    />
+
+                    {/* 5 hidden named inputs — these carry files in the FormData */}
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <input
+                        key={i}
+                        ref={(el) => { fileInputsRef.current[i] = el; }}
+                        type="file"
+                        name={`lampiran_${i}`}
+                        className="sr-only"
+                      />
+                    ))}
                   </div>
 
                   {/* Submit */}

@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { MessageSquareWarning, ChevronDown, ChevronUp, Paperclip, FileText } from "lucide-react";
 
+type Lampiran = {
+  id: string;
+  mimeType: string;
+  nama: string;
+  urutan: number;
+};
+
 type Complaint = {
   id: string;
   nama: string;
@@ -10,10 +17,9 @@ type Complaint = {
   telepon: string | null;
   judul: string;
   isi: string;
-  gambarName: string | null;
-  gambarType: string | null;
   status: string;
   createdAt: Date;
+  lampiran: Lampiran[];
 };
 
 const STATUS_OPTIONS = ["BARU", "DIPROSES", "SELESAI"] as const;
@@ -31,7 +37,7 @@ const statusLabel: Record<string, string> = {
 };
 
 export default function PengaduanDashboard({ initialData }: { initialData: Complaint[] }) {
-  const [data, setData] = useState<Complaint[]>(initialData);
+  const [data, setData]       = useState<Complaint[]>(initialData);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -43,9 +49,7 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status }),
       });
-      if (res.ok) {
-        setData((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
-      }
+      if (res.ok) setData((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
     } catch (err) {
       console.error("[PengaduanDashboard] update error:", err);
     } finally {
@@ -115,8 +119,11 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
                     })}
                   </p>
                 </div>
-                {p.gambarName && (
-                  <Paperclip className="w-4 h-4 text-slate-400 shrink-0" aria-label="Ada lampiran" />
+                {p.lampiran.length > 0 && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Paperclip className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-xs text-slate-400">{p.lampiran.length}</span>
+                  </div>
                 )}
                 {isOpen ? (
                   <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
@@ -148,27 +155,36 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
                     </div>
                   </div>
 
-                  {p.gambarName && (
+                  {/* Lampiran */}
+                  {p.lampiran.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-xs text-slate-400 mb-2">Lampiran Bukti</p>
-                      {p.gambarType?.startsWith("image/") ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={`/api/pengaduan/${p.id}/gambar`}
-                          alt="Foto pengaduan"
-                          className="max-h-64 rounded-lg border border-gray-200 object-contain"
-                        />
-                      ) : (
-                        <a
-                          href={`/api/pengaduan/${p.id}/gambar`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <FileText className="w-4 h-4 text-slate-400" />
-                          {p.gambarName}
-                        </a>
-                      )}
+                      <p className="text-xs text-slate-400 mb-2">
+                        Lampiran Bukti ({p.lampiran.length})
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {p.lampiran.map((l) =>
+                          l.mimeType.startsWith("image/") ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              key={l.id}
+                              src={`/api/pengaduan/${p.id}/gambar?lid=${l.id}`}
+                              alt={l.nama}
+                              className="max-h-48 rounded-lg border border-gray-200 object-contain"
+                            />
+                          ) : (
+                            <a
+                              key={l.id}
+                              href={`/api/pengaduan/${p.id}/gambar?lid=${l.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <FileText className="w-4 h-4 text-slate-400" />
+                              {l.nama}
+                            </a>
+                          )
+                        )}
+                      </div>
                     </div>
                   )}
 

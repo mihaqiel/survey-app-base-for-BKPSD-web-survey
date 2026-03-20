@@ -17,10 +17,12 @@ export default async function PengaduanAdminPage() {
       telepon: true,
       judul: true,
       isi: true,
-      gambarName: true,
-      gambarType: true,
       status: true,
       createdAt: true,
+      lampiran: {
+        select: { id: true, mimeType: true, nama: true, urutan: true },
+        orderBy: { urutan: "asc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

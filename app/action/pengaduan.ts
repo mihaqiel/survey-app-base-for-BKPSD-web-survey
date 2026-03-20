@@ -4,55 +4,60 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { pengaduanConfirmTemplate, pengaduanNotifTemplate } from "@/lib/email-templates";
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB per file
+const MAX_FILES = 5;
 
 export async function submitPengaduan(
   _prev: unknown,
   formData: FormData,
 ): Promise<{ success?: true; error?: string }> {
-  const nama = (formData.get("nama") as string)?.trim().slice(0, 100);
-  const email = (formData.get("email") as string)?.trim().slice(0, 200);
+  const nama   = (formData.get("nama")   as string)?.trim().slice(0, 100);
+  const email  = (formData.get("email")  as string)?.trim().slice(0, 200);
   const telepon = (formData.get("telepon") as string)?.trim().slice(0, 30) || null;
-  const judul = (formData.get("judul") as string)?.trim().slice(0, 200);
-  const isi = (formData.get("isi") as string)?.trim().slice(0, 2000);
-  const file = formData.get("gambar") as File | null;
+  const judul  = (formData.get("judul")  as string)?.trim().slice(0, 200);
+  const isi    = (formData.get("isi")    as string)?.trim().slice(0, 2000);
 
-  // Validate required fields
   if (!nama || !email || !judul || !isi) {
     return { error: "Nama, email, judul, dan isi pengaduan wajib diisi." };
   }
-
-  // Validate email format
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Format email tidak valid." };
   }
 
-  // Handle optional image
-  let gambar: Uint8Array<ArrayBuffer> | null = null;
-  let gambarType: string | null = null;
-  let gambarName: string | null = null;
+  // Collect up to 5 attachments (lampiran_0 … lampiran_4)
+  const lampiranData: Array<{
+    data: Uint8Array<ArrayBuffer>;
+    mimeType: string;
+    nama: string;
+    urutan: number;
+  }> = [];
 
-  if (file && file.size > 0) {
-    if (file.size > MAX_IMAGE_BYTES) {
-      return { error: "Ukuran file tidak boleh lebih dari 5 MB." };
+  for (let i = 0; i < MAX_FILES; i++) {
+    const file = formData.get(`lampiran_${i}`) as File | null;
+    if (!file || file.size === 0) continue;
+    if (file.size > MAX_FILE_BYTES) {
+      return { error: `File "${file.name}" melebihi batas 5 MB.` };
     }
-    const arrayBuffer = await file.arrayBuffer();
-    gambar = new Uint8Array(arrayBuffer as ArrayBuffer);
-    gambarType = file.type;
-    gambarName = file.name.slice(0, 255);
+    const ab = await file.arrayBuffer();
+    lampiranData.push({
+      data:     new Uint8Array(ab as ArrayBuffer),
+      mimeType: file.type || "application/octet-stream",
+      nama:     file.name.slice(0, 255),
+      urutan:   i,
+    });
   }
 
   try {
     await prisma.pengaduan.create({
-      data: { nama, email, telepon, judul, isi, gambar, gambarType, gambarName },
+      data: {
+        nama, email, telepon, judul, isi,
+        lampiran: { create: lampiranData },
+      },
     });
 
     // Fire-and-forget emails — never block or throw
     void Promise.all([
-      sendEmail({
-        to: email,
-        ...pengaduanConfirmTemplate({ nama, judul }),
-      }),
+      sendEmail({ to: email, ...pengaduanConfirmTemplate({ nama, judul }) }),
       process.env.ADMIN_EMAIL
         ? sendEmail({
             to: process.env.ADMIN_EMAIL,
