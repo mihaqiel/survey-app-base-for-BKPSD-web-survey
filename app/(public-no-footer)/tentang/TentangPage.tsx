@@ -9,7 +9,7 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  style: ["normal"],
   display: "swap",
   variable: "--font-display",
 });
@@ -39,8 +39,8 @@ const MANTAP = [
 
 const STATS = [
   { value: "2008", label: "Tahun Berdiri",  sub: "Bersama Kab. Anambas"     },
-  { value: "9",    label: "Unsur SKM",      sub: "Standar Permenpan RB"     },
-  { value: "5",    label: "Unit Layanan",   sub: "Kepegawaian & SDM"        },
+  { value: "9",    label: "Unsur SKM",      sub: "Standar Permenpan-RB"      },
+  { value: "5",    label: "Unit Layanan",   sub: "Kepegawaian dan SDM"      },
   { value: "100",  label: "% Digital",      sub: "Layanan berbasis digital" },
 ];
 
@@ -51,7 +51,7 @@ const PILLARS = [
 ];
 
 const LEGAL = [
-  { code: "Permenpan RB",        num: "No. 14 / 2017", desc: "Pedoman Penyusunan Survei Kepuasan Masyarakat — mengatur 9 unsur penilaian standar nasional pelayanan publik." },
+  { code: "Permenpan-RB",        num: "No. 14 / 2017", desc: "Pedoman Penyusunan Survei Kepuasan Masyarakat — mengatur 9 unsur penilaian standar nasional pelayanan publik." },
   { code: "Undang-Undang",       num: "No. 25 / 2009", desc: "UU Pelayanan Publik — mewajibkan evaluasi kinerja pelayanan secara berkala oleh setiap penyelenggara." },
   { code: "Peraturan Pemerintah",num: "No. 96 / 2012", desc: "Pelaksanaan UU Pelayanan Publik — termasuk kewajiban pengukuran indeks kepuasan masyarakat secara periodik." },
   { code: "Undang-Undang",       num: "No. 5 / 2014",  desc: "Aparatur Sipil Negara — landasan profesionalisme, kompetensi, dan pengembangan SDM ASN Kab. Kepulauan Anambas." },
@@ -118,8 +118,8 @@ function CharReveal({ text, className, delay = 0 }: { text: string; className?: 
   );
 }
 
-function WordReveal({ text, inView, delay = 0, italic = false, className }: {
-  text: string; inView: boolean; delay?: number; italic?: boolean; className?: string;
+function WordReveal({ text, inView, delay = 0, className }: {
+  text: string; inView: boolean; delay?: number; className?: string;
 }) {
   return (
     <span className={className}>
@@ -130,7 +130,7 @@ function WordReveal({ text, inView, delay = 0, italic = false, className }: {
             transform: inView ? "translateY(0)" : "translateY(22px)",
             transition: `opacity 0.6s ease ${delay + i * 0.09}s, transform 0.6s ease ${delay + i * 0.09}s`,
           }}>
-          {italic ? <em>{word}</em> : word}{"\u00A0"}
+          {word}{"\u00A0"}
         </span>
       ))}
     </span>
@@ -346,7 +346,7 @@ export default function TentangPage() {
             <span className="block text-4xl sm:text-5xl md:text-[3.8rem] font-bold text-white">
               <CharReveal text="Badan Kepegawaian dan" delay={0.3} />
             </span>
-            <span className="block font-normal italic whitespace-nowrap" style={{ fontSize: "clamp(1.5rem, 3.6vw, 2.6rem)", color: "rgba(255,255,255,0.7)" }}>
+            <span className="block font-bold text-white whitespace-nowrap" style={{ fontSize: "clamp(1.5rem, 3.6vw, 2.6rem)" }}>
               <CharReveal text="Pengembangan Sumber Daya Manusia" delay={0.85} />
             </span>
           </h1>
@@ -384,7 +384,7 @@ export default function TentangPage() {
           {/* Section label */}
           <div className="flex items-center gap-3 mb-12" style={fade(gallery.inView, 0)}>
             <span className="w-6 h-px block" style={{ background: "#FAE705" }} />
-            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>Tagline &amp; Galeri</span>
+            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>Tagline dan Galeri</span>
           </div>
 
           {/* Two-column: MANTAP left — photo carousel right */}
@@ -563,7 +563,7 @@ export default function TentangPage() {
             <h2 className="serif text-4xl font-bold text-slate-900 mb-6 leading-tight">
               <WordReveal text="Survei Kepuasan" inView={skm.inView} delay={0.1} />
               <br />
-              <WordReveal text="Masyarakat Digital" inView={skm.inView} delay={0.42} italic />
+              <WordReveal text="Masyarakat Digital" inView={skm.inView} delay={0.42} />
             </h2>
             <p className="text-slate-500 leading-relaxed text-sm mb-4" style={fade(skm.inView, 0.5)}>
               Platform digital dirancang untuk mengukur kepuasan masyarakat terhadap pelayanan publik BKPSDM
@@ -577,9 +577,9 @@ export default function TentangPage() {
 
           <div className="space-y-3">
             {[
-              { val: "9",   label: "Unsur Penilaian", sub: "Sesuai standar nasional Permenpan RB"  },
-              { val: "IKM", label: "Indeks Kepuasan",  sub: "Dihitung dan ditampilkan otomatis"     },
-              { val: "QR",  label: "Akses QR Code",    sub: "Pindai & isi survei langsung di loket" },
+              { val: "9",   label: "Unsur Penilaian", sub: "Sesuai standar nasional Permenpan-RB"  },
+              { val: "IKM", label: "Indeks Kepuasan",  sub: "Dihitung dan ditampilkan otomatis"      },
+              { val: "QR",  label: "Akses QR Code",    sub: "Pindai dan isi survei langsung di loket" },
             ].map((f, i) => (
               <div key={f.label} className="skm-tile" style={fade(skm.inView, 0.3 + i * 0.12, "x", -24)}>
                 <div className="skm-icon serif">{f.val}</div>
