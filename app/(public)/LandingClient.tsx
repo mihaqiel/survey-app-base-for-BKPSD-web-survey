@@ -29,7 +29,7 @@ const FEATURES = [
   {
     icon: <ShieldCheck className="w-6 h-6" />,
     title: "Sesuai Regulasi",
-    desc: "Menggunakan 9 unsur pelayanan standar Kementerian PANRB sesuai Permenpan RB Nomor 14 Tahun 2017.",
+    desc: "Menggunakan 9 unsur pelayanan standar Kementerian PANRB sesuai Permenpan-RB Nomor 14 Tahun 2017.",
   },
   {
     icon: <QrCode className="w-6 h-6" />,
@@ -46,9 +46,9 @@ const STEPS = [
 ];
 
 const STATS_BAR = [
-  { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan RB" },
+  { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan-RB" },
   { val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis"    },
-  { val: "QR",  label: "Akses Mudah",     sub: "Pindai & Isi Survei"  },
+  { val: "QR",  label: "Akses Mudah",     sub: "Pindai dan Isi Survei" },
 ];
 
 /* ── Hooks ─────────────────────────────────────── */
@@ -316,7 +316,7 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
             <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
               <CharReveal text="Survei Kepuasan" delay={0.3} />
             </span>
-            <span className="block font-normal italic" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", color: "rgba(255,255,255,0.72)" }}>
+            <span className="block font-bold text-white" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)" }}>
               <CharReveal text="Masyarakat" delay={0.9} />
             </span>
           </h1>

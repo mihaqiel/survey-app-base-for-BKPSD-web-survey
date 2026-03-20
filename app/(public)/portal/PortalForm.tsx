@@ -45,7 +45,7 @@ const STEP_LABELS = [
   "Pilih Layanan","Data Diri","Pilih Pegawai",
   "Q1 · Persyaratan","Q2 · Prosedur","Q3 · Waktu","Q4 · Biaya",
   "Q5 · Produk","Q6 · Kompetensi","Q7 · Perilaku","Q8 · Sarana","Q9 · Pengaduan",
-  "Rating Pegawai","Saran & Kirim",
+  "Rating Pegawai","Saran dan Kirim",
 ];
 
 interface Layanan { id: string; nama: string }
@@ -753,7 +753,7 @@ export default function PortalForm() {
                   {step === 13 && (
                     <div className="space-y-5 fade-up">
                       <div>
-                        <label className={labelCls}>Saran & Masukan (Opsional)</label>
+                        <label className={labelCls}>Saran dan Masukan (Opsional)</label>
                         <textarea value={saran} onChange={e=>setSaran(e.target.value)}
                           placeholder="Tuliskan saran atau masukan Anda..."
                           title="Saran dan Masukan"
@@ -855,7 +855,7 @@ export default function PortalForm() {
             )}
             <button onClick={handleNext} disabled={!canProceed()} className="btn-next" style={{ fontFamily:"var(--pf-body)" }}>
               {step === 11 ? "Lanjut ke Rating Pegawai"
-               : step === 12 ? "Lanjut ke Saran & Kirim"
+               : step === 12 ? "Lanjut ke Saran dan Kirim"
                : "Lanjut"
               }
               <ArrowRight className="w-3.5 h-3.5"/>

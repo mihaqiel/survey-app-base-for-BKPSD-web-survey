@@ -285,7 +285,7 @@ export default function SkmForm({
 
           {/* ── SECTION 4: SARAN ── */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8">
-            <SectionHeader number="4" title="Saran & Masukan" />
+            <SectionHeader number="4" title="Saran dan Masukan" />
             <textarea name="saran" placeholder="Tuliskan saran atau masukan Anda untuk perbaikan layanan ini (opsional)..."
               className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none resize-none min-h-[120px] transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100" />
           </div>

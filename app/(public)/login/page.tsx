@@ -47,7 +47,7 @@ export default function LoginPage() {
                 Admin Login
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Badan Kepegawaian & Pengembangan SDM
+                Badan Kepegawaian dan Pengembangan Sumber Daya Manusia
               </p>
             </div>
 

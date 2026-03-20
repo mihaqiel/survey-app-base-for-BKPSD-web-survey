@@ -219,7 +219,7 @@ export default function PengaduanClient() {
     },
     {
       icon: <Eye className="w-5 h-5" />,
-      title: "Transparan & Akuntabel",
+      title: "Transparan dan Akuntabel",
       desc: "Setiap laporan dicatat, diproses, dan dapat dipantau statusnya.",
     },
   ];
@@ -716,7 +716,7 @@ export default function PengaduanClient() {
                         ) : (
                           <>
                             <p className="text-sm font-medium" style={{ color: "#64748b" }}>
-                              Seret &amp; lepas atau{" "}
+                              Seret dan lepas atau{" "}
                               <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
                             </p>
                           </>
@@ -849,7 +849,7 @@ export default function PengaduanClient() {
 
               <h2 className="serif text-3xl md:text-4xl font-bold text-white max-w-xl leading-tight"
                 style={fade(ctaSection.inView, 0.1)}>
-                Sampaikan Pengaduan yang Akurat & Bertanggung Jawab
+                Sampaikan Pengaduan yang Akurat dan Bertanggung Jawab
               </h2>
               <p className="text-white/50 text-sm max-w-md leading-relaxed" style={fade(ctaSection.inView, 0.2)}>
                 Pastikan informasi yang Anda berikan benar dan dapat dipertanggungjawabkan.
