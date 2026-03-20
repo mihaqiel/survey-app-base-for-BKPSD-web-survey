@@ -10,9 +10,6 @@
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@prisma/client": "^6.19.2",
     "@types/qrcode": "^1.5.6",
