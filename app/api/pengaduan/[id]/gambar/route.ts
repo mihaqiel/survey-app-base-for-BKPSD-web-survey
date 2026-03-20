@@ -20,10 +20,11 @@ export async function GET(
       return new NextResponse(null, { status: 404 });
     }
 
+    const isImage = (p.gambarType ?? "").startsWith("image/");
     return new NextResponse(p.gambar, {
       headers: {
-        "Content-Type": p.gambarType ?? "image/jpeg",
-        "Content-Disposition": `inline; filename="${p.gambarName ?? "gambar"}"`,
+        "Content-Type": p.gambarType ?? "application/octet-stream",
+        "Content-Disposition": `${isImage ? "inline" : "attachment"}; filename="${p.gambarName ?? "file"}"`,
         "Cache-Control": "private, max-age=3600",
       },
     });

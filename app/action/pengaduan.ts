@@ -33,11 +33,8 @@ export async function submitPengaduan(
   let gambarName: string | null = null;
 
   if (file && file.size > 0) {
-    if (!file.type.startsWith("image/")) {
-      return { error: "File harus berupa gambar (JPG, PNG, dsb)." };
-    }
     if (file.size > MAX_IMAGE_BYTES) {
-      return { error: "Ukuran gambar tidak boleh lebih dari 5 MB." };
+      return { error: "Ukuran file tidak boleh lebih dari 5 MB." };
     }
     const arrayBuffer = await file.arrayBuffer();
     gambar = new Uint8Array(arrayBuffer as ArrayBuffer);

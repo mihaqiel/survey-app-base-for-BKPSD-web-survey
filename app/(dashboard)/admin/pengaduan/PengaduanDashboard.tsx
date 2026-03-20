@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquareWarning, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { MessageSquareWarning, ChevronDown, ChevronUp, Paperclip, FileText } from "lucide-react";
 
 type Complaint = {
   id: string;
@@ -11,6 +11,7 @@ type Complaint = {
   judul: string;
   isi: string;
   gambarName: string | null;
+  gambarType: string | null;
   status: string;
   createdAt: Date;
 };
@@ -115,7 +116,7 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
                   </p>
                 </div>
                 {p.gambarName && (
-                  <ImageIcon className="w-4 h-4 text-slate-400 shrink-0" aria-label="Ada gambar" />
+                  <Paperclip className="w-4 h-4 text-slate-400 shrink-0" aria-label="Ada lampiran" />
                 )}
                 {isOpen ? (
                   <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
@@ -149,13 +150,25 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
 
                   {p.gambarName && (
                     <div className="mt-4">
-                      <p className="text-xs text-slate-400 mb-2">Foto Bukti</p>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`/api/pengaduan/${p.id}/gambar`}
-                        alt="Foto pengaduan"
-                        className="max-h-64 rounded-lg border border-gray-200 object-contain"
-                      />
+                      <p className="text-xs text-slate-400 mb-2">Lampiran Bukti</p>
+                      {p.gambarType?.startsWith("image/") ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/pengaduan/${p.id}/gambar`}
+                          alt="Foto pengaduan"
+                          className="max-h-64 rounded-lg border border-gray-200 object-contain"
+                        />
+                      ) : (
+                        <a
+                          href={`/api/pengaduan/${p.id}/gambar`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-slate-400" />
+                          {p.gambarName}
+                        </a>
+                      )}
                     </div>
                   )}
 

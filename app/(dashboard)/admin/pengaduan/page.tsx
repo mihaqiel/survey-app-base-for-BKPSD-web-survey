@@ -18,6 +18,7 @@ export default async function PengaduanAdminPage() {
       judul: true,
       isi: true,
       gambarName: true,
+      gambarType: true,
       status: true,
       createdAt: true,
     },

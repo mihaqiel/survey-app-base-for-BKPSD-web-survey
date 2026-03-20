@@ -100,19 +100,19 @@ export default function PengaduanClient() {
   function handleFile(file: File | null | undefined) {
     setFileError(null);
     if (!file) { clearFile(); return; }
-    if (!file.type.startsWith("image/")) {
-      setFileError("File harus berupa gambar (JPG, PNG, dsb).");
-      clearFile(); return;
-    }
     if (file.size > 5 * 1024 * 1024) {
-      setFileError("Ukuran gambar tidak boleh lebih dari 5 MB.");
+      setFileError("Ukuran file tidak boleh lebih dari 5 MB.");
       clearFile(); return;
     }
     setFileName(file.name);
     setFileSize((file.size / 1024 / 1024).toFixed(2) + " MB");
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreview("__file__");
+    }
   }
 
   function clearFile() {
@@ -593,36 +593,59 @@ export default function PengaduanClient() {
                   {/* Upload */}
                   <div>
                     <label className="form-label">
-                      Foto Bukti <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional · maks. 5 MB)</span>
+                      Lampiran Bukti <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional · maks. 5 MB)</span>
                     </label>
 
                     {preview ? (
-                      /* ── Preview state ── */
-                      <div className="upload-preview">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={preview} alt="Preview foto bukti"
-                          className="w-full object-cover"
-                          style={{ maxHeight: "200px" }} />
-                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      preview === "__file__" ? (
+                        /* ── Non-image file card ── */
+                        <div className="upload-preview">
+                          <div className="flex items-center gap-3 px-4 py-3">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                               style={{ background: "#0d2d58" }}>
-                              <Upload className="w-4 h-4" style={{ color: "#FAE705" }} />
+                              <FileText className="w-5 h-5" style={{ color: "#FAE705" }} />
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium text-slate-700 truncate">{fileName}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-slate-700 truncate">{fileName}</p>
                               <p className="text-[11px]" style={{ color: "#94a3b8" }}>{fileSize}</p>
                             </div>
+                            <button type="button" onClick={clearFile}
+                              className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
+                              style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
+                              Hapus
+                            </button>
                           </div>
-                          <button type="button" onClick={clearFile}
-                            className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
-                            style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
-                            Hapus
-                          </button>
                         </div>
-                      </div>
+                      ) : (
+                        /* ── Image preview ── */
+                        <div className="upload-preview">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={preview} alt="Preview foto bukti"
+                            className="w-full object-cover"
+                            style={{ maxHeight: "200px" }} />
+                          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{ background: "#0d2d58" }}>
+                                <Upload className="w-4 h-4" style={{ color: "#FAE705" }} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-slate-700 truncate">{fileName}</p>
+                                <p className="text-[11px]" style={{ color: "#94a3b8" }}>{fileSize}</p>
+                              </div>
+                            </div>
+                            <button type="button" onClick={clearFile}
+                              className="flex-shrink-0 ml-3 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
+                              style={{ color: "#dc2626", borderColor: "#fca5a5", background: "#fff5f5" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}>
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      )
                     ) : (
                       /* ── Drop / click zone ── */
                       <div
@@ -635,7 +658,7 @@ export default function PengaduanClient() {
                         role="button"
                         tabIndex={0}
                         onKeyDown={e => e.key === "Enter" && fileInputRef.current?.click()}
-                        aria-label="Unggah foto bukti"
+                        aria-label="Unggah lampiran bukti"
                       >
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 transition-colors"
                           style={{ background: dragActive ? "rgba(56,189,248,.12)" : "#f1f5f9" }}>
@@ -647,14 +670,14 @@ export default function PengaduanClient() {
                         ) : (
                           <>
                             <p className="text-sm font-medium" style={{ color: "#64748b" }}>
-                              Seret & lepas gambar di sini
+                              Seret &amp; lepas file di sini
                             </p>
                             <p className="text-xs" style={{ color: "#94a3b8" }}>
                               atau <span style={{ color: "#38bdf8", fontWeight: 600 }}>klik untuk memilih</span>
                             </p>
                           </>
                         )}
-                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>JPG, PNG, WEBP · Maks. 5 MB</p>
+                        <p className="text-[11px] mt-1" style={{ color: "#cbd5e1" }}>JPG, PNG, PDF, DOC · Maks. 5 MB</p>
                       </div>
                     )}
 
@@ -664,7 +687,8 @@ export default function PengaduanClient() {
                       </p>
                     )}
 
-                    <input ref={fileInputRef} id="gambar-input" name="gambar" type="file" accept="image/*"
+                    <input ref={fileInputRef} id="gambar-input" name="gambar" type="file"
+                      accept="image/*,.pdf,.doc,.docx,.xlsx,.xls,.csv,.txt"
                       className="sr-only"
                       onChange={(e) => handleFile(e.target.files?.[0])} />
                   </div>
