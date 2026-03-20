@@ -21,7 +21,7 @@ import {
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  style: ["normal"],
   display: "swap",
   variable: "--font-display",
 });
@@ -62,8 +62,8 @@ function CharReveal({ text, delay = 0 }: { text: string; delay?: number }) {
   );
 }
 
-function WordReveal({ text, inView, delay = 0, italic = false }: {
-  text: string; inView: boolean; delay?: number; italic?: boolean;
+function WordReveal({ text, inView, delay = 0 }: {
+  text: string; inView: boolean; delay?: number;
 }) {
   return (
     <span>
@@ -74,7 +74,7 @@ function WordReveal({ text, inView, delay = 0, italic = false }: {
             transform: inView ? "translateY(0)" : "translateY(22px)",
             transition: `opacity 0.6s ease ${delay + i * 0.09}s, transform 0.6s ease ${delay + i * 0.09}s`,
           }}>
-          {italic ? <em>{word}</em> : word}{"\u00A0"}
+          {word}{"\u00A0"}
         </span>
       ))}
     </span>
@@ -442,7 +442,7 @@ export default function PengaduanClient() {
             <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
               <CharReveal text="Pengaduan" delay={0.3} />
             </span>
-            <span className="block font-normal italic" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)", color: "rgba(255,255,255,0.72)" }}>
+            <span className="block font-bold text-white" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)" }}>
               <CharReveal text="Masyarakat" delay={0.75} />
             </span>
           </h1>
@@ -518,7 +518,7 @@ export default function PengaduanClient() {
             <h2 className="serif text-4xl font-bold text-slate-900 mb-6 leading-tight">
               <WordReveal text="Suarakan" inView={formSection.inView} delay={0.1} />
               <br />
-              <WordReveal text="Aspirasi Anda" inView={formSection.inView} delay={0.32} italic />
+              <WordReveal text="Aspirasi Anda" inView={formSection.inView} delay={0.32} />
             </h2>
 
             <p className="text-slate-500 leading-relaxed text-sm mb-8" style={fade(formSection.inView, 0.45)}>
@@ -804,7 +804,7 @@ export default function PengaduanClient() {
           <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900 mb-3">
             <WordReveal text="Bagaimana Kami Menangani" inView={featSection.inView} delay={0.05} />
             <br />
-            <WordReveal text="Pengaduan Anda" inView={featSection.inView} delay={0.38} italic />
+            <WordReveal text="Pengaduan Anda" inView={featSection.inView} delay={0.38} />
           </h2>
           <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-14"
             style={fade(featSection.inView, 0.35)}>

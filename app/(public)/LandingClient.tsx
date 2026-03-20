@@ -9,7 +9,7 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  style: ["normal"],
   display: "swap",
   variable: "--font-display",
 });
@@ -86,8 +86,8 @@ function CharReveal({ text, delay = 0 }: { text: string; delay?: number }) {
   );
 }
 
-function WordReveal({ text, inView, delay = 0, italic = false }: {
-  text: string; inView: boolean; delay?: number; italic?: boolean;
+function WordReveal({ text, inView, delay = 0 }: {
+  text: string; inView: boolean; delay?: number;
 }) {
   return (
     <span>
@@ -101,7 +101,7 @@ function WordReveal({ text, inView, delay = 0, italic = false }: {
             transition: `opacity 0.6s ease ${delay + i * 0.09}s, transform 0.6s ease ${delay + i * 0.09}s`,
           }}
         >
-          {italic ? <em>{word}</em> : word}{"\u00A0"}
+          {word}{"\u00A0"}
         </span>
       ))}
     </span>
