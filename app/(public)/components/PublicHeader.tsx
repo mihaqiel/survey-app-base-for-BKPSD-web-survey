@@ -28,10 +28,9 @@ const NAV_LINKS = [
 
 /* ── Theme detection ────────────────────────────── */
 /**
- * Probes the element stack just below the header's bottom edge and returns
- * 'dark' or 'light' based on the background of the first real element found.
- * - gradient backgrounds → dark (all gradients in this app are dark)
- * - solid color → ITU-R BT.601 luminance < 0.45 → dark
+ * Probes the element stack just below the header's bottom edge.
+ * - gradient background → dark (all gradients in this app are dark)
+ * - solid colour → ITU-R BT.601 luminance < 0.45 → dark
  */
 function detectTheme(headerEl: HTMLElement): "light" | "dark" {
   const rect = headerEl.getBoundingClientRect();
@@ -47,12 +46,10 @@ function detectTheme(headerEl: HTMLElement): "light" | "dark" {
 
     const st = window.getComputedStyle(el);
 
-    // Gradient backgrounds are always dark in this app
     if (st.backgroundImage !== "none" && st.backgroundImage.includes("gradient")) {
       return "dark";
     }
 
-    // Solid background — luminance test
     const m = st.backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
     if (m) {
       const lum = (0.299 * +m[1] + 0.587 * +m[2] + 0.114 * +m[3]) / 255;
@@ -79,14 +76,14 @@ export default function PublicHeader() {
 
       setScrolled(y > 20);
 
-      // Auto-hide: only engage after scrolling 80px to avoid jitter near top
+      // After 80 px: hide on scroll-down, show nav-only on scroll-up
       if (y > 80) {
         setHidden(dir === "down");
       } else {
         setHidden(false);
       }
 
-      // Throttled theme probe — 120ms is fast enough to feel responsive
+      // Throttled theme probe
       if (themeTimer.current) clearTimeout(themeTimer.current);
       themeTimer.current = setTimeout(() => {
         if (headerRef.current) setTheme(detectTheme(headerRef.current));
@@ -103,19 +100,13 @@ export default function PublicHeader() {
   /* ── Derived style values ───────────────────── */
   const isDark = theme === "dark";
 
-  const headerBg = !scrolled
-    ? "#ffffff"
-    : isDark
-      ? "rgba(13, 29, 56, 0.88)"
-      : "rgba(255, 255, 255, 0.92)";
+  // Active / inactive link colours adapt to detected section theme
+  const navActiveColor   = isDark ? "#FAE705"                : "#0d2d58";
+  const navInactiveColor = isDark ? "rgba(255,255,255,0.75)" : "rgba(13,45,88,0.60)";
 
-  const navActiveColor   = isDark ? "#FAE705"                 : "#0d2d58";
-  const navInactiveColor = isDark ? "rgba(255,255,255,0.70)"  : "rgba(13,45,88,0.55)";
-  const subtitleColor    = isDark ? "rgba(255,255,255,0.55)"  : "rgba(13,45,88,0.55)";
-  const borderColor      = isDark ? "rgba(255,255,255,0.08)"  : "rgba(13,45,88,0.08)";
-  const sepGradient      = isDark
-    ? "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.2) 30%, rgba(255,255,255,0.2) 70%, transparent 100%)"
-    : "linear-gradient(to bottom, transparent 0%, rgba(13,45,88,0.2) 30%, rgba(13,45,88,0.2) 70%, transparent 100%)";
+  // Separator in logo row (only visible when not scrolled, theme always light there)
+  const sepGradient =
+    "linear-gradient(to bottom, transparent, rgba(13,45,88,0.2) 30%, rgba(13,45,88,0.2) 70%, transparent)";
 
   return (
     <>
@@ -134,17 +125,25 @@ export default function PublicHeader() {
           transition: filter 0.35s ease, transform 0.35s ease;
         }
         .hdr-logo-link:hover .hdr-logo-wrap {
-          filter: drop-shadow(0 0 10px rgba(56,189,248,0.45));
+          filter: drop-shadow(0 0 10px rgba(56,189,248,0.4));
           transform: scale(1.04);
         }
+
+        /* Nav links — transparent pill style */
         .hdr-nav-item {
           position: relative;
-          transition: color 0.25s ease;
+          border-radius: 999px;
+          transition: color 0.25s ease, background 0.25s ease;
         }
+        .hdr-nav-item:hover {
+          background: rgba(255,255,255,0.08);
+        }
+
+        /* Yellow underline indicator */
         .hdr-nav-item::after {
           content: '';
           position: absolute;
-          bottom: 0; left: 1rem; right: 1rem;
+          bottom: 6px; left: 1rem; right: 1rem;
           height: 2px;
           border-radius: 1px;
           background: #FAE705;
@@ -160,102 +159,109 @@ export default function PublicHeader() {
         ref={headerRef}
         className={`${playfair.variable} ${dmSans.variable} sticky top-0 z-50`}
         style={{
-          background:           headerBg,
-          backdropFilter:       scrolled ? "blur(14px)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(14px)" : "none",
-          transform:            hidden   ? "translateY(-100%)" : "translateY(0)",
-          transition:           "transform 0.4s cubic-bezier(0.4,0,0.2,1), background 0.35s ease, box-shadow 0.35s ease",
-          boxShadow:            scrolled && !hidden ? "0 4px 24px rgba(13,45,88,0.12)" : "none",
+          // At top: solid white. When scrolled: fully transparent — nav floats over content.
+          background:  scrolled ? "transparent" : "#ffffff",
+          transform:   hidden   ? "translateY(-100%)" : "translateY(0)",
+          transition:  "transform 0.4s cubic-bezier(0.4,0,0.2,1), background 0.35s ease",
+          boxShadow:   "none",
         }}
       >
-        {/* ── TOP ACCENT ─────────────────────────────── */}
-        <div className="hdr-grad-bar" style={{ height: 3 }} />
+        {/* ── TOP ACCENT — only at page top ──────────── */}
+        <div
+          className="hdr-grad-bar overflow-hidden"
+          style={{
+            height:     scrolled ? 0 : 3,
+            transition: "height 0.3s ease",
+          }}
+        />
 
-        {/* ── LOGO ROW ───────────────────────────────── */}
-        <Link href="/" className="hdr-logo-link block">
-          <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-center gap-8 md:gap-12">
-
-            {/* Lambang Anambas */}
-            <div className="hdr-logo-wrap">
-              <Image
-                src="/logo-anambas.png"
-                alt="Lambang Kepulauan Anambas"
-                width={56}
-                height={64}
-                className="object-contain w-auto"
-                style={{ height: 52, transition: "height 0.3s ease" }}
-              />
-            </div>
-
-            <div
-              className="hidden sm:block"
-              style={{
-                width: 1,
-                height: 36,
-                background: sepGradient,
-                transition: "background 0.35s ease",
-              }}
-            />
-
-            {/* Logo + unit name center block */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="hdr-logo-wrap">
-                <Image
-                  src="/logo-anambas-maju.png"
-                  alt="Anambas Maju – Energi Baru"
-                  width={130}
-                  height={56}
-                  className="object-contain w-auto"
-                  style={{ height: 44 }}
-                />
-              </div>
-              <p
-                className="text-[9px] tracking-[0.22em] uppercase"
-                style={{
-                  fontFamily:    "var(--hdr-body)",
-                  color:         subtitleColor,
-                  letterSpacing: "0.22em",
-                  transition:    "color 0.35s ease",
-                }}
-              >
-                Kabupaten Kepulauan Anambas
-              </p>
-            </div>
-
-            <div
-              className="hidden sm:block"
-              style={{
-                width: 1,
-                height: 36,
-                background: sepGradient,
-                transition: "background 0.35s ease",
-              }}
-            />
-
-            {/* BKPSDM logo */}
-            <div className="hdr-logo-wrap">
-              <Image
-                src="/logo-bkpsdm.png"
-                alt="BKPSDM Anambas"
-                width={90}
-                height={56}
-                className="object-contain w-auto"
-                style={{ height: 48 }}
-              />
-            </div>
-
-          </div>
-        </Link>
-
-        {/* ── NAV BAR ────────────────────────────────── */}
+        {/* ── LOGO ROW — collapses when scrolled ─────── */}
         <div
           style={{
-            background:  "transparent",
-            borderTop:   `1px solid ${borderColor}`,
-            transition:  "border-color 0.35s ease",
+            maxHeight:   scrolled ? 0   : 200,
+            opacity:     scrolled ? 0   : 1,
+            overflow:    "hidden",
+            pointerEvents: scrolled ? "none" : "auto",
+            transition:  "max-height 0.35s ease, opacity 0.25s ease",
           }}
         >
-          <div className="max-w-5xl mx-auto px-6 flex items-center justify-center">
+          <Link href="/" className="hdr-logo-link block">
+            <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-center gap-8 md:gap-12">
+
+              {/* Lambang Anambas */}
+              <div className="hdr-logo-wrap">
+                <Image
+                  src="/logo-anambas.png"
+                  alt="Lambang Kepulauan Anambas"
+                  width={56}
+                  height={64}
+                  className="object-contain w-auto"
+                  style={{ height: 52 }}
+                />
+              </div>
+
+              <div
+                className="hidden sm:block"
+                style={{ width: 1, height: 36, background: sepGradient }}
+              />
+
+              {/* Centre logo + unit name */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="hdr-logo-wrap">
+                  <Image
+                    src="/logo-anambas-maju.png"
+                    alt="Anambas Maju – Energi Baru"
+                    width={130}
+                    height={56}
+                    className="object-contain w-auto"
+                    style={{ height: 44 }}
+                  />
+                </div>
+                <p
+                  className="text-[9px] tracking-[0.22em] uppercase"
+                  style={{
+                    fontFamily:    "var(--hdr-body)",
+                    color:         "rgba(13,45,88,0.55)",
+                    letterSpacing: "0.22em",
+                  }}
+                >
+                  Kabupaten Kepulauan Anambas
+                </p>
+              </div>
+
+              <div
+                className="hidden sm:block"
+                style={{ width: 1, height: 36, background: sepGradient }}
+              />
+
+              {/* BKPSDM logo */}
+              <div className="hdr-logo-wrap">
+                <Image
+                  src="/logo-bkpsdm.png"
+                  alt="BKPSDM Anambas"
+                  width={90}
+                  height={56}
+                  className="object-contain w-auto"
+                  style={{ height: 48 }}
+                />
+              </div>
+
+            </div>
+          </Link>
+        </div>
+
+        {/* ── NAV BAR — always in DOM, transparent when scrolled ── */}
+        <div
+          style={{
+            // Thin separator only when the logo row is visible
+            borderTop:  scrolled ? "none" : "1px solid rgba(13,45,88,0.08)",
+            transition: "border-color 0.35s ease",
+            // Slight padding increase when floating (logo gone, give the nav more air)
+            paddingTop:    scrolled ? 4 : 0,
+            paddingBottom: scrolled ? 4 : 0,
+          }}
+        >
+          <div className="max-w-5xl mx-auto px-6 flex items-center justify-center gap-1">
 
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
@@ -263,11 +269,17 @@ export default function PublicHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`hdr-nav-item${isActive ? " active" : ""} px-5 py-3 text-[11px] font-semibold tracking-[0.18em] uppercase`}
+                  className={`hdr-nav-item${isActive ? " active" : ""} px-5 py-2.5 text-[11px] font-semibold tracking-[0.18em] uppercase`}
                   style={{
                     fontFamily: "var(--hdr-body)",
                     color:      isActive ? navActiveColor : navInactiveColor,
-                    transition: "color 0.35s ease",
+                    // Subtle text-shadow so text stays legible over any background
+                    textShadow: scrolled
+                      ? isDark
+                        ? "0 1px 4px rgba(0,0,0,0.5)"
+                        : "0 1px 3px rgba(255,255,255,0.6)"
+                      : "none",
+                    transition: "color 0.35s ease, text-shadow 0.35s ease",
                   }}
                 >
                   {link.label}
@@ -278,8 +290,14 @@ export default function PublicHeader() {
           </div>
         </div>
 
-        {/* ── BOTTOM ACCENT ──────────────────────────── */}
-        <div className="hdr-grad-bar" style={{ height: 2 }} />
+        {/* ── BOTTOM ACCENT — only at page top ───────── */}
+        <div
+          className="hdr-grad-bar overflow-hidden"
+          style={{
+            height:     scrolled ? 0 : 2,
+            transition: "height 0.3s ease",
+          }}
+        />
       </header>
     </>
   );
