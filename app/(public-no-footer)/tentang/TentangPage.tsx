@@ -157,7 +157,6 @@ export default function TentangPage() {
   const gallery = useInView(0.08);
   const pillars = useInView(0.08);
   const legal   = useInView(0.08);
-  const skm     = useInView(0.08);
 
   useEffect(() => {
     const onScroll = () => {
@@ -266,17 +265,6 @@ export default function TentangPage() {
         .photo-card:hover .photo-overlay { opacity:1; }
         .photo-caption { transform:translateY(16px); transition:transform 0.45s ease; }
         .photo-card:hover .photo-caption { transform:translateY(0); }
-
-        /* ═══ SKM tiles ═══ */
-        .skm-tile {
-          display:flex; align-items:center; gap:1.25rem;
-          background:#fff; border:1px solid #f1f5f9; border-radius:.875rem;
-          padding:1rem 1.25rem; box-shadow:0 1px 3px rgba(0,0,0,.06);
-          transition: box-shadow .3s ease, border-color .3s ease, transform .3s ease;
-        }
-        .skm-tile:hover { box-shadow:0 4px 20px rgba(56,189,248,.18); border-color:rgba(56,189,248,.35); transform:translateX(6px); }
-        .skm-icon { width:52px; height:52px; border-radius:.7rem; background:#0d2d58; display:flex; align-items:center; justify-content:center; font-family:var(--font-display,Georgia,serif); color:#FAE705; font-size:1.1rem; font-weight:700; flex-shrink:0; transition:background .3s ease, color .3s ease; }
-        .skm-tile:hover .skm-icon { background:#38bdf8; color:#0d2d58; }
 
         /* ═══ Pillar cards ═══ */
         .pillar-card { border-top:1px solid rgba(255,255,255,.1); padding-top:2rem; transition:border-color .4s ease; }
@@ -544,49 +532,6 @@ export default function TentangPage() {
                 <h3 className="serif text-2xl font-bold text-white mb-3">{p.title}</h3>
                 <span className="block w-8 h-px mb-5" style={{ background: "#FAE705" }} />
                 <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          SKM SYSTEM
-      ════════════════════════════════════ */}
-      <section className="bg-[#f8f7f3] py-24 px-6">
-        <div ref={skm.ref} className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="flex items-center gap-3 mb-5" style={fade(skm.inView, 0)}>
-              <span className="w-6 h-px block" style={{ background: "#FAE705" }} />
-              <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>Sistem SKM</span>
-            </div>
-            <h2 className="serif text-4xl font-bold text-slate-900 mb-6 leading-tight">
-              <WordReveal text="Survei Kepuasan" inView={skm.inView} delay={0.1} />
-              <br />
-              <WordReveal text="Masyarakat Digital" inView={skm.inView} delay={0.42} />
-            </h2>
-            <p className="text-slate-500 leading-relaxed text-sm mb-4" style={fade(skm.inView, 0.5)}>
-              Platform digital dirancang untuk mengukur kepuasan masyarakat terhadap pelayanan publik BKPSDM
-              secara transparan, akuntabel, dan mudah diakses.
-            </p>
-            <p className="text-slate-500 leading-relaxed text-sm" style={fade(skm.inView, 0.62)}>
-              Hasil survei diolah otomatis menjadi Indeks Kepuasan Masyarakat (IKM) yang dipantau real-time
-              sebagai bahan evaluasi dan perbaikan berkelanjutan.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { val: "9",   label: "Unsur Penilaian", sub: "Sesuai standar nasional Permenpan-RB"  },
-              { val: "IKM", label: "Indeks Kepuasan",  sub: "Dihitung dan ditampilkan otomatis"      },
-              { val: "QR",  label: "Akses QR Code",    sub: "Pindai dan isi survei langsung di loket" },
-            ].map((f, i) => (
-              <div key={f.label} className="skm-tile" style={fade(skm.inView, 0.3 + i * 0.12, "x", -24)}>
-                <div className="skm-icon serif">{f.val}</div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{f.label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{f.sub}</p>
-                </div>
               </div>
             ))}
           </div>

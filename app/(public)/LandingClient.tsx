@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { BarChart3, ShieldCheck, QrCode, Smartphone, KeyRound, ClipboardList, CheckCircle2, ChevronDown } from "lucide-react";
+import { BarChart3, ShieldCheck, QrCode, ChevronDown } from "lucide-react";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 
 /* ── Fonts ─────────────────────────────────────── */
@@ -38,12 +38,6 @@ const FEATURES = [
   },
 ];
 
-const STEPS = [
-  { step: "01", icon: <Smartphone   className="w-6 h-6" />, title: "Pindai QR Code",  desc: "Temukan QR Code di loket pelayanan BKPSDM lalu pindai menggunakan kamera ponsel Anda." },
-  { step: "02", icon: <KeyRound     className="w-6 h-6" />, title: "Masukkan Token",  desc: "Ketik kode akses dari QR Code ke dalam kolom token pada portal survei digital." },
-  { step: "03", icon: <ClipboardList className="w-6 h-6" />, title: "Isi Formulir",   desc: "Berikan penilaian jujur terhadap 9 unsur pelayanan yang telah Anda terima." },
-  { step: "04", icon: <CheckCircle2 className="w-6 h-6" />, title: "Kirim Survei",    desc: "Tekan kirim — data Anda tersimpan aman dan langsung diproses sistem." },
-];
 
 const STATS_BAR = [
   { id: "unsur" as const, val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan-RB" },
@@ -141,9 +135,7 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
   /* Intersection hooks */
   const features = useInView(0.08);
-  const howto    = useInView(0.08);
-  const cta      = useInView(0.08);
-  const stats    = useInView(0.15);
+const stats    = useInView(0.15);
 
   /* ── Stats bar state ── */
   const [activePanel, setActivePanel] = useState<"unsur" | "ikm" | "qr">("unsur");
@@ -797,94 +789,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                 <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          HOW TO
-      ════════════════════════════════════ */}
-      <section className="py-24 px-6 bg-white" style={{ borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" }}>
-        <div ref={howto.ref} className="max-w-5xl mx-auto">
-
-          <div className="section-label mb-4" style={fade(howto.inView, 0)}>
-            <span className="section-label-line" />
-            <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
-              Panduan
-            </span>
-          </div>
-
-          <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900 mb-3">
-            <WordReveal text="Cara Pengisian Survei" inView={howto.inView} delay={0.05} />
-          </h2>
-          <div className="w-14 h-[3px] rounded-full mb-14" style={{ background: "#FAE705", ...fade(howto.inView, 0.3) }} />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {STEPS.map((item, i) => (
-              <div key={item.step} className="step-wrap relative" style={fade(howto.inView, 0.1 + i * 0.1)}>
-                <div className="step-num absolute -top-3 -left-1 z-0 select-none" aria-hidden>
-                  {item.step}
-                </div>
-                <div className="relative z-10 pt-8">
-                  <div className="step-icon-ring mb-5" style={{ color: "#334155" }}>
-                    {item.icon}
-                  </div>
-                  <h3 className="serif font-bold text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div
-                    className="hidden md:block absolute top-12 right-0 translate-x-1/2 w-full h-px"
-                    style={{ background: "linear-gradient(90deg,#e2e8f0,transparent)" }}
-                    aria-hidden
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          CTA
-      ════════════════════════════════════ */}
-      <section className="py-24 px-6" style={{ background: "#f8f7f3" }}>
-        <div ref={cta.ref} className="max-w-5xl mx-auto">
-          <div className="cta-grad relative overflow-hidden rounded-3xl shadow-2xl">
-
-            <div
-              className="orb-a pointer-events-none absolute right-[-6%] top-[-30%] w-80 h-80 rounded-full blur-[90px]"
-              style={{ background: "rgba(250,231,5,0.22)" }}
-            />
-            <div
-              className="orb-b pointer-events-none absolute left-[-4%] bottom-[-20%] w-64 h-64 rounded-full blur-[80px]"
-              style={{ background: "rgba(56,189,248,0.18)" }}
-            />
-            <div className="dot-grid pointer-events-none absolute inset-0" style={{ opacity: 0.5 }} />
-
-            <div className="relative z-10 px-10 py-20 flex flex-col items-center text-center gap-8">
-              <div className="section-label justify-center" style={fade(cta.inView, 0)}>
-                <span className="section-label-line" />
-                <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
-                  Sampaikan Pendapat Anda
-                </span>
-                <span className="section-label-line" />
-              </div>
-
-              <h2 className="serif text-3xl md:text-4xl font-bold text-white max-w-xl leading-tight" style={fade(cta.inView, 0.1)}>
-                Bantu Kami Meningkatkan Kualitas Layanan
-              </h2>
-              <p className="text-white/50 text-sm max-w-md leading-relaxed" style={fade(cta.inView, 0.2)}>
-                Survei ini bersifat rahasia. Setiap respons Anda membantu BKPSDM memberikan pelayanan yang lebih baik bagi masyarakat Kepulauan Anambas.
-              </p>
-
-              <div style={fade(cta.inView, 0.3)}>
-                <Link href={surveyHref} className="cta-btn">
-                  Isi Survei Sekarang
-                  <span aria-hidden>→</span>
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </section>

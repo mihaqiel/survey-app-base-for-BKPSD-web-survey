@@ -178,7 +178,6 @@ export default function PengaduanClient() {
 
   const formSection  = useInView(0.06);
   const featSection  = useInView(0.08);
-  const ctaSection   = useInView(0.08);
 
   // Scroll progress
   useEffect(() => {
@@ -478,26 +477,6 @@ export default function PengaduanClient() {
 
         {/* Bottom bleed */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#f8f7f3]" />
-      </section>
-
-      {/* ════════════════════════════════════
-          STATS BAR
-      ════════════════════════════════════ */}
-      <section style={{ background: "#0d1b2a", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-3">
-          {[
-            { val: "24",  label: "Jam Respons",       sub: "Ditinjau dalam 1 hari kerja" },
-            { val: "100", label: "% Rahasia",          sub: "Identitas pelapor terlindungi" },
-            { val: "✓",   label: "Terverifikasi",      sub: "Ditangani tim yang berwenang" },
-          ].map((item, i) => (
-            <div key={item.label} className="px-8 py-4 first:pl-0 last:pr-0"
-              style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-              <p className="serif text-4xl md:text-5xl font-bold" style={{ color: "#FAE705" }}>{item.val}</p>
-              <p className="text-sm font-semibold text-white mt-2 tracking-wide">{item.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{item.sub}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ════════════════════════════════════
@@ -821,51 +800,6 @@ export default function PengaduanClient() {
                 <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          CTA / NOTE
-      ════════════════════════════════════ */}
-      <section className="py-24 px-6" style={{ background: "#f8f7f3" }}>
-        <div ref={ctaSection.ref} className="max-w-5xl mx-auto">
-          <div className="cta-grad relative overflow-hidden rounded-3xl shadow-2xl">
-
-            <div className="orb-a pointer-events-none absolute right-[-6%] top-[-30%] w-80 h-80 rounded-full blur-[90px]"
-              style={{ background: "rgba(250,231,5,0.22)" }} />
-            <div className="orb-b pointer-events-none absolute left-[-4%] bottom-[-20%] w-64 h-64 rounded-full blur-[80px]"
-              style={{ background: "rgba(56,189,248,0.18)" }} />
-            <div className="dot-grid pointer-events-none absolute inset-0" style={{ opacity: 0.5 }} />
-
-            <div className="relative z-10 px-10 py-20 flex flex-col items-center text-center gap-8">
-              <div className="section-label justify-center" style={fade(ctaSection.inView, 0)}>
-                <span className="section-label-line" />
-                <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
-                  Perhatian
-                </span>
-                <span className="section-label-line" />
-              </div>
-
-              <h2 className="serif text-3xl md:text-4xl font-bold text-white max-w-xl leading-tight"
-                style={fade(ctaSection.inView, 0.1)}>
-                Sampaikan Pengaduan yang Akurat dan Bertanggung Jawab
-              </h2>
-              <p className="text-white/50 text-sm max-w-md leading-relaxed" style={fade(ctaSection.inView, 0.2)}>
-                Pastikan informasi yang Anda berikan benar dan dapat dipertanggungjawabkan.
-                Pengaduan yang tidak berdasar atau mengandung informasi palsu dapat dikenakan
-                sanksi sesuai ketentuan yang berlaku.
-              </p>
-
-              <div style={fade(ctaSection.inView, 0.3)}>
-                <a href="#form"
-                  className="inline-flex items-center gap-2 font-bold py-4 px-8 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
-                  style={{ background: "#FAE705", color: "#0d1b2a", boxShadow: "0 8px 28px rgba(250,231,5,0.2)" }}>
-                  <Send className="w-4 h-4" />
-                  Buat Pengaduan Sekarang
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </section>
