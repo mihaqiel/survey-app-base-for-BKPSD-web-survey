@@ -19,7 +19,7 @@ const dmSans = DM_Sans({
   variable: "--font-body",
 });
 
-/* ── Data ─────────────────────────────────────── */
+/* ── Static data ────────────────────────────────── */
 const FEATURES = [
   {
     icon: <BarChart3 className="w-6 h-6" />,
@@ -39,17 +39,38 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { step: "01", icon: <Smartphone className="w-6 h-6" />,   title: "Pindai QR Code",    desc: "Temukan QR Code di loket pelayanan BKPSDM lalu pindai menggunakan kamera ponsel Anda." },
-  { step: "02", icon: <KeyRound    className="w-6 h-6" />,   title: "Masukkan Token",    desc: "Ketik kode akses dari QR Code ke dalam kolom token pada portal survei digital." },
-  { step: "03", icon: <ClipboardList className="w-6 h-6" />, title: "Isi Formulir",      desc: "Berikan penilaian jujur terhadap 9 unsur pelayanan yang telah Anda terima." },
-  { step: "04", icon: <CheckCircle2 className="w-6 h-6" />,  title: "Kirim Survei",      desc: "Tekan kirim — data Anda tersimpan aman dan langsung diproses sistem." },
+  { step: "01", icon: <Smartphone   className="w-6 h-6" />, title: "Pindai QR Code",  desc: "Temukan QR Code di loket pelayanan BKPSDM lalu pindai menggunakan kamera ponsel Anda." },
+  { step: "02", icon: <KeyRound     className="w-6 h-6" />, title: "Masukkan Token",  desc: "Ketik kode akses dari QR Code ke dalam kolom token pada portal survei digital." },
+  { step: "03", icon: <ClipboardList className="w-6 h-6" />, title: "Isi Formulir",   desc: "Berikan penilaian jujur terhadap 9 unsur pelayanan yang telah Anda terima." },
+  { step: "04", icon: <CheckCircle2 className="w-6 h-6" />, title: "Kirim Survei",    desc: "Tekan kirim — data Anda tersimpan aman dan langsung diproses sistem." },
 ];
 
 const STATS_BAR = [
-  { val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan-RB" },
-  { val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis"    },
-  { val: "QR",  label: "Akses Mudah",     sub: "Pindai dan Isi Survei" },
+  { id: "unsur" as const, val: "9",   label: "Unsur Penilaian", sub: "Standar Permenpan-RB" },
+  { id: "ikm"   as const, val: "IKM", label: "Indeks Kepuasan", sub: "Dihitung Otomatis"    },
+  { id: "qr"    as const, val: "QR",  label: "Akses Mudah",     sub: "Pindai dan Isi Survei" },
 ];
+
+/** 9 SKM elements — Permenpan-RB No. 14 Tahun 2017 */
+const UNSUR_SKM = [
+  { num: "U1", nama: "Persyaratan",          desc: "Kesesuaian persyaratan dengan jenis pelayanan" },
+  { num: "U2", nama: "Prosedur",             desc: "Kemudahan alur dan tahapan pelayanan" },
+  { num: "U3", nama: "Waktu Pelayanan",      desc: "Ketepatan waktu penyelesaian pelayanan" },
+  { num: "U4", nama: "Biaya / Tarif",        desc: "Kewajaran dan kejelasan biaya pelayanan" },
+  { num: "U5", nama: "Produk Layanan",       desc: "Kesesuaian hasil layanan dengan ketentuan" },
+  { num: "U6", nama: "Kompetensi",           desc: "Kemampuan petugas dalam memberikan layanan" },
+  { num: "U7", nama: "Perilaku Pelaksana",   desc: "Kesopanan dan keramahan petugas" },
+  { num: "U8", nama: "Sarana dan Prasarana", desc: "Kondisi dan ketersediaan fasilitas layanan" },
+  { num: "U9", nama: "Penanganan Pengaduan", desc: "Pengelolaan saran, masukan, dan pengaduan" },
+];
+
+/* ── Helpers ────────────────────────────────────── */
+function ikmCategory(ikm: number): string {
+  if (ikm >= 88.31) return "Sangat Baik";
+  if (ikm >= 76.61) return "Baik";
+  if (ikm >= 65.00) return "Kurang Baik";
+  return "Tidak Baik";
+}
 
 /* ── Hooks ─────────────────────────────────────── */
 function useInView(threshold = 0.12) {
@@ -96,7 +117,7 @@ function WordReveal({ text, inView, delay = 0 }: {
           key={i}
           className="inline-block"
           style={{
-            opacity: inView ? 1 : 0,
+            opacity:   inView ? 1 : 0,
             transform: inView ? "translateY(0)" : "translateY(22px)",
             transition: `opacity 0.6s ease ${delay + i * 0.09}s, transform 0.6s ease ${delay + i * 0.09}s`,
           }}
@@ -108,17 +129,42 @@ function WordReveal({ text, inView, delay = 0 }: {
   );
 }
 
+/* ── IKM types ──────────────────────────────────── */
+interface IkmService { nama: string; ikm: number; count: number; category: string; }
+
 /* ── Page ─────────────────────────────────────── */
 export default function LandingClient({ surveyToken }: { surveyToken: string }) {
   const surveyHref = surveyToken ? `/enter?token=${surveyToken}` : "/enter";
 
+  /* Scroll progress */
   const [progress, setProgress] = useState(0);
 
+  /* Intersection hooks */
   const features = useInView(0.08);
   const howto    = useInView(0.08);
   const cta      = useInView(0.08);
 
-  /* scroll progress */
+  /* ── Stats bar state ── */
+  const [activePanel, setActivePanel] = useState<"unsur" | "ikm" | "qr" | null>(null);
+
+  /* IKM panel */
+  const [ikmServices,  setIkmServices]  = useState<IkmService[]>([]);
+  const [ikmOverall,   setIkmOverall]   = useState(0);
+  const [ikmCat,       setIkmCat]       = useState("");
+  const [ikmActive,    setIkmActive]    = useState(false);
+  const [ikmLoading,   setIkmLoading]   = useState(false);
+  const [ikmFetched,   setIkmFetched]   = useState(false);
+  const [barsMounted,  setBarsMounted]  = useState(false);
+
+  /* QR panel */
+  const [qrDataUrl,  setQrDataUrl]  = useState<string | null>(null);
+  const [surveyUrl,  setSurveyUrl]  = useState("");
+
+  useEffect(() => {
+    if (surveyToken) setSurveyUrl(`${window.location.origin}/enter?token=${surveyToken}`);
+  }, [surveyToken]);
+
+  /* Scroll progress listener */
   useEffect(() => {
     const onScroll = () => {
       const docH = document.documentElement.scrollHeight - window.innerHeight;
@@ -128,11 +174,61 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /* Fetch IKM when panel first opens */
+  useEffect(() => {
+    if (activePanel !== "ikm" || ikmFetched) return;
+    setIkmLoading(true);
+    setIkmFetched(true);
+    fetch("/api/public/ikm")
+      .then(r => r.json())
+      .then((data: { active: boolean; overall: number; category: string; services: IkmService[] }) => {
+        setIkmActive(data.active);
+        setIkmOverall(data.overall);
+        setIkmCat(data.category ?? "");
+        setIkmServices(data.services ?? []);
+        setIkmLoading(false);
+      })
+      .catch(() => setIkmLoading(false));
+  }, [activePanel, ikmFetched]);
+
+  /* Animate bars after IKM data loaded */
+  useEffect(() => {
+    if (activePanel === "ikm" && !ikmLoading && ikmServices.length > 0) {
+      const t = setTimeout(() => setBarsMounted(true), 80);
+      return () => clearTimeout(t);
+    }
+    setBarsMounted(false);
+  }, [activePanel, ikmLoading, ikmServices]);
+
+  /* Generate QR when panel first opens */
+  useEffect(() => {
+    if (activePanel !== "qr" || qrDataUrl || !surveyToken) return;
+    import("qrcode").then(({ default: QRCode }) => {
+      QRCode.toDataURL(`${window.location.origin}/enter?token=${surveyToken}`, {
+        width: 220, margin: 2, errorCorrectionLevel: "H",
+        color: { dark: "#0f172a", light: "#ffffff" },
+      }).then(setQrDataUrl);
+    });
+  }, [activePanel, surveyToken, qrDataUrl]);
+
+  /* Toggle helper */
+  function togglePanel(id: "unsur" | "ikm" | "qr") {
+    setActivePanel(prev => (prev === id ? null : id));
+  }
+
   const fade = (inView: boolean, delay = 0, axis: "y" | "x" = "y", dist = 24) => ({
-    opacity: inView ? 1 : 0,
+    opacity:   inView ? 1 : 0,
     transform: inView ? "translate(0,0)" : axis === "y" ? `translateY(${dist}px)` : `translateX(${-dist}px)`,
     transition: `opacity 0.65s ease ${delay}s, transform 0.65s ease ${delay}s`,
   });
+
+  /* Gold gradient text style — reused for all stat values */
+  const goldGradText: React.CSSProperties = {
+    background:              "linear-gradient(135deg, #FAE705 0%, #f59e0b 55%, #FAE705 100%)",
+    WebkitBackgroundClip:    "text",
+    WebkitTextFillColor:     "transparent",
+    backgroundClip:          "text",
+  };
 
   return (
     <div
@@ -148,6 +244,11 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           75%  { background-position: 0%  100%; }
           100% { background-position: 0%   50%; }
         }
+        @keyframes statsGrad {
+          0%   { background-position: 0%   50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0%   50%; }
+        }
         @keyframes charIn {
           from { opacity:0; transform:translateY(36px) rotateX(-20deg); filter:blur(5px); }
           to   { opacity:1; transform:translateY(0)    rotateX(0deg);   filter:blur(0);  }
@@ -156,10 +257,15 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
         }
+        @keyframes panelFadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         @keyframes bounceY  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
         @keyframes orbA     { 0%,100%{transform:translate(0,0)scale(1)} 40%{transform:translate(28px,-20px)scale(1.09)} 70%{transform:translate(-16px,26px)scale(0.92)} }
         @keyframes orbB     { 0%,100%{transform:translate(0,0)scale(1)} 35%{transform:translate(-26px,22px)scale(1.07)} 75%{transform:translate(24px,-14px)scale(0.93)} }
         @keyframes orbC     { 0%,100%{transform:translate(0,0)scale(1)} 50%{transform:translate(18px,30px)scale(1.11)} }
+
         /* ═══ Hero gradient ═══ */
         .hero-grad {
           background: linear-gradient(-45deg,
@@ -169,9 +275,30 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           animation: heroGrad 18s ease infinite;
         }
 
+        /* ═══ Stats gradient — navy ↔ deep blue ═══ */
+        .stats-grad {
+          background: linear-gradient(-45deg, #0d1b2a, #0d2d58, #1565c0, #0d2d58, #0d1b2a);
+          background-size: 400% 400%;
+          animation: statsGrad 12s ease infinite;
+        }
+
         /* ═══ Typography ═══ */
         .serif { font-family: var(--font-display, Georgia, serif); }
         .char-in { animation: charIn 0.65s cubic-bezier(0.22,1,0.36,1) both; opacity: 0; }
+
+        /* ═══ Stat buttons ═══ */
+        .stat-btn {
+          text-align: left;
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          transition: background 0.25s ease;
+          padding: 2rem 2rem;
+          width: 100%;
+        }
+        .stat-btn:hover   { background: rgba(255,255,255,0.04); }
+        .stat-btn:focus   { outline: none; }
+        .stat-btn.active  { background: rgba(255,255,255,0.06); }
 
         /* ═══ Orbs ═══ */
         .orb-a { animation: orbA 10s ease-in-out infinite; }
@@ -184,7 +311,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           background-image: radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1px);
           background-size: 36px 36px;
         }
-
 
         /* ═══ Progress bar ═══ */
         .prog-bar {
@@ -268,6 +394,9 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
         /* ═══ HR ═══ */
         .hr-tri { height:1px; background:linear-gradient(90deg,transparent,#FAE705 30%,#38bdf8 70%,transparent); }
+
+        /* ═══ Panel animation ═══ */
+        .panel-content { animation: panelFadeIn 0.35s ease both; }
       `}</style>
 
       {/* ── Scroll progress ── */}
@@ -299,7 +428,7 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           </span>
         </div>
 
-        {/* ── Content — centered single column ── */}
+        {/* Content */}
         <div className="relative z-10 max-w-3xl mx-auto w-full py-28 flex flex-col items-center text-center">
 
           {/* Overline */}
@@ -332,10 +461,7 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
           {/* Buttons */}
           <div className="char-in flex flex-col sm:flex-row gap-4 justify-center" style={{ animationDelay: "1.9s" }}>
-            <Link
-              href={surveyHref}
-              className="cta-btn text-center justify-center"
-            >
+            <Link href={surveyHref} className="cta-btn text-center justify-center">
               Mulai Survei
               <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
@@ -358,28 +484,243 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
           <div className="bounce"><ChevronDown className="w-4 h-4" /></div>
         </div>
 
-        {/* Bottom gradient bleed */}
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#f8f7f3]" />
+        {/* Bottom gradient bleed → blends into stats section */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#0d1b2a]" />
       </section>
 
       {/* ════════════════════════════════════
-          STATS BAR
+          STATS BAR — animated gradient, interactive
       ════════════════════════════════════ */}
-      <section style={{ background: "#0d1b2a", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-3">
-          {STATS_BAR.map((item, i) => (
+      <section className="stats-grad" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="max-w-5xl mx-auto px-6">
+
+          {/* ── Three stat buttons ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3">
+            {STATS_BAR.map((item, i) => (
+              <button
+                key={item.id}
+                onClick={() => togglePanel(item.id)}
+                className={`stat-btn${activePanel === item.id ? " active" : ""}`}
+                style={{
+                  borderRight: i < STATS_BAR.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                }}
+              >
+                {/* Value — gold gradient text matching TentangKami typography */}
+                <p
+                  className="serif text-5xl md:text-6xl font-bold leading-none"
+                  style={goldGradText}
+                >
+                  {item.val}
+                </p>
+
+                {/* Label */}
+                <p className="text-sm font-semibold text-white mt-3 tracking-wide">
+                  {item.label}
+                </p>
+
+                {/* Sub */}
+                <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.50)" }}>
+                  {item.sub}
+                </p>
+
+                {/* Chevron indicator */}
+                <div className="mt-3">
+                  <span
+                    className="text-[9px] tracking-widest"
+                    style={{
+                      color:      activePanel === item.id ? "#FAE705" : "rgba(255,255,255,0.28)",
+                      display:    "inline-block",
+                      transform:  activePanel === item.id ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.3s ease, color 0.3s ease",
+                    }}
+                  >
+                    ▼
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Expandable panel ── */}
+          <div
+            style={{
+              maxHeight:  activePanel ? 560 : 0,
+              opacity:    activePanel ? 1   : 0,
+              overflow:   "hidden",
+              transition: "max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease",
+            }}
+          >
             <div
-              key={item.label}
-              className="px-8 py-4 first:pl-0 last:pr-0"
-              style={{
-                borderRight: i < STATS_BAR.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
-              }}
+              className="py-8 px-2"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.10)" }}
             >
-              <p className="serif text-4xl md:text-5xl font-bold" style={{ color: "#FAE705" }}>{item.val}</p>
-              <p className="text-sm font-semibold text-white mt-2 tracking-wide">{item.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{item.sub}</p>
+
+              {/* ── 9 UNSUR PANEL ── */}
+              {activePanel === "unsur" && (
+                <div className="panel-content">
+                  <p className="text-[10px] font-semibold tracking-[0.3em] uppercase mb-5"
+                     style={{ color: "#FAE705" }}>
+                    9 Unsur SKM — Permenpan-RB No. 14 Tahun 2017
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {UNSUR_SKM.map((u) => (
+                      <div key={u.num} className="flex gap-3 items-start">
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
+                          style={{
+                            border:  "1px solid rgba(250,231,5,0.4)",
+                            color:   "#FAE705",
+                            background: "rgba(250,231,5,0.08)",
+                          }}
+                        >
+                          {u.num}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-white leading-tight">{u.nama}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                            {u.desc}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── IKM PANEL ── */}
+              {activePanel === "ikm" && (
+                <div className="panel-content">
+                  {ikmLoading ? (
+                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Memuat data IKM…
+                    </p>
+                  ) : !ikmActive ? (
+                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Belum ada survei aktif. Data IKM akan muncul setelah periode survei dibuka.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Overall */}
+                      <div className="flex flex-wrap items-baseline gap-3 mb-6">
+                        <span className="serif text-5xl font-bold" style={goldGradText}>
+                          {ikmOverall}
+                        </span>
+                        <span className="text-white/60 text-sm">IKM Keseluruhan</span>
+                        <span
+                          className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full"
+                          style={{ background: "rgba(250,231,5,0.15)", color: "#FAE705" }}
+                        >
+                          {ikmCat}
+                        </span>
+                      </div>
+
+                      {/* Top 3 layanan */}
+                      <div className="space-y-5">
+                        {ikmServices.map((s, idx) => (
+                          <div key={s.nama}>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-sm text-white/80 flex items-center gap-2">
+                                <span className="text-base leading-none">
+                                  {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
+                                </span>
+                                {s.nama}
+                              </span>
+                              <span
+                                className="serif text-sm font-bold"
+                                style={goldGradText}
+                              >
+                                {s.ikm}
+                              </span>
+                            </div>
+                            {/* Animated bar */}
+                            <div
+                              className="h-1.5 rounded-full overflow-hidden"
+                              style={{ background: "rgba(255,255,255,0.08)" }}
+                            >
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  background: "linear-gradient(90deg, #FAE705, #f59e0b)",
+                                  width:      barsMounted ? `${(s.ikm / 100) * 100}%` : "0%",
+                                  transition: `width 0.7s ease ${idx * 0.15}s`,
+                                }}
+                              />
+                            </div>
+                            <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+                              {s.count} responden · {s.category}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── QR PANEL ── */}
+              {activePanel === "qr" && (
+                <div className="panel-content flex flex-col sm:flex-row items-center sm:items-start gap-8">
+                  {!surveyToken ? (
+                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Tidak ada survei aktif saat ini. QR Code akan tersedia saat periode survei dibuka.
+                    </p>
+                  ) : !qrDataUrl ? (
+                    <p className="text-sm py-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Memuat QR Code…
+                    </p>
+                  ) : (
+                    <>
+                      {/* QR image */}
+                      <div
+                        className="p-3 rounded-2xl shadow-xl shrink-0"
+                        style={{ background: "#ffffff" }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={qrDataUrl}
+                          alt="QR Code Survei SKM"
+                          className="w-36 h-36 sm:w-44 sm:h-44"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex flex-col justify-center gap-2">
+                        <p
+                          className="text-[10px] font-semibold tracking-[0.3em] uppercase"
+                          style={{ color: "#FAE705" }}
+                        >
+                          Survei Aktif
+                        </p>
+                        <p className="text-white font-semibold">
+                          Pindai untuk mulai survei
+                        </p>
+                        <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+                          Arahkan kamera ponsel ke QR Code di atas, atau kunjungi tautan berikut:
+                        </p>
+                        <a
+                          href={surveyUrl}
+                          className="text-[11px] font-mono break-all mt-1 hover:underline"
+                          style={{ color: "rgba(56,189,248,0.85)" }}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {surveyUrl}
+                        </a>
+                        <Link
+                          href={surveyHref}
+                          className="cta-btn mt-3 self-start text-sm"
+                          style={{ padding: "0.7rem 1.5rem" }}
+                        >
+                          Mulai Survei →
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
@@ -389,7 +730,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
       <section className="py-24 px-6" style={{ background: "#f8f7f3" }}>
         <div ref={features.ref} className="max-w-5xl mx-auto">
 
-          {/* Label */}
           <div className="section-label mb-4" style={fade(features.inView, 0)}>
             <span className="section-label-line" />
             <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
@@ -397,7 +737,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
             </span>
           </div>
 
-          {/* Heading */}
           <div className="mb-4">
             <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900">
               <WordReveal text="Fitur Utama SKM" inView={features.inView} delay={0.05} />
@@ -409,7 +748,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
 
           <div className="hr-tri mb-14" />
 
-          {/* Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
               <div key={f.title} className="feat-card" style={fade(features.inView, 0.15 + i * 0.1)}>
@@ -428,7 +766,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
       <section className="py-24 px-6 bg-white" style={{ borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" }}>
         <div ref={howto.ref} className="max-w-5xl mx-auto">
 
-          {/* Label */}
           <div className="section-label mb-4" style={fade(howto.inView, 0)}>
             <span className="section-label-line" />
             <span className="text-[10px] font-semibold tracking-[0.35em] uppercase" style={{ color: "#916e00" }}>
@@ -436,21 +773,17 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
             </span>
           </div>
 
-          {/* Heading */}
           <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900 mb-3">
             <WordReveal text="Cara Pengisian Survei" inView={howto.inView} delay={0.05} />
           </h2>
           <div className="w-14 h-[3px] rounded-full mb-14" style={{ background: "#FAE705", ...fade(howto.inView, 0.3) }} />
 
-          {/* Steps grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {STEPS.map((item, i) => (
               <div key={item.step} className="step-wrap relative" style={fade(howto.inView, 0.1 + i * 0.1)}>
-                {/* Ghost step number */}
                 <div className="step-num absolute -top-3 -left-1 z-0 select-none" aria-hidden>
                   {item.step}
                 </div>
-                {/* Content */}
                 <div className="relative z-10 pt-8">
                   <div className="step-icon-ring mb-5" style={{ color: "#334155" }}>
                     {item.icon}
@@ -458,7 +791,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                   <h3 className="serif font-bold text-slate-900 mb-2">{item.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
                 </div>
-                {/* Connector line (not on last) */}
                 {i < STEPS.length - 1 && (
                   <div
                     className="hidden md:block absolute top-12 right-0 translate-x-1/2 w-full h-px"
@@ -479,7 +811,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
         <div ref={cta.ref} className="max-w-5xl mx-auto">
           <div className="cta-grad relative overflow-hidden rounded-3xl shadow-2xl">
 
-            {/* Orb inside CTA */}
             <div
               className="orb-a pointer-events-none absolute right-[-6%] top-[-30%] w-80 h-80 rounded-full blur-[90px]"
               style={{ background: "rgba(250,231,5,0.22)" }}
@@ -491,7 +822,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
             <div className="dot-grid pointer-events-none absolute inset-0" style={{ opacity: 0.5 }} />
 
             <div className="relative z-10 px-10 py-20 flex flex-col items-center text-center gap-8">
-              {/* Overline */}
               <div className="section-label justify-center" style={fade(cta.inView, 0)}>
                 <span className="section-label-line" />
                 <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
@@ -500,7 +830,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                 <span className="section-label-line" />
               </div>
 
-              {/* Heading */}
               <h2 className="serif text-3xl md:text-4xl font-bold text-white max-w-xl leading-tight" style={fade(cta.inView, 0.1)}>
                 Bantu Kami Meningkatkan Kualitas Layanan
               </h2>
@@ -508,7 +837,6 @@ export default function LandingClient({ surveyToken }: { surveyToken: string }) 
                 Survei ini bersifat rahasia. Setiap respons Anda membantu BKPSDM memberikan pelayanan yang lebih baik bagi masyarakat Kepulauan Anambas.
               </p>
 
-              {/* Button */}
               <div style={fade(cta.inView, 0.3)}>
                 <Link href={surveyHref} className="cta-btn">
                   Isi Survei Sekarang
