@@ -9,6 +9,12 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Prevent Turbopack from bundling Prisma inline into server chunks.
+  // Without this, `prisma generate` regenerates node_modules but the
+  // cached compiled chunk (content-addressed) still embeds the old schema,
+  // causing P2021 "table does not exist" on every deploy.
+  serverExternalPackages: ["@prisma/client", "prisma"],
+
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
 
   // 5 files × 5 MB each = 25 MB max — raise Server Action body size limit.
