@@ -216,7 +216,7 @@ export default function PortalForm() {
   return (
     <div
       className={`${playfair.variable} ${dmSans.variable}`}
-      style={{ fontFamily:"var(--pf-body)", minHeight:"100vh", paddingBottom: step < 13 ? 88 : 40 }}
+      style={{ fontFamily:"var(--pf-body)", minHeight:"100vh", paddingBottom: step < 13 ? 88 : 40, background:"#0d1b2a" }}
     >
       {/* ══ GLOBAL CSS ═══════════════════════════════════════ */}
       <style>{`
