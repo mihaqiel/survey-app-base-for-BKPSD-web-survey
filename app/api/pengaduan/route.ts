@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
+import { sendEmail } from "@/lib/email";
+import { pengaduanStatusUpdateTemplate } from "@/lib/email-templates";
 
 // GET /api/pengaduan — list all complaints (admin only, no binary data)
 export async function GET() {
@@ -42,7 +44,24 @@ export async function PATCH(req: NextRequest) {
     if (!id || !["BARU", "DIPROSES", "SELESAI"].includes(status)) {
       return NextResponse.json({ error: "Data tidak valid." }, { status: 400 });
     }
-    await prisma.pengaduan.update({ where: { id }, data: { status } });
+    const updated = await prisma.pengaduan.update({
+      where: { id },
+      data: { status },
+      select: { nama: true, email: true, judul: true },
+    });
+
+    // Fire-and-forget: notify complainant on meaningful status changes only
+    if (status === "DIPROSES" || status === "SELESAI") {
+      const { subject, html } = pengaduanStatusUpdateTemplate({
+        nama: updated.nama,
+        judul: updated.judul,
+        status,
+      });
+      sendEmail({ to: updated.email, subject, html }).catch(err =>
+        console.error("[api/pengaduan PATCH] status email error:", err)
+      );
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[api/pengaduan PATCH] error:", err);

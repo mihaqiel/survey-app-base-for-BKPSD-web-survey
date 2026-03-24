@@ -299,7 +299,66 @@ export function pengaduanNotifTemplate(opts: {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Survey Submission Confirmation → sent to respondent (optional, use case 4)
+// 6. Pengaduan Status Update → sent to complainant when admin changes status
+// ---------------------------------------------------------------------------
+
+export function pengaduanStatusUpdateTemplate(opts: {
+  nama: string;
+  judul: string;
+  status: "DIPROSES" | "SELESAI";
+}): { subject: string; html: string } {
+  const isDiproses = opts.status === "DIPROSES";
+
+  const subject = isDiproses
+    ? "[BKPSDM] Pengaduan Anda Sedang Diproses"
+    : "[BKPSDM] Pengaduan Anda Telah Selesai";
+
+  const badgeColor   = isDiproses ? "#009CC5" : "#16a34a";
+  const badgeBg      = isDiproses ? "#e0f4fa" : "#f0fdf4";
+  const badgeLabel   = isDiproses ? "Sedang Diproses" : "Selesai Ditangani";
+  const calloutBg    = isDiproses ? "#e0f4fa" : "#f0fdf4";
+  const calloutBorder= isDiproses ? "#009CC5" : "#86efac";
+  const calloutText  = isDiproses ? "#00627d" : "#166534";
+
+  const message = isDiproses
+    ? "Pengaduan Anda sedang ditindaklanjuti oleh tim BKPSDM. Kami akan menghubungi Anda jika diperlukan informasi tambahan."
+    : "Pengaduan Anda telah selesai ditangani oleh tim BKPSDM Kabupaten Kepulauan Anambas. Terima kasih atas kepercayaan Anda.";
+
+  const html = wrap(`
+    <h2 style="margin:0 0 8px;font-size:20px;color:${BRAND_NAVY};">Pembaruan Status Pengaduan</h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+      Halo, <strong>${opts.nama}</strong>. Berikut adalah pembaruan terbaru mengenai pengaduan yang Anda kirimkan.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;border-bottom:1px solid #e8eaf0;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:2px;">Judul Pengaduan</span>
+          <span style="font-size:14px;font-weight:600;color:#111827;">${opts.judul}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;">
+          <span style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Status Terkini</span>
+          <span style="display:inline-block;padding:4px 12px;background:${badgeBg};color:${badgeColor};font-size:12px;font-weight:700;border-radius:4px;letter-spacing:0.5px;">
+            ${badgeLabel}
+          </span>
+        </td>
+      </tr>
+    </table>
+
+    <div style="background:${calloutBg};border:1.5px solid ${calloutBorder};border-radius:8px;padding:16px 20px;">
+      <p style="margin:0;font-size:13px;color:${calloutText};line-height:1.6;">
+        ${message}
+      </p>
+    </div>
+  `);
+
+  return { subject, html };
+}
+
+// ---------------------------------------------------------------------------
+// 7. Survey Submission Confirmation → sent to respondent (optional, use case 4)
 // ---------------------------------------------------------------------------
 
 export function surveyConfirmationTemplate(opts: {

@@ -19,9 +19,15 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = process.env.ADMIN_EMAIL; // used for outbound notifications
 
-  if (!clientId || !clientSecret || !adminEmail) {
+  // Support comma-separated allow-list; falls back to ADMIN_EMAIL for single-account setups
+  const allowedEmails = (process.env.ALLOWED_ADMIN_EMAILS ?? adminEmail ?? "")
+    .split(",")
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!clientId || !clientSecret || allowedEmails.length === 0) {
     return NextResponse.redirect(`${appUrl}/login?error=ConfigError`);
   }
 
@@ -58,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     const { email, verified_email } = await userRes.json();
 
-    if (!verified_email || email !== adminEmail) {
+    if (!verified_email || !allowedEmails.includes(email.toLowerCase())) {
       return NextResponse.redirect(`${appUrl}/login?error=Unauthorized`);
     }
 
