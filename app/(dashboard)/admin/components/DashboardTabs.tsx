@@ -88,8 +88,18 @@ function MetricPill({ pill }: { pill: Pill }) {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-  const labels: Record<string, string> = { Survei: "Total Survei Aktif", Layanan: "Total Layanan SKM", Responden: "Total Responden", IKM: "Overall IKM Score" };
-  const subs:   Record<string, string> = { Survei: "Survei berjalan", Layanan: "Layanan terdaftar", Responden: "Responden terkumpul", IKM: "Indeks Kepuasan Masyarakat" };
+  const labels: Record<string, string> = {
+    Responden:  "Total Responden",
+    Layanan:    "Total Layanan SKM",
+    IKM:        "Overall IKM Score",
+    Pengaduan:  "Pengaduan Belum Ditangani",
+  };
+  const subs: Record<string, string> = {
+    Responden:  "Responden terkumpul",
+    Layanan:    "Layanan terdaftar",
+    IKM:        "Indeks Kepuasan Masyarakat",
+    Pengaduan:  "Status: Baru · perlu tindak lanjut",
+  };
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(o => !o)}

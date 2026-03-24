@@ -35,6 +35,7 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
   const [activeTab, setActiveTab] = useState<"ringkasan" | "performa" | "responden">("ringkasan");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showAllRespondents, setShowAllRespondents] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -107,7 +108,7 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
                 { label: "Total Survei",       value: data.totalSurveys, color: "#3b82f6" },
                 { label: "IKM Rata-rata",       value: data.ikm > 0 ? `${data.ikm.toFixed(1)}%` : "—", color: ikmColor(data.ikm) },
                 { label: "Layanan Ditangani",   value: data.layananStats.length, color: undefined },
-                { label: "Feedback Negatif",    value: data.negFeedback, color: data.negFeedback > 0 ? "#dc2626" : "#16a34a" },
+                { label: "Responden Memberi Saran", value: data.negFeedback, color: data.negFeedback > 0 ? "#f59e0b" : "#10b981" },
               ].map(c => (
                 <div key={c.label} className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs font-medium text-slate-500 mb-1">{c.label}</p>
@@ -200,10 +201,10 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
+                <tbody className="divide-y divide-gray-50">
                   {data.respondents.length === 0 ? (
                     <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">Belum ada responden</td></tr>
-                  ) : data.respondents.map((r: any) => (
+                  ) : (showAllRespondents ? data.respondents : data.respondents.slice(0, 20)).map((r: any) => (
                     <tr key={r.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-2.5 text-sm font-medium text-slate-900 truncate">{r.nama}</td>
                       <td className="px-4 py-2.5 text-sm text-slate-500 truncate">{r.layananNama}</td>
@@ -224,6 +225,16 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
                 </tbody>
               </table>
             </div>
+            {data.respondents.length > 20 && (
+              <button
+                onClick={() => setShowAllRespondents(v => !v)}
+                className="w-full py-2 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              >
+                {showAllRespondents
+                  ? "Tampilkan lebih sedikit"
+                  : `Lihat semua ${data.respondents.length} responden`}
+              </button>
+            )}
           </div>
         )}
       </div>

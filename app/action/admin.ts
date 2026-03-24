@@ -2,6 +2,19 @@
 
 import { prisma } from "@/lib/prisma";
 
+// Unsur labels per Permenpan RB 14/2017
+const UNSUR_LABELS: Record<string, string> = {
+  u1: "Persyaratan",
+  u2: "Prosedur",
+  u3: "Waktu Penyelesaian",
+  u4: "Biaya/Tarif",
+  u5: "Produk Layanan",
+  u6: "Kompetensi Pelaksana",
+  u7: "Perilaku Pelaksana",
+  u8: "Penanganan Pengaduan",
+  u9: "Sarana & Prasarana",
+};
+
 type UnsurFields = {
   u1: number; u2: number; u3: number;
   u4: number; u5: number; u6: number;
@@ -153,6 +166,17 @@ export async function getAdminDashboardStats(periodeId?: string) {
 
   const fmt = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
+  // ── Bottom-3 UNSUR (lowest-scoring service aspects across all responses)
+  const UNSUR_KEYS = ["u1","u2","u3","u4","u5","u6","u7","u8","u9"] as const;
+  const bottom3Unsur = allRespon.length === 0 ? [] : UNSUR_KEYS.map(key => ({
+    key,
+    label: UNSUR_LABELS[key],
+    avg: parseFloat(
+      ((allRespon.reduce((s: number, r: any) => s + r[key], 0) / allRespon.length) * 25
+      ).toFixed(1)
+    ),
+  })).sort((a, b) => a.avg - b.avg).slice(0, 3);
+
   return {
     periodLabel,
     periodStart: firstRespon ? fmt(new Date(firstRespon.createdAt)) : "",
@@ -172,7 +196,15 @@ export async function getAdminDashboardStats(periodeId?: string) {
     employees,
     recentResponses,
     gender,
+    bottom3Unsur,
   };
+}
+
+// ----------------------------------------------------------------------
+// PENGADUAN AKTIF COUNT (for dashboard KPI pill)
+// ----------------------------------------------------------------------
+export async function getPengaduanAktifCount(): Promise<number> {
+  return prisma.pengaduan.count({ where: { status: "BARU" } });
 }
 
 // ----------------------------------------------------------------------

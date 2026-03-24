@@ -1,13 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { getAdminDashboardStats, getAllPeriode, getAllLayanan } from "@/app/action/admin";
+import {
+  getAdminDashboardStats, getAllPeriode, getAllLayanan,
+  getPengaduanAktifCount,
+} from "@/app/action/admin";
 import { logout } from "@/app/action/auth";
 import Link from "next/link";
 import DashboardChartsV2 from "./components/DashboardChartsV2";
-import GlobalExportButton from "./GlobalExportButton";
-import StatusBadge, { ikmColor, ikmLabel } from "@/components/ui/StatusBadge";
+import StatusBadge, { ikmColor } from "@/components/ui/StatusBadge";
 import DashboardTabs from "./components/DashboardTabs";
+import { AlertTriangle } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Dashboard — Admin BKPSDM Anambas",
@@ -25,10 +28,11 @@ export default async function AdminDashboard(props: {
   searchParams: Promise<{ periode?: string }>;
 }) {
   const { periode: periodeId } = await props.searchParams;
-  const [stats, periodes, layananRaw] = await Promise.all([
+  const [stats, periodes, layananRaw, pengaduanAktif] = await Promise.all([
     getAdminDashboardStats(periodeId),
     getAllPeriode(),
     getAllLayanan(),
+    getPengaduanAktifCount(),
   ]);
   const layananList = layananRaw.map((l: { id: string; nama: string }) => ({ id: l.id, nama: l.nama }));
 
@@ -52,44 +56,29 @@ export default async function AdminDashboard(props: {
     ? parseFloat((services.reduce((acc: number, s) => acc + (s.ikm * s.count), 0) / stats.totalResponses).toFixed(1))
     : 0;
 
-  const catCount = { sb: 0, b: 0, kb: 0, tb: 0 };
-  servicesWithData.forEach((s) => {
-    if      (s.ikm >= 88.31) catCount.sb++;
-    else if (s.ikm >= 76.61) catCount.b++;
-    else if (s.ikm >= 65)    catCount.kb++;
-    else                     catCount.tb++;
-  });
-
-  const donutData = [
-    { name: "Sangat Baik", value: catCount.sb, fill: "#16a34a" },
-    { name: "Baik",        value: catCount.b,  fill: "#3b82f6" },
-    { name: "Kurang Baik", value: catCount.kb, fill: "#f59e0b" },
-    { name: "Tidak Baik",  value: catCount.tb, fill: "#ef4444" },
-  ];
-
   const barChartData = servicesWithData
-    .sort((a: ServiceStat, b: ServiceStat) => b.ikm - a.ikm)
+    .sort((a: ServiceStat, b: ServiceStat) => a.ikm - b.ikm) // worst → best (problems visible first)
     .map((s: ServiceStat) => ({ id: s.id, name: s.nama, ikm: s.ikm, count: s.count, fill: ikmColor(s.ikm) }));
 
-  const employees   = (stats as any).employees        ?? [];
-  const trendData   = (stats as any).trendData        ?? [];
-  const periodLabel = (stats as any).periodLabel      ?? "";
+  const trendData   = (stats as any).trendData    ?? [];
+  const periodLabel = (stats as any).periodLabel  ?? "";
+  const bottom3Unsur = (stats as any).bottom3Unsur ?? [];
 
-  // Pill data for toolbar
+  // ── KPI pills ──────────────────────────────────────────────────────────────
   const pills = [
-    { label: "Survei",    value: stats.totalResponses,  color: "#3b82f6",  dot: true },
-    { label: "Layanan",   value: services.length,  color: "#64748b",  dot: false },
-    { label: "Responden", value: stats.totalResponses,  color: "#10b981",  dot: false },
-    { label: "IKM",       value: overallIkm > 0 ? overallIkm : "—", color: ikmColor(overallIkm), dot: false },
+    { label: "Responden",  value: stats.totalResponses,                  color: "#10b981", dot: true  },
+    { label: "Layanan",    value: services.length,                       color: "#64748b", dot: false },
+    { label: "IKM",        value: overallIkm > 0 ? overallIkm : "—",    color: ikmColor(overallIkm), dot: false },
+    { label: "Pengaduan",  value: pengaduanAktif,                        color: pengaduanAktif > 0 ? "#ef4444" : "#10b981", dot: pengaduanAktif > 0 },
   ];
 
-  // Performa tab: sorted services
+  // Performa tab: sorted services (best → worst for ranking table)
   const perfServices = [...servicesWithData].sort((a: ServiceStat, b: ServiceStat) => b.ikm - a.ikm);
 
   return (
     <div className="min-h-screen font-sans bg-gray-50/50">
 
-      {/* ══ HEADER — title only ══ */}
+      {/* ══ HEADER ══ */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center sticky top-0 z-20 shadow-sm">
         <div>
           <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Ringkasan Manajemen</h1>
@@ -125,9 +114,8 @@ export default async function AdminDashboard(props: {
         ringkasanContent={
           <RingkasanTab
             barChartData={barChartData}
-            donutData={donutData}
             trendData={trendData}
-            employees={employees}
+            bottom3Unsur={bottom3Unsur}
           />
         }
         performaContent={
@@ -140,66 +128,67 @@ export default async function AdminDashboard(props: {
 
 // ── TAB CONTENT COMPONENTS ─────────────────────────────────────────────────
 
-function RingkasanTab({ barChartData, donutData, trendData, employees }: {
+const ikmColorLocal = (v: number) =>
+  v >= 88.31 ? "#16a34a" : v >= 76.61 ? "#3b82f6" : v >= 65 ? "#f59e0b" : "#ef4444";
+const ikmLabelLocal = (v: number) =>
+  v >= 88.31 ? "Sangat Baik" : v >= 76.61 ? "Baik" : v >= 65 ? "Kurang Baik" : "Tidak Baik";
+
+function RingkasanTab({ barChartData, trendData, bottom3Unsur }: {
   barChartData: any[];
-  donutData: any[];
   trendData: any[];
-  employees: any[];
+  bottom3Unsur: { key: string; label: string; avg: number }[];
 }) {
   return (
     <div className="space-y-6">
-      {/* Charts */}
+
+      {/* Charts — full width (no donut) */}
       <DashboardChartsV2
         services={barChartData}
-        donutData={donutData}
         trendData={trendData}
       />
 
-      {/* Daftar Pegawai */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              Daftar Pegawai Berkinerja Terbaik
-            </h3>
-            <p className="text-sm text-slate-500 mt-1">Berdasarkan skor IKM</p>
+      {/* 3 Aspek Terendah */}
+      {bottom3Unsur.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
+            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">3 Aspek Layanan Terendah</h3>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Unsur penilaian dengan skor IKM rata-rata paling rendah — perlu perhatian segera
+              </p>
+            </div>
           </div>
-          <Link href="/admin/pegawai"
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-            Lihat Semua Daftar &rarr;
-          </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+            {bottom3Unsur.map((u, i) => {
+              const color = ikmColorLocal(u.avg);
+              const label = ikmLabelLocal(u.avg);
+              return (
+                <div key={u.key} className="px-6 py-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">#{i + 1} Terendah</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                      style={{ background: color + "14", color }}>
+                      {label}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 mb-2 leading-tight">{u.label}</p>
+                  <div className="flex items-end gap-2">
+                    <p className="text-2xl font-bold" style={{ color }}>{u.avg}</p>
+                    <p className="text-xs text-slate-400 mb-1 font-medium">/ 100</p>
+                  </div>
+                  <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${u.avg}%`, backgroundColor: color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Pegawai</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Kerja</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Skor IKM</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50/80">
-              {employees.slice(0, 6).map((emp: any) => (
-                <tr key={emp.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900 truncate max-w-[200px]">{emp.nama}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">BKPSDM</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-700">{emp.ikm.toFixed(1)}%</td>
-                  <td className="px-6 py-4"><StatusBadge ikm={emp.ikm} size="sm" /></td>
-                </tr>
-              ))}
-              {employees.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
-                    Belum ada data kinerja masuk pada periode ini.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -209,17 +198,15 @@ function PerformaTab({ services }: { services: any[] }) {
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-50">
-           <h3 className="text-base font-semibold text-slate-900">
-              Performa Seluruh Layanan
-           </h3>
-           <p className="text-sm text-slate-500 mt-1">Laporan komprehensif metrik indikator kepuasan secara global</p>
+          <h3 className="text-base font-semibold text-slate-900">Performa Seluruh Layanan</h3>
+          <p className="text-sm text-slate-500 mt-1">Peringkat layanan berdasarkan skor IKM tertinggi</p>
         </div>
-        
+
         {services.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <p className="text-sm font-medium text-slate-400">Belum ada layanan yang dievaluasi.</p>
           </div>
-        ) : ( 
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
@@ -236,7 +223,6 @@ function PerformaTab({ services }: { services: any[] }) {
                   <tr key={svc.id} className="hover:bg-gray-50/80 transition-colors group cursor-pointer relative">
                     <td className="px-6 py-4 text-sm font-medium text-slate-400">
                       {i + 1}
-                      {/* Make row clickable via positioned anchor */}
                       <Link href={`/admin/layanan/${svc.id}`} className="absolute inset-0 z-10">
                         <span className="sr-only">Detail {svc.nama}</span>
                       </Link>
@@ -255,9 +241,7 @@ function PerformaTab({ services }: { services: any[] }) {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: ikmColor(svc.ikm) }} />
-                        <p className="text-sm font-bold text-slate-700">
-                          {svc.ikm.toFixed(2)}
-                        </p>
+                        <p className="text-sm font-bold text-slate-700">{svc.ikm.toFixed(2)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 relative z-20">

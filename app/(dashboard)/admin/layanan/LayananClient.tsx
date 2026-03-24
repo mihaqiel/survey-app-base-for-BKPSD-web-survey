@@ -147,6 +147,9 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
   const [selectedRespondent, setSelectedRespondent] = useState<any>(null);
   const [filter, setFilter]           = useState({ jenisKelamin: "", pendidikan: "", pekerjaan: "" });
   const [saranSearch, setSaranSearch] = useState("");
+  const [page, setPage]               = useState(1);
+
+  useEffect(() => { setPage(1); }, [filter, saranSearch]);
 
   useEffect(() => {
     if (!selectedPeriode) return;
@@ -223,51 +226,96 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
         ) : (
           <>
             {/* PERFORMA */}
-            {activeTab === "performa" && (
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Total Responden", value: data.total, color: "#3b82f6" },
-                    { label: "IKM Score", value: data.ikm > 0 ? data.ikm.toFixed(2) : "—", color: ikmColor(data.ikm) },
-                    { label: "Periode", value: data.periode?.label ?? "—", color: undefined },
-                  ].map(c => (
-                    <div key={c.label} className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs font-medium text-slate-500 mb-1">{c.label}</p>
-                      <p className="text-lg font-bold truncate" style={{ color: c.color }}>{c.value}</p>
+            {activeTab === "performa" && (() => {
+              const responses = data.responses ?? [];
+              const maleCount   = responses.filter((r: any) => r.jenisKelamin === "Laki-laki").length;
+              const femaleCount = responses.filter((r: any) => r.jenisKelamin === "Perempuan").length;
+              const unsurAvg: number[] = data.unsurAvg ?? [];
+              const validAvg = unsurAvg.map((v, i) => ({ v, i })).filter(x => x.v > 0);
+              const bottomUnsur = validAvg.length > 0
+                ? validAvg.reduce((min, x) => x.v < min.v ? x : min)
+                : null;
+              return (
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Total Responden", value: data.total, color: "#3b82f6" },
+                      { label: "IKM Score", value: data.ikm > 0 ? data.ikm.toFixed(2) : "—", color: ikmColor(data.ikm) },
+                      { label: "Periode", value: data.periode?.label ?? "—", color: undefined },
+                    ].map(c => (
+                      <div key={c.label} className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs font-medium text-slate-500 mb-1">{c.label}</p>
+                        <p className="text-lg font-bold truncate" style={{ color: c.color }}>{c.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {data.total > 0 && (maleCount > 0 || femaleCount > 0) && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-medium text-slate-500">Gender:</span>
+                      {maleCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                          L · {maleCount}
+                        </span>
+                      )}
+                      {femaleCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-pink-50 text-pink-700 text-xs font-semibold rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-pink-400" />
+                          P · {femaleCount}
+                        </span>
+                      )}
                     </div>
-                  ))}
+                  )}
+
+                  {data.total > 0 && bottomUnsur && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                      <span className="text-base">⚠</span>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800">Aspek Terendah</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          U{bottomUnsur.i + 1} · {UNSUR_LABELS[bottomUnsur.i]}
+                          <span className="font-bold ml-1" style={{ color: ikmColor(bottomUnsur.v * 25) }}>
+                            ({(bottomUnsur.v * 25).toFixed(1)})
+                          </span>
+                          {" "}— perlu perhatian khusus
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {data.total > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 mb-3">Analisis Per Unsur</p>
+                      <div className="space-y-2">
+                        {UNSUR_LABELS.map((label, i) => {
+                          const val = unsurAvg[i] ?? 0;
+                          const pct = (val / 4) * 100;
+                          return (
+                            <div key={label}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-medium text-slate-700">U{i + 1} · {label}</span>
+                                <span className="text-xs font-bold" style={{ color: ikmColor(val * 25) }}>{val.toFixed(2)}</span>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${pct}%`, backgroundColor: ikmColor(val * 25) }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {data.total === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 gap-2">
+                      <BarChart3 className="w-10 h-10 text-slate-200" />
+                      <p className="text-sm text-slate-400">Belum ada data survei di periode ini</p>
+                    </div>
+                  )}
                 </div>
-                {data.total > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-3">Analisis Per Unsur</p>
-                    <div className="space-y-2">
-                      {UNSUR_LABELS.map((label, i) => {
-                        const val = data.unsurAvg[i] ?? 0;
-                        const pct = (val / 4) * 100;
-                        return (
-                          <div key={label}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium text-slate-700">U{i + 1} · {label}</span>
-                              <span className="text-xs font-bold" style={{ color: ikmColor(val * 25) }}>{val.toFixed(2)}</span>
-                            </div>
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-500"
-                                style={{ width: `${pct}%`, backgroundColor: ikmColor(val * 25) }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                {data.total === 0 && (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <BarChart3 className="w-10 h-10 text-slate-200" />
-                    <p className="text-sm text-slate-400">Belum ada data survei di periode ini</p>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {/* RESPONDEN */}
             {activeTab === "responden" && (
@@ -317,60 +365,91 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                   <span className="text-xs text-slate-400 ml-auto">{filteredRespondents.length} responden</span>
                 </div>
 
-                <div className="overflow-hidden rounded-lg border border-gray-100">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-gray-50/50 border-b border-gray-100">
-                        {["Nama", "Saran", "Tanggal", "IKM"].map(h => (
-                          <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {filteredRespondents.length === 0 ? (
-                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">
-                          {saranSearch ? `Tidak ada hasil untuk "${saranSearch}"` : "Tidak ada data"}
-                        </td></tr>
-                      ) : filteredRespondents.map((r: any) => {
-                        const hasSaran = r.saran && r.saran.trim() && r.saran !== "-";
-                        const highlight = saranSearch.trim()
-                          ? (text: string) => {
-                              if (!text) return <span>{text}</span>;
-                              const idx = text.toLowerCase().indexOf(saranSearch.toLowerCase());
-                              if (idx === -1) return <span>{text}</span>;
+                {(() => {
+                  const PAGE_SIZE = 10;
+                  const totalPages = Math.max(1, Math.ceil(filteredRespondents.length / PAGE_SIZE));
+                  const safePage = Math.min(page, totalPages);
+                  const paged = filteredRespondents.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+                  return (
+                    <>
+                      <div className="overflow-hidden rounded-lg border border-gray-100">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-gray-50/50 border-b border-gray-100">
+                              {["Nama", "Saran", "Tanggal", "IKM"].map(h => (
+                                <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {filteredRespondents.length === 0 ? (
+                              <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">
+                                {saranSearch ? `Tidak ada hasil untuk "${saranSearch}"` : "Tidak ada data"}
+                              </td></tr>
+                            ) : paged.map((r: any) => {
+                              const hasSaran = r.saran && r.saran.trim() && r.saran !== "-";
+                              const highlight = saranSearch.trim()
+                                ? (text: string) => {
+                                    if (!text) return <span>{text}</span>;
+                                    const idx = text.toLowerCase().indexOf(saranSearch.toLowerCase());
+                                    if (idx === -1) return <span>{text}</span>;
+                                    return (
+                                      <span>
+                                        {text.slice(0, idx)}
+                                        <mark className="bg-yellow-100 text-yellow-900 rounded px-0.5">{text.slice(idx, idx + saranSearch.length)}</mark>
+                                        {text.slice(idx + saranSearch.length)}
+                                      </span>
+                                    );
+                                  }
+                                : (text: string) => <span>{text}</span>;
                               return (
-                                <span>
-                                  {text.slice(0, idx)}
-                                  <mark className="bg-yellow-100 text-yellow-900 rounded px-0.5">{text.slice(idx, idx + saranSearch.length)}</mark>
-                                  {text.slice(idx + saranSearch.length)}
-                                </span>
+                                <tr key={r.id} onClick={() => setSelectedRespondent(r)}
+                                  className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors max-w-[100px] truncate">
+                                    {highlight(r.nama)}
+                                  </td>
+                                  <td className="px-4 py-2.5 max-w-[160px]">
+                                    {hasSaran ? (
+                                      <span className="text-xs leading-relaxed text-slate-500 line-clamp-2">
+                                        {highlight(r.saran)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-gray-300 italic">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{r.tglLayanan}</td>
+                                  <td className="px-4 py-2.5 text-sm font-bold whitespace-nowrap" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
+                                </tr>
                               );
-                            }
-                          : (text: string) => <span>{text}</span>;
-                        return (
-                          <tr key={r.id} onClick={() => setSelectedRespondent(r)}
-                            className="hover:bg-gray-50 transition-colors cursor-pointer group">
-                            <td className="px-4 py-2.5 text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors max-w-[100px] truncate">
-                              {highlight(r.nama)}
-                            </td>
-                            <td className="px-4 py-2.5 max-w-[160px]">
-                              {hasSaran ? (
-                                <span className="text-xs leading-relaxed text-slate-500 line-clamp-2">
-                                  {highlight(r.saran)}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-gray-300 italic">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{r.tglLayanan}</td>
-                            <td className="px-4 py-2.5 text-sm font-bold whitespace-nowrap" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-slate-400 text-center">Klik baris untuk melihat detail penilaian U1–U9</p>
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between pt-1">
+                          <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={safePage <= 1}
+                            className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-gray-200 rounded-lg hover:border-gray-300 disabled:opacity-40 transition-all"
+                          >
+                            ← Sebelumnya
+                          </button>
+                          <span className="text-xs text-slate-400">
+                            {safePage} / {totalPages} · {filteredRespondents.length} responden
+                          </span>
+                          <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={safePage >= totalPages}
+                            className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-gray-200 rounded-lg hover:border-gray-300 disabled:opacity-40 transition-all"
+                          >
+                            Berikutnya →
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-400 text-center">Klik baris untuk melihat detail penilaian U1–U9</p>
+                    </>
+                  );
+                })()}
               </div>
             )}
 

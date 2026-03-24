@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import DonutChart, { DonutSlice } from "@/components/charts/DonutChart";
-import { BarChart3, TrendingUp, Activity } from "lucide-react";
+import { TrendingUp, Activity } from "lucide-react";
 
 export interface ServiceChartData {
   id: string;
@@ -20,7 +19,6 @@ export interface TrendPoint {
 
 interface Props {
   services: ServiceChartData[];
-  donutData: DonutSlice[];
   trendData: TrendPoint[];
 }
 
@@ -217,26 +215,21 @@ function ServiceWaveChart({ services, mode }: { services: ServiceChartData[]; mo
   return <div style={{ height: 260 }}><canvas ref={canvasRef} /></div>;
 }
 
-export default function DashboardChartsV2({ services, donutData, trendData }: Props) {
+export default function DashboardChartsV2({ services, trendData }: Props) {
   const [mode, setMode]               = useState<"ikm" | "count">("ikm");
   const [selectedService, setSelectedService] = useState<string>("all");
 
-  // Filter services by selected service for chart
   const chartServices = selectedService === "all"
     ? services
     : services.filter(s => s.id === selectedService);
 
-  // For trend: if a specific service is selected, filter trend data
   const hasTrend = trendData.length > 0 && selectedService === "all";
 
-  // Filtered donut data based on service selection
-  const filteredDonut = donutData; // donut always shows all
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-6">
 
-      {/* Left: Chart */}
-      <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+      {/* Full-width chart */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
         <div className="px-6 py-5 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
              <h3 className="text-base font-semibold text-slate-900">
@@ -299,27 +292,6 @@ export default function DashboardChartsV2({ services, donutData, trendData }: Pr
                </div>
              ))}
           </div>
-        </div>
-      </div>
-
-      {/* Right: Donut */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="px-6 py-5 border-b border-gray-50">
-           <h3 className="text-base font-semibold text-slate-900">Persebaran Responden</h3>
-           <p className="text-sm text-slate-500 mt-1">Berdasarkan kategori kepuasan IKM global</p>
-        </div>
-        
-        <div className="p-6 flex-1 flex flex-col items-center justify-center">
-          {filteredDonut.some(d => d.value > 0) ? (
-            <div className="w-full">
-               <DonutChart data={filteredDonut} height={240} centerLabel="Layanan" centerValue={filteredDonut.reduce((s, d) => s + d.value, 0)} />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-3">
-              <BarChart3 className="w-12 h-12 text-slate-200" />
-              <p className="text-sm font-medium text-slate-400">Belum ada distribusi data</p>
-            </div>
-          )}
         </div>
       </div>
     </div>
