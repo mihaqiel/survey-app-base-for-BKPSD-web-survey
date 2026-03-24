@@ -272,7 +272,7 @@ export default function PortalForm() {
         .sidebar-item { display:flex; align-items:center; gap:9px; padding:7px 12px; border-radius:9px; transition:all .18s; font-size:12px; font-weight:600; }
         .sidebar-item.done    { color:rgba(255,255,255,0.50); }
         .sidebar-item.current { background:rgba(250,231,5,0.12); color:#FAE705; border:1px solid rgba(250,231,5,0.25); }
-        .sidebar-item.pending { color:rgba(255,255,255,0.22); }
+        .sidebar-item.pending { color:rgba(255,255,255,0.45); }
 
         /* ── Answer cards (dark glass) ── */
         .answer-card {
@@ -360,6 +360,21 @@ export default function PortalForm() {
         {/* Dot grid */}
         <div className="pointer-events-none" style={{ position:"fixed", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize:"28px 28px", zIndex:0 }} />
 
+        {/* Mobile progress indicator — hidden on lg+, replaces sidebar (WCAG 2.4.1 / H1) */}
+        <div className="lg:hidden px-4 pt-4 pb-2" style={{ position:"relative", zIndex:10 }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold tracking-[.15em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.45)" }}>
+              Langkah {step+1} dari {TOTAL_STEPS}
+            </p>
+            <p className="text-[11px] font-semibold truncate max-w-[55%] text-right" style={{ fontFamily:"var(--pf-body)", color:"#FAE705" }}>
+              {STEP_LABELS[step]}
+            </p>
+          </div>
+          <div className="h-1 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.10)" }}>
+            <div className="h-full rounded-full transition-all duration-500" style={{ width:`${pct}%`, background:"#FAE705", boxShadow:"0 0 8px rgba(250,231,5,0.5)" }}/>
+          </div>
+        </div>
+
         {/* ── LAYOUT ─────────────────────────────────────── */}
         <div className="max-w-4xl mx-auto px-4 pt-6 pb-4 flex gap-5 items-start" style={{ position:"relative", zIndex:10 }}>
 
@@ -375,7 +390,8 @@ export default function PortalForm() {
                 {STEP_LABELS.map((label, i) => {
                   const done=i<step, cur=i===step;
                   return (
-                    <div key={i} className={`sidebar-item ${cur?"current":done?"done":"pending"}`} style={{ fontFamily:"var(--pf-body)" }}>
+                    <div key={i} className={`sidebar-item ${cur?"current":done?"done":"pending"}`} style={{ fontFamily:"var(--pf-body)" }}
+                      aria-label={`Langkah ${i+1}: ${label}${done?" (selesai)":cur?" (aktif)":""}`}>
                       <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded-md text-[10px] font-bold"
                         style={{
                           background: cur?"rgba(250,231,5,0.18)":done?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.06)",
@@ -395,8 +411,9 @@ export default function PortalForm() {
           {/* MAIN CARD */}
           <div className="flex-1 min-w-0">
             <div ref={contentRef} className="rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
-              {/* Card header */}
-              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}>
+              {/* Card header — aria-live so screen readers announce step changes (WCAG 4.1.3) */}
+              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}
+                aria-live="polite" aria-atomic="true">
                 <div>
                   <p className="text-[10px] font-black tracking-[.18em] uppercase mb-0.5" style={{ fontFamily:"var(--pf-body)", color:"rgba(250,231,5,0.8)" }}>
                     Langkah {step+1} dari {TOTAL_STEPS}
@@ -492,32 +509,31 @@ export default function PortalForm() {
                     <div className="space-y-4 fade-up">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="sm:col-span-2">
-                          <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Nama Lengkap</label>
-                          <input type="text" value={nama} onChange={e=>setNama(e.target.value)}
-                            title="Nama Lengkap" placeholder="Nama Anda" className={inputCls}
+                          <label htmlFor="f-nama" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Nama Lengkap</label>
+                          <input id="f-nama" type="text" value={nama} onChange={e=>setNama(e.target.value)}
+                            placeholder="Nama Anda" className={inputCls}
                             style={{ ...inputStyle, fontFamily:"var(--pf-body)" }}
                           />
                         </div>
                         <div>
-                          <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Tanggal Layanan</label>
-                          <input type="date" value={tglLayanan} onChange={e=>setTglLayanan(e.target.value)}
-                            title="Tanggal Layanan"
+                          <label htmlFor="f-tgl" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Tanggal Layanan</label>
+                          <input id="f-tgl" type="date" value={tglLayanan} onChange={e=>setTglLayanan(e.target.value)}
                             className={`${inputCls} portal-sel`}
                             style={{ ...inputStyle, fontFamily:"var(--pf-body)", colorScheme:"dark" }}
                           />
                         </div>
                         <div>
-                          <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Usia</label>
-                          <input type="number" value={usia} onChange={e=>setUsia(e.target.value)}
-                            title="Usia" placeholder="Tahun" min={1} max={120} className={inputCls}
+                          <label htmlFor="f-usia" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Usia</label>
+                          <input id="f-usia" type="number" value={usia} onChange={e=>setUsia(e.target.value)}
+                            placeholder="Tahun" min={1} max={120} className={inputCls}
                             style={{ ...inputStyle, fontFamily:"var(--pf-body)" }}
                           />
                         </div>
                       </div>
 
                       {/* Gender */}
-                      <div>
-                        <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Jenis Kelamin</label>
+                      <div role="group" aria-labelledby="lbl-gender">
+                        <p id="lbl-gender" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Jenis Kelamin</p>
                         <div className="grid grid-cols-2 gap-3">
                           {["Laki-laki","Perempuan"].map(v => (
                             <button key={v} type="button"
@@ -536,9 +552,8 @@ export default function PortalForm() {
 
                       {/* Pendidikan */}
                       <div>
-                        <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Pendidikan Terakhir</label>
-                        <select value={pendidikan} onChange={e=>setPendidikan(e.target.value)}
-                          title="Pendidikan Terakhir"
+                        <label htmlFor="f-pendidikan" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Pendidikan Terakhir</label>
+                        <select id="f-pendidikan" value={pendidikan} onChange={e=>setPendidikan(e.target.value)}
                           className={`${inputCls} portal-sel`}
                           style={{ ...inputStyle, fontFamily:"var(--pf-body)", colorScheme:"dark" }}
                         >
@@ -549,9 +564,8 @@ export default function PortalForm() {
 
                       {/* Pekerjaan */}
                       <div>
-                        <label className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Pekerjaan</label>
-                        <select value={pekerjaan} onChange={e=>setPekerjaan(e.target.value)}
-                          title="Pekerjaan"
+                        <label htmlFor="f-pekerjaan" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Pekerjaan</label>
+                        <select id="f-pekerjaan" value={pekerjaan} onChange={e=>setPekerjaan(e.target.value)}
                           className={`${inputCls} portal-sel`}
                           style={{ ...inputStyle, fontFamily:"var(--pf-body)", colorScheme:"dark" }}
                         >
@@ -611,7 +625,15 @@ export default function PortalForm() {
                       </div>
                       {(() => {
                         const list = pegawaiSearch.length>1 ? filteredPegawai : pegawaiList;
-                        return list.length>0 && !selectedPegawai ? (
+                        if (selectedPegawai) return null;
+                        if (pegawaiSearch.length > 1 && list.length === 0) return (
+                          <div className="rounded-xl px-5 py-4" style={{ border:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.02)" }}>
+                            <p className="text-xs font-medium" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.35)" }}>
+                              Tidak ada pegawai yang cocok dengan pencarian &ldquo;{pegawaiSearch}&rdquo;
+                            </p>
+                          </div>
+                        );
+                        return list.length > 0 ? (
                           <div className="rounded-xl overflow-hidden" style={{ border:"1px solid rgba(250,231,5,0.25)" }}>
                             <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom:"1px solid rgba(250,231,5,0.15)", background:"rgba(250,231,5,0.05)" }}>
                               <p className="text-[10px] font-black uppercase tracking-wide" style={{ fontFamily:"var(--pf-body)", color:"rgba(250,231,5,0.70)" }}>

@@ -374,19 +374,19 @@ export default function PengaduanClient() {
 
         /* ═══ Submit button ═══ */
         .submit-btn {
-          width:100%; background:#0d2d58; color:#fff;
+          width:100%; background:#FAE705; color:#0d1b2a;
           padding:.95rem 1.5rem; border-radius:.75rem;
           font-size:.875rem; font-weight:700; border:none; cursor:pointer;
           display:flex; align-items:center; justify-content:center; gap:.5rem;
-          transition:background .25s ease, transform .2s ease, box-shadow .3s ease;
+          transition:filter .25s ease, transform .2s ease, box-shadow .3s ease;
         }
         .submit-btn:hover:not(:disabled) {
-          background:#1565c0;
+          filter:brightness(0.95);
           transform:translateY(-1px);
-          box-shadow:0 8px 28px rgba(13,45,88,.22);
+          box-shadow:0 8px 28px rgba(250,231,5,.25);
         }
         .submit-btn:active:not(:disabled) { transform:scale(.98); }
-        .submit-btn:disabled { background:#94a3b8; cursor:not-allowed; }
+        .submit-btn:disabled { background:#e2e8f0; color:#94a3b8; cursor:not-allowed; }
 
         /* ═══ Spin ═══ */
         @keyframes spin { to { transform:rotate(360deg); } }
@@ -618,7 +618,7 @@ export default function PengaduanClient() {
                     <label className="form-label">
                       Isi Pengaduan <span style={{ color: "#ef4444" }}>*</span>
                     </label>
-                    <textarea name="isi" required maxLength={2000} rows={3}
+                    <textarea name="isi" required maxLength={2000} rows={5}
                       placeholder="Jelaskan pengaduan Anda secara detail — apa yang terjadi, kapan, dan di mana..."
                       className="form-input"
                       style={{ resize: "none", lineHeight: 1.6 }} />

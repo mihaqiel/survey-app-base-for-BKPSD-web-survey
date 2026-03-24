@@ -33,7 +33,8 @@ function SocialIcon({ title, href, children }: { title: string; href: string; ch
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      title={title}
+      title={`${title} (buka di tab baru)`}
+      aria-label={`${title} BKPSDM Anambas (buka di tab baru)`}
       className="ftr-social"
     >
       {children}
@@ -79,7 +80,7 @@ export default function PublicFooter() {
           align-items: center;
           gap: 6px;
           font-size: 13px;
-          color: rgba(255,255,255,0.4);
+          color: rgba(255,255,255,0.60);
           transition: color 0.25s, gap 0.25s;
           font-family: var(--ftr-body);
         }
