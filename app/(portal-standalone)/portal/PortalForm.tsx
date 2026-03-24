@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import { submitSkmResponse } from "@/app/action/submit";
 import {
   Search, ChevronDown, Check, X,
@@ -31,10 +31,10 @@ const SKM_QUESTIONS = [
 ];
 
 const SKM_OPTIONS = [
-  { val:1, label:"Tidak Baik",  sublabel:"Sangat tidak puas",  icon:<Frown  className="w-5 h-5"/>, color:"#ef4444", lightBg:"#fef2f2", border:"#fca5a5" },
-  { val:2, label:"Kurang Baik", sublabel:"Kurang memuaskan",   icon:<Meh    className="w-5 h-5"/>, color:"#f97316", lightBg:"#fff7ed", border:"#fdba74" },
-  { val:3, label:"Baik",        sublabel:"Cukup memuaskan",    icon:<Smile  className="w-5 h-5"/>, color:"#16a34a", lightBg:"#f0fdf4", border:"#86efac" },
-  { val:4, label:"Sangat Baik", sublabel:"Sangat memuaskan",   icon:<Award  className="w-5 h-5"/>, color:"#0d2d58", lightBg:"#eff6ff", border:"#93c5fd" },
+  { val:1, label:"Tidak Baik",  sublabel:"Sangat tidak puas",  icon:<Frown  className="w-5 h-5"/>, color:"#ef4444", lightBg:"rgba(239,68,68,0.12)",  border:"rgba(239,68,68,0.35)"  },
+  { val:2, label:"Kurang Baik", sublabel:"Kurang memuaskan",   icon:<Meh    className="w-5 h-5"/>, color:"#f97316", lightBg:"rgba(249,115,22,0.12)", border:"rgba(249,115,22,0.35)" },
+  { val:3, label:"Baik",        sublabel:"Cukup memuaskan",    icon:<Smile  className="w-5 h-5"/>, color:"#16a34a", lightBg:"rgba(22,163,74,0.12)",  border:"rgba(22,163,74,0.35)"  },
+  { val:4, label:"Sangat Baik", sublabel:"Sangat memuaskan",   icon:<Award  className="w-5 h-5"/>, color:"#38bdf8", lightBg:"rgba(56,189,248,0.12)", border:"rgba(56,189,248,0.35)" },
 ];
 
 const PENDIDIKAN = ["SD","SMP","SMA/SMK","D1/D2/D3","S1/D4","S2","S3"];
@@ -172,7 +172,7 @@ export default function PortalForm() {
     setPrevStep(step);
     setStep(nextStep);
     setAnimKey(k => k + 1);
-    setTimeout(() => contentRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }), 50);
+    setTimeout(() => { if (contentRef.current) contentRef.current.scrollTop = 0; }, 50);
   };
 
   const handleNext   = () => { if (canProceed()) goTo(step + 1); };
@@ -215,8 +215,8 @@ export default function PortalForm() {
 
   return (
     <div
-      className={`${playfair.variable} ${dmSans.variable}`}
-      style={{ fontFamily:"var(--pf-body)", minHeight:"100vh", paddingBottom: step < 13 ? 88 : 40, background:"#0d1b2a" }}
+      className={`${playfair.variable} ${dmSans.variable} min-h-screen flex flex-col`}
+      style={{ fontFamily:"var(--pf-body)", background:"#0d1b2a" }}
     >
       {/* ══ GLOBAL CSS ═══════════════════════════════════════ */}
       <style>{`
@@ -268,11 +268,17 @@ export default function PortalForm() {
           white-space: nowrap;
         }
 
-        /* ── Sidebar ── */
-        .sidebar-item { display:flex; align-items:center; gap:9px; padding:7px 12px; border-radius:9px; transition:all .18s; font-size:12px; font-weight:600; }
-        .sidebar-item.done    { color:rgba(255,255,255,0.50); }
-        .sidebar-item.current { background:rgba(250,231,5,0.12); color:#FAE705; border:1px solid rgba(250,231,5,0.25); }
-        .sidebar-item.pending { color:rgba(255,255,255,0.45); }
+        /* ── Horizontal step stepper ── */
+        .step-pip {
+          width:24px; height:24px; border-radius:50%; flex-shrink:0;
+          display:flex; align-items:center; justify-content:center;
+          font-size:10px; font-weight:800; transition:all .25s;
+          background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.30);
+        }
+        .step-pip.done    { background:rgba(34,197,94,0.80); color:white; }
+        .step-pip.current { width:30px; height:30px; background:#FAE705; color:#0d1b2a; box-shadow:0 0 12px rgba(250,231,5,.40); }
+        .step-connector   { flex:1; height:1px; background:rgba(255,255,255,0.08); min-width:4px; max-width:24px; }
+        .step-connector.done { background:rgba(34,197,94,0.50); }
 
         /* ── Answer cards (dark glass) ── */
         .answer-card {
@@ -301,14 +307,6 @@ export default function PortalForm() {
         .gender-dot { width:15px; height:15px; border-radius:50%; border:2px solid rgba(255,255,255,0.20); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:border-color .2s; }
         .gender-btn.selected .gender-dot { border-color:#FAE705; }
 
-        /* ── Sticky nav bar ── */
-        .sticky-nav {
-          position:fixed; bottom:0; left:0; right:0; z-index:50;
-          background:rgba(13,27,42,0.92);
-          backdrop-filter:blur(16px);
-          border-top:1px solid rgba(255,255,255,0.08);
-          padding:10px 0;
-        }
 
         /* ── Nav buttons ── */
         .btn-back {
@@ -351,8 +349,6 @@ export default function PortalForm() {
         .peg-item:hover { background:rgba(250,231,5,0.07); color:white; }
       `}</style>
 
-      {/* ══ DARK BACKGROUND WRAPPER ══════════════════════════ */}
-      <div className="portal-warm-bg" style={{ minHeight:"100vh", position:"relative" }}>
         {/* Orb A — yellow top-right */}
         <div className="pointer-events-none" style={{ position:"fixed", top:"-160px", right:"-160px", width:"500px", height:"500px", borderRadius:"50%", background:"rgba(250,231,5,0.07)", filter:"blur(150px)", zIndex:0 }} />
         {/* Orb B — cyan bottom-left */}
@@ -360,59 +356,54 @@ export default function PortalForm() {
         {/* Dot grid */}
         <div className="pointer-events-none" style={{ position:"fixed", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize:"28px 28px", zIndex:0 }} />
 
-        {/* Mobile progress indicator — hidden on lg+, replaces sidebar (WCAG 2.4.1 / H1) */}
-        <div className="lg:hidden px-4 pt-4 pb-2" style={{ position:"relative", zIndex:10 }}>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold tracking-[.15em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.45)" }}>
-              Langkah {step+1} dari {TOTAL_STEPS}
-            </p>
-            <p className="text-[11px] font-semibold truncate max-w-[55%] text-right" style={{ fontFamily:"var(--pf-body)", color:"#FAE705" }}>
-              {STEP_LABELS[step]}
-            </p>
+        {/* ── Horizontal step stepper ─────────────────────── */}
+        <div className="relative z-10 max-w-5xl mx-auto w-full px-4 pt-4 pb-3">
+          {/* Desktop (md+): numbered circles + connectors */}
+          <div className="hidden md:flex items-center justify-between">
+            {STEP_LABELS.map((label, i) => {
+              const done = i < step, cur = i === step;
+              return (
+                <Fragment key={i}>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className={`step-pip ${cur ? "current" : done ? "done" : "pending"}`}
+                      aria-label={`Langkah ${i+1}: ${label}${done?" (selesai)":cur?" (aktif)":""}`}>
+                      {done ? <Check className="w-3 h-3"/> : i+1}
+                    </div>
+                    {cur && (
+                      <span className="text-[9px] font-bold tracking-wide text-center max-w-[52px] leading-tight" style={{ color:"#FAE705", fontFamily:"var(--pf-body)" }}>
+                        {label}
+                      </span>
+                    )}
+                  </div>
+                  {i < STEP_LABELS.length - 1 && (
+                    <div className={`step-connector ${i < step ? "done" : ""}`}/>
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.10)" }}>
-            <div className="h-full rounded-full transition-all duration-500" style={{ width:`${pct}%`, background:"#FAE705", boxShadow:"0 0 8px rgba(250,231,5,0.5)" }}/>
+          {/* Mobile: compact progress bar */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-bold tracking-[.15em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.45)" }}>
+                Langkah {step+1} dari {TOTAL_STEPS}
+              </p>
+              <p className="text-[11px] font-semibold truncate max-w-[55%] text-right" style={{ fontFamily:"var(--pf-body)", color:"#FAE705" }}>
+                {STEP_LABELS[step]}
+              </p>
+            </div>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.10)" }}>
+              <div className="h-full rounded-full transition-all duration-500" style={{ width:`${pct}%`, background:"#FAE705", boxShadow:"0 0 8px rgba(250,231,5,0.5)" }}/>
+            </div>
           </div>
         </div>
 
-        {/* ── LAYOUT ─────────────────────────────────────── */}
-        <div className="max-w-4xl mx-auto px-4 pt-6 pb-4 flex gap-5 items-start" style={{ position:"relative", zIndex:10 }}>
-
-          {/* SIDEBAR */}
-          <aside className="hidden lg:block w-48 shrink-0 sticky top-6">
-            <div className="rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
-              <div className="px-4 py-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.05)" }}>
-                <p className="text-[10px] font-black tracking-[.18em] uppercase" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.45)" }}>
-                  Tahapan Survei
-                </p>
-              </div>
-              <div className="p-1.5 space-y-0.5">
-                {STEP_LABELS.map((label, i) => {
-                  const done=i<step, cur=i===step;
-                  return (
-                    <div key={i} className={`sidebar-item ${cur?"current":done?"done":"pending"}`} style={{ fontFamily:"var(--pf-body)" }}
-                      aria-label={`Langkah ${i+1}: ${label}${done?" (selesai)":cur?" (aktif)":""}`}>
-                      <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded-md text-[10px] font-bold"
-                        style={{
-                          background: cur?"rgba(250,231,5,0.18)":done?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.06)",
-                          color: cur?"#FAE705":done?"#4ade80":"rgba(255,255,255,0.25)",
-                        }}
-                      >
-                        {done ? <Check className="w-3 h-3"/> : i+1}
-                      </div>
-                      <span className="truncate">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </aside>
-
-          {/* MAIN CARD */}
-          <div className="flex-1 min-w-0">
-            <div ref={contentRef} className="rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
-              {/* Card header — aria-live so screen readers announce step changes (WCAG 4.1.3) */}
-              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}
+        {/* ── Card area — fills remaining height ──────────── */}
+        <div className="relative z-10 flex-1 px-4 pb-4 max-w-5xl mx-auto w-full flex flex-col min-h-0">
+          <div className="flex-1 rounded-2xl overflow-hidden flex flex-col min-h-0"
+            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+              {/* Card header */}
+              <div className="px-6 py-4 flex items-center gap-3 shrink-0" style={{ borderBottom:"1px solid rgba(255,255,255,0.12)", background:"#0d2d58" }}
                 aria-live="polite" aria-atomic="true">
                 <div>
                   <p className="text-[10px] font-black tracking-[.18em] uppercase mb-0.5" style={{ fontFamily:"var(--pf-body)", color:"rgba(250,231,5,0.8)" }}>
@@ -424,8 +415,8 @@ export default function PortalForm() {
                 </div>
               </div>
 
-              {/* Step content */}
-              <div className="p-6">
+              {/* Scrollable content */}
+              <div ref={contentRef} className="flex-1 overflow-y-auto p-6 min-h-0">
                 <div key={animKey} className={isForward ? "anim-r" : "anim-l"}>
 
                   {/* ══ STEP 0: PILIH LAYANAN ═══════════════════ */}
@@ -706,16 +697,16 @@ export default function PortalForm() {
                               onClick={() => setAnswers(a => ({ ...a, [key]: opt.val }))}
                               className={`answer-card ${selected?"selected":""}`}
                               style={{
-                                borderColor:  selected ? opt.color : "#e2e8f0",
-                                background:   selected ? opt.lightBg : "white",
-                                boxShadow:    selected ? `0 0 0 1px ${opt.border}, 0 4px 16px ${opt.color}18` : "0 1px 4px rgba(0,0,0,.04)",
+                                borderColor:  selected ? opt.color : "rgba(255,255,255,0.10)",
+                                background:   selected ? opt.lightBg : "rgba(255,255,255,0.04)",
+                                boxShadow:    selected ? `0 0 0 1px ${opt.border}, 0 4px 16px ${opt.color}18` : "none",
                               }}
                             >
                               {/* Number */}
                               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-all"
                                 style={{
-                                  background: selected ? opt.color : "#f1f5f9",
-                                  color: selected ? "white" : "#94a3b8",
+                                  background: selected ? opt.color : "rgba(255,255,255,0.10)",
+                                  color: selected ? "white" : "rgba(255,255,255,0.35)",
                                 }}
                               >
                                 {opt.val}
@@ -866,31 +857,27 @@ export default function PortalForm() {
 
                 </div>
               </div>
+
+              {/* Navigation footer — pinned inside card */}
+              {step < 13 && (
+                <div className="shrink-0 px-6 py-4 flex gap-3"
+                  style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.02)" }}>
+                  {step > 0 && (
+                    <button onClick={handleBack} className="btn-back" style={{ fontFamily:"var(--pf-body)" }}>
+                      <ArrowLeft className="w-3.5 h-3.5"/> Kembali
+                    </button>
+                  )}
+                  <button onClick={handleNext} disabled={!canProceed()} className="btn-next" style={{ fontFamily:"var(--pf-body)" }}>
+                    {step === 11 ? "Lanjut ke Rating Pegawai"
+                     : step === 12 ? "Lanjut ke Saran dan Kirim"
+                     : "Lanjut"
+                    }
+                    <ArrowRight className="w-3.5 h-3.5"/>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-      </div>{/* end warm bg */}
-
-      {/* ══ STICKY BOTTOM NAV ════════════════════════════════ */}
-      {step < 13 && (
-        <div className="sticky-nav">
-          <div className="max-w-4xl mx-auto px-4 flex gap-3">
-            {step > 0 && (
-              <button onClick={handleBack} className="btn-back" style={{ fontFamily:"var(--pf-body)" }}>
-                <ArrowLeft className="w-3.5 h-3.5"/> Kembali
-              </button>
-            )}
-            <button onClick={handleNext} disabled={!canProceed()} className="btn-next" style={{ fontFamily:"var(--pf-body)" }}>
-              {step === 11 ? "Lanjut ke Rating Pegawai"
-               : step === 12 ? "Lanjut ke Saran dan Kirim"
-               : "Lanjut"
-              }
-              <ArrowRight className="w-3.5 h-3.5"/>
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );
