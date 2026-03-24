@@ -1,6 +1,12 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Settings & QR Code — Admin BKPSDM Anambas",
+  description: "Kelola periode survei aktif dan QR Code untuk akses survei.",
+};
 import QrSection from "@/app/(dashboard)/admin/components/QrSection";
 import PeriodeManager from "@/app/(dashboard)/admin/components/PeriodeManager";
 import { Activity, Layers, Users, QrCode } from "lucide-react";
@@ -26,7 +32,7 @@ export default async function SettingsPage() {
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: "Total Responden", value: totalResponses, color: "#3b82f6", icon: <Activity className="w-5 h-5" /> },
             { label: "Total Layanan",   value: totalLayanan,   color: "#0f172a", icon: <Layers className="w-5 h-5" /> },

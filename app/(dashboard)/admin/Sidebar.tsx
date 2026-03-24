@@ -111,7 +111,7 @@ export default function Sidebar() {
         </p>
       </div>
 
-      <nav className="flex-1 overflow-y-auto pb-6 space-y-1">
+      <nav aria-label="Menu Admin" className="flex-1 overflow-y-auto pb-6 space-y-1">
         {navItem(
           "/admin",
           "Dashboard",
@@ -187,7 +187,7 @@ export default function Sidebar() {
         <p className="text-xs text-slate-400">
           SKM System v1.0
         </p>
-        <p className="text-xs text-slate-300 mt-0.5">
+        <p className="text-xs text-slate-400 mt-0.5">
           Permenpan RB 14/2017
         </p>
       </div>

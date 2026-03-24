@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { getLayananWithResponseCount, getPegawaiWithResponseCount } from "@/app/action/delete";
+
+export const metadata: Metadata = {
+  title: "Hapus Data Survei — Admin BKPSDM Anambas",
+  description: "Pusat penghapusan data respon, layanan, dan pegawai secara permanen.",
+};
 import Link from "next/link";
 import EntityDeleteModal from "@/app/(dashboard)/admin/components/EntityDeleteModal";
 import DeleteConfirmModal from "@/app/(dashboard)/admin/components/DeleteConfirmModal";
@@ -232,7 +238,7 @@ export default async function HapusDataPage({
 
             {/* Stats summary */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 grid grid-cols-3 divide-x divide-gray-100">
+              <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
                 {[
                   { label: "Total Layanan", val: layananList.length, color: "text-slate-900" },
                   { label: "Total Pegawai", val: pegawaiList.length, color: "text-slate-900" },

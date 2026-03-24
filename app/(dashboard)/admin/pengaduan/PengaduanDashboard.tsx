@@ -73,7 +73,7 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
   };
 
   return (
-    <main className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
@@ -286,6 +286,6 @@ export default function PengaduanDashboard({ initialData }: { initialData: Compl
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { getAdminDashboardStats, getAllPeriode, getAllLayanan } from "@/app/action/admin";
 import { logout } from "@/app/action/auth";
 import Link from "next/link";
@@ -7,9 +8,11 @@ import DashboardChartsV2 from "./components/DashboardChartsV2";
 import GlobalExportButton from "./GlobalExportButton";
 import StatusBadge, { ikmColor, ikmLabel } from "@/components/ui/StatusBadge";
 import DashboardTabs from "./components/DashboardTabs";
-import {
-  Bell, LogOut,
-} from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Dashboard — Admin BKPSDM Anambas",
+  description: "Ringkasan manajemen survei kepuasan masyarakat BKPSDM Kabupaten Kepulauan Anambas.",
+};
 
 interface ServiceStat {
   id: string;
@@ -89,9 +92,26 @@ export default async function AdminDashboard(props: {
       {/* ══ HEADER — title only ══ */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center sticky top-0 z-20 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none">Ringkasan Manajemen</h1>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Ringkasan Manajemen</h1>
           <p className="text-sm font-medium text-slate-500 mt-1">BKPSDM Kabupaten Kepulauan Anambas</p>
         </div>
+      </div>
+
+      {/* ══ IKM SCALE LEGEND ══ */}
+      <div className="bg-white border-b border-gray-100 px-6 py-2 flex items-center gap-1 flex-wrap">
+        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mr-2">Skala IKM:</span>
+        {[
+          { label: "Sangat Baik", min: "≥ 88,31", color: "#16a34a" },
+          { label: "Baik",        min: "76,61–88,30", color: "#3b82f6" },
+          { label: "Kurang Baik", min: "65,00–76,60", color: "#f59e0b" },
+          { label: "Tidak Baik",  min: "< 65,00",     color: "#ef4444" },
+        ].map((s) => (
+          <span key={s.label} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold mr-1"
+            style={{ background: s.color + "14", color: s.color }}>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.color }} />
+            {s.label} ({s.min})
+          </span>
+        ))}
       </div>
 
       {/* ══ TABS + TOOLBAR ROW ══ */}

@@ -3,7 +3,10 @@ import { isAdmin } from "@/app/action/auth";
 import { redirect } from "next/navigation";
 import PengaduanDashboard from "./PengaduanDashboard";
 
-export const metadata = { title: "Pengaduan Masyarakat — Admin BKPSDM" };
+export const metadata = {
+  title: "Pengaduan Masyarakat — Admin BKPSDM",
+  description: "Kelola dan tindak lanjuti pengaduan masyarakat yang masuk.",
+};
 
 export default async function PengaduanAdminPage() {
   const ok = await isAdmin();
