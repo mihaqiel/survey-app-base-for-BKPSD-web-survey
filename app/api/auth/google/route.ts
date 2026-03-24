@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function GET() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -12,15 +11,6 @@ export async function GET() {
   // Generate CSRF state token
   const state = crypto.randomUUID();
 
-  const cookieStore = await cookies();
-  cookieStore.set("google_oauth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 10, // 10 minutes
-    path: "/",
-  });
-
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: `${appUrl}/api/auth/google/callback`,
@@ -31,7 +21,21 @@ export async function GET() {
     prompt: "select_account",
   });
 
-  return NextResponse.redirect(
+  // Set the cookie directly on the redirect response — this guarantees the
+  // Set-Cookie header is on the exact response the browser receives.
+  // Using (await cookies()).set() + NextResponse.redirect() can silently
+  // drop the cookie because they operate on different response objects.
+  const response = NextResponse.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
   );
+
+  response.cookies.set("google_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10, // 10 minutes
+    path: "/",
+  });
+
+  return response;
 }

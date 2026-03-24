@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
   cookieStore.delete("google_oauth_state");
 
   if (!code || !state || state !== savedState) {
+    console.warn("[google/callback] state mismatch — code:%s state:%s savedState:%s",
+      !!code, state?.slice(0, 8), savedState?.slice(0, 8));
     return NextResponse.redirect(`${appUrl}/login?error=OAuthState`);
   }
 
@@ -28,6 +30,8 @@ export async function GET(req: NextRequest) {
     .filter(Boolean);
 
   if (!clientId || !clientSecret || allowedEmails.length === 0) {
+    console.error("[google/callback] config missing — clientId:%s secret:%s allowedCount:%d",
+      !!clientId, !!clientSecret, allowedEmails.length);
     return NextResponse.redirect(`${appUrl}/login?error=ConfigError`);
   }
 
@@ -65,12 +69,15 @@ export async function GET(req: NextRequest) {
     const { email, verified_email } = await userRes.json();
 
     if (!verified_email || !allowedEmails.includes(email.toLowerCase())) {
+      console.warn("[google/callback] unauthorized email: %s (verified:%s allowedCount:%d)",
+        email, verified_email, allowedEmails.length);
       return NextResponse.redirect(`${appUrl}/login?error=Unauthorized`);
     }
 
     // Create admin session — same token format as password login
     const sessionToken = await createSessionToken();
-    cookieStore.set(COOKIE_NAME, sessionToken, {
+    const successRes = NextResponse.redirect(`${appUrl}/admin`);
+    successRes.cookies.set(COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
@@ -78,9 +85,10 @@ export async function GET(req: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.redirect(`${appUrl}/admin`);
+    console.log("[google/callback] login success: %s", email);
+    return successRes;
   } catch (err) {
-    console.error("[google/callback] error:", err);
+    console.error("[google/callback] unexpected error:", err);
     return NextResponse.redirect(`${appUrl}/login?error=OAuthFailed`);
   }
 }
