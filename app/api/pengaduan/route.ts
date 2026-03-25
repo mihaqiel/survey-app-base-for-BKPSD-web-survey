@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api-auth";
@@ -50,15 +51,18 @@ export async function PATCH(req: NextRequest) {
       select: { nama: true, email: true, judul: true },
     });
 
-    // Fire-and-forget: notify complainant on meaningful status changes only
+    // Schedule email after response — `after()` keeps the function alive
+    // until the promise resolves, preventing Vercel from freezing it early.
     if (status === "DIPROSES" || status === "SELESAI") {
       const { subject, html } = pengaduanStatusUpdateTemplate({
         nama: updated.nama,
         judul: updated.judul,
         status,
       });
-      sendEmail({ to: updated.email, subject, html }).catch(err =>
-        console.error("[api/pengaduan PATCH] status email error:", err)
+      after(
+        sendEmail({ to: updated.email, subject, html }).catch(err =>
+          console.error("[api/pengaduan PATCH] status email error:", err)
+        )
       );
     }
 

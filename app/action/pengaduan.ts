@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { pengaduanConfirmTemplate, pengaduanNotifTemplate } from "@/lib/email-templates";
@@ -55,16 +56,19 @@ export async function submitPengaduan(
       },
     });
 
-    // Fire-and-forget emails — never block or throw
-    void Promise.all([
-      sendEmail({ to: email, ...pengaduanConfirmTemplate({ nama, judul }) }),
-      process.env.ADMIN_EMAIL
-        ? sendEmail({
-            to: process.env.ADMIN_EMAIL,
-            ...pengaduanNotifTemplate({ nama, email, telepon: telepon ?? undefined, judul, isi }),
-          })
-        : Promise.resolve(),
-    ]).catch((err) => console.error("[pengaduan] email error:", err));
+    // Schedule emails after response — after() keeps the function alive
+    // until the promise resolves, preventing Vercel from freezing it early.
+    after(
+      Promise.all([
+        sendEmail({ to: email, ...pengaduanConfirmTemplate({ nama, judul }) }),
+        process.env.ADMIN_EMAIL
+          ? sendEmail({
+              to: process.env.ADMIN_EMAIL,
+              ...pengaduanNotifTemplate({ nama, email, telepon: telepon ?? undefined, judul, isi }),
+            })
+          : Promise.resolve(),
+      ]).catch((err) => console.error("[pengaduan] email error:", err))
+    );
 
     return { success: true };
   } catch (err) {
