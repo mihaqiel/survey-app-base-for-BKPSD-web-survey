@@ -6,7 +6,8 @@ import { sendEmail } from "@/lib/email";
 import { pengaduanStatusUpdateTemplate } from "@/lib/email-templates";
 import { STATUS_LIST } from "@/lib/pengaduan";
 
-const EMAIL_STATUSES = new Set(["PENDING_VERIFIKASI", "DIPROSES", "PERLU_DATA", "SELESAI", "DITOLAK"]);
+// Only these statuses trigger citizen email — internal workflow statuses do not
+const EMAIL_STATUSES = new Set(["DIPROSES", "SELESAI", "DITOLAK"]);
 
 // GET /api/pengaduan — list all complaints (admin only)
 export async function GET() {
@@ -50,13 +51,14 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, status, prioritas, petugasId, kategori, catatan } = body as {
+    const { id, status, prioritas, petugasId, kategori, catatan, catatanVisibility } = body as {
       id?: string;
       status?: string;
       prioritas?: string;
       petugasId?: string | null;
       kategori?: string | null;
       catatan?: string;
+      catatanVisibility?: "public" | "internal";
     };
 
     if (!id) {
@@ -64,6 +66,22 @@ export async function PATCH(req: NextRequest) {
     }
     if (status !== undefined && !(STATUS_LIST as readonly string[]).includes(status)) {
       return NextResponse.json({ error: "Status tidak valid." }, { status: 400 });
+    }
+
+    // Pure note-add (no status/field change) — fast path
+    if (!status && !prioritas && !petugasId && !kategori && catatan) {
+      const noteExists = await prisma.pengaduan.findUnique({ where: { id }, select: { id: true } });
+      if (!noteExists) return NextResponse.json({ error: "Pengaduan tidak ditemukan." }, { status: 404 });
+      await prisma.pengaduanLog.create({
+        data: {
+          pengaduanId: id,
+          aksi: "CATATAN",
+          deskripsi: catatan,
+          oleh: "Admin",
+          visibility: catatanVisibility ?? "internal",
+        },
+      });
+      return NextResponse.json({ ok: true });
     }
 
     // Fetch current record to compute diff for log entries
@@ -88,20 +106,19 @@ export async function PATCH(req: NextRequest) {
       select: { id: true, nomorUrut: true, nama: true, email: true, judul: true, createdAt: true },
     });
 
-    // Build log entries
-    const logEntries: { pengaduanId: string; aksi: string; deskripsi: string; oleh: string }[] = [];
+    // Build log entries — visibility: public for email-triggering statuses, internal otherwise
+    const logEntries: { pengaduanId: string; aksi: string; deskripsi: string; oleh: string; visibility: string }[] = [];
 
     if (status !== undefined && status !== current.status) {
-      const prevLabel = current.status;
-      const nextLabel = status;
-      const deskripsi = catatan && status === "DITOLAK"
-        ? `${prevLabel} → ${nextLabel}\nAlasan: ${catatan}`
-        : `${prevLabel} → ${nextLabel}`;
+      const deskripsi = catatan
+        ? `${current.status} → ${status}\n${catatan}`
+        : `${current.status} → ${status}`;
       logEntries.push({
         pengaduanId: id,
         aksi: "STATUS_BERUBAH",
         deskripsi,
         oleh: "Admin",
+        visibility: EMAIL_STATUSES.has(status) ? "public" : "internal",
       });
     }
     if (prioritas !== undefined && prioritas !== current.prioritas) {
@@ -110,14 +127,16 @@ export async function PATCH(req: NextRequest) {
         aksi: "PRIORITAS_BERUBAH",
         deskripsi: `${current.prioritas} → ${prioritas}`,
         oleh: "Admin",
+        visibility: "internal",
       });
     }
     if (petugasId !== undefined && petugasId !== current.petugasId) {
       logEntries.push({
         pengaduanId: id,
         aksi: "PETUGAS_DITUGASKAN",
-        deskripsi: petugasId ? `Ditugaskan ke petugas baru` : "Penugasan dihapus",
+        deskripsi: petugasId ? "Ditugaskan ke petugas baru" : "Penugasan dihapus",
         oleh: "Admin",
+        visibility: "internal",
       });
     }
 
@@ -125,15 +144,15 @@ export async function PATCH(req: NextRequest) {
       await prisma.pengaduanLog.createMany({ data: logEntries });
     }
 
-    // Send email for actionable status changes
+    // Send email only for citizen-facing status changes (DIPROSES / SELESAI / DITOLAK)
     if (status !== undefined && EMAIL_STATUSES.has(status) && status !== current.status) {
       const { subject, html } = pengaduanStatusUpdateTemplate({
         nama: updated.nama,
         judul: updated.judul,
-        status: status as "PENDING_VERIFIKASI" | "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK",
+        status: status as "DIPROSES" | "SELESAI" | "DITOLAK",
         nomorUrut: updated.nomorUrut,
         createdAt: updated.createdAt.toISOString(),
-        ...(catatan && status === "DITOLAK" ? { catatan } : {}),
+        catatan: catatan || undefined,
       });
       after(
         sendEmail({ to: updated.email, subject, html }).catch(err =>

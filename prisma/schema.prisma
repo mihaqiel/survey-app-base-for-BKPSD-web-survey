@@ -148,6 +148,7 @@ model PengaduanLog {
   aksi        String    // DIBUAT | STATUS_BERUBAH | PRIORITAS_BERUBAH | PETUGAS_DITUGASKAN | CATATAN
   deskripsi   String?
   oleh        String    @default("Admin")
+  visibility  String    @default("internal") // "public" (visible to citizen) | "internal" (admin only)
   createdAt   DateTime  @default(now())
   pengaduan   Pengaduan @relation(fields: [pengaduanId], references: [id], onDelete: Cascade)
 }

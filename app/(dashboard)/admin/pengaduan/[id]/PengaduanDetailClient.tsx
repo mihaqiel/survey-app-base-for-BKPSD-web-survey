@@ -16,6 +16,8 @@ import {
   Calendar,
   Tag,
   ChevronRight,
+  Lock,
+  Users,
 } from "lucide-react";
 import {
   STATUS_LIST,
@@ -38,6 +40,7 @@ type LogEntry = {
   aksi: string;
   deskripsi: string | null;
   oleh: string;
+  visibility: string;
   createdAt: Date;
 };
 type Petugas = { id: string; nama: string } | null;
@@ -64,6 +67,78 @@ interface Props {
   data: ComplaintDetail;
   pegawaiList: PegawaiItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Status modal configuration
+// ---------------------------------------------------------------------------
+
+type ModalConfig = {
+  title: string;
+  subtitle: string;
+  label: string;
+  required: boolean;
+  placeholder: string;
+  headerBg: string;
+  confirmLabel: string;
+  confirmBg: string;
+  warningText?: string;
+};
+
+const STATUS_MODAL_CONFIG: Record<string, ModalConfig> = {
+  PENDING_VERIFIKASI: {
+    title: "Mulai Verifikasi",
+    subtitle: "Tandai pengaduan ini sedang dalam tahap verifikasi.",
+    label: "Catatan Verifikasi",
+    required: false,
+    placeholder: "Contoh: Pengaduan valid, akan ditindaklanjuti oleh tim terkait.",
+    headerBg: "bg-slate-600",
+    confirmLabel: "Mulai Verifikasi",
+    confirmBg: "bg-slate-600 hover:bg-slate-700",
+  },
+  PERLU_DATA: {
+    title: "Minta Data Tambahan",
+    subtitle: "Informasikan data apa yang diperlukan dari pelapor.",
+    label: "Data yang Dibutuhkan",
+    required: false,
+    placeholder: "Contoh: Mohon lampirkan surat keterangan RT/RW dan foto kondisi terkini.",
+    headerBg: "bg-amber-600",
+    confirmLabel: "Minta Data",
+    confirmBg: "bg-amber-600 hover:bg-amber-700",
+  },
+  DIPROSES: {
+    title: "Proses Pengaduan",
+    subtitle: "Pesan ini akan dikirimkan ke pelapor melalui email.",
+    label: "Pesan untuk Pelapor ★",
+    required: true,
+    placeholder: "Contoh: Pengaduan Anda sedang kami tindaklanjuti. Tim kami akan menghubungi Anda dalam 3 hari kerja.",
+    headerBg: "bg-cyan-600",
+    confirmLabel: "Proses Sekarang",
+    confirmBg: "bg-cyan-600 hover:bg-cyan-700",
+    warningText: "Pesan ini akan dikirim melalui email ke pelapor.",
+  },
+  SELESAI: {
+    title: "Selesaikan Pengaduan",
+    subtitle: "Ringkasan penyelesaian akan dikirimkan ke pelapor melalui email.",
+    label: "Ringkasan Penyelesaian ★",
+    required: true,
+    placeholder: "Contoh: Pengaduan telah diselesaikan. Perbaikan jalan di Jl. Merdeka telah dilaksanakan pada 20 Maret 2026.",
+    headerBg: "bg-green-600",
+    confirmLabel: "Tandai Selesai",
+    confirmBg: "bg-green-600 hover:bg-green-700",
+    warningText: "Ringkasan ini akan dikirim melalui email ke pelapor.",
+  },
+  DITOLAK: {
+    title: "Tolak Pengaduan",
+    subtitle: "Alasan penolakan akan dikirimkan ke pelapor melalui email.",
+    label: "Alasan Penolakan ★",
+    required: true,
+    placeholder: "Contoh: Pengaduan ini di luar kewenangan BKPSDM. Mohon sampaikan ke instansi terkait.",
+    headerBg: "bg-red-600",
+    confirmLabel: "Tolak Pengaduan",
+    confirmBg: "bg-red-600 hover:bg-red-700",
+    warningText: "Tindakan ini akan mengirimkan notifikasi email kepada pelapor.",
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -115,10 +190,18 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
   const [log, setLog] = useState(data.log);
   const [updating, setUpdating] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
-  const [ditolakModal, setDitolakModal] = useState<{ open: boolean; alasan: string }>({
-    open: false,
-    alasan: "",
-  });
+
+  // Generic status-change modal (replaces ditolakModal)
+  const [statusModal, setStatusModal] = useState<{
+    open: boolean;
+    targetStatus: string;
+    reason: string;
+  }>({ open: false, targetStatus: "", reason: "" });
+
+  // Admin note state
+  const [noteText, setNoteText] = useState("");
+  const [noteVisibility, setNoteVisibility] = useState<"internal" | "public">("internal");
+  const [savingNote, setSavingNote] = useState(false);
 
   // Close lightbox on Escape — depend on truthiness only; handler doesn't close over lightbox content
   const lightboxOpen = !!lightbox;
@@ -131,6 +214,25 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxOpen]);
 
+  // Close status modal on Escape
+  const modalOpen = statusModal.open;
+  useEffect(() => {
+    if (!modalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setStatusModal({ open: false, targetStatus: "", reason: "" });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [modalOpen]);
+
+  const refreshLog = useCallback(async () => {
+    const fresh = await fetch(`/api/pengaduan/${complaint.id}`);
+    if (fresh.ok) {
+      const freshData = await fresh.json();
+      setLog(freshData.log);
+    }
+  }, [complaint.id]);
+
   const patchComplaint = useCallback(async (patch: Record<string, unknown>) => {
     setUpdating(true);
     try {
@@ -141,19 +243,38 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
       });
       if (res.ok) {
         setComplaint((prev) => ({ ...prev, ...patch }));
-        // Refresh log from GET /api/pengaduan/[id]
-        const fresh = await fetch(`/api/pengaduan/${complaint.id}`);
-        if (fresh.ok) {
-          const freshData = await fresh.json();
-          setLog(freshData.log);
-        }
+        await refreshLog();
       }
     } catch (err) {
       console.error("[PengaduanDetailClient] patch error:", err);
     } finally {
       setUpdating(false);
     }
-  }, [complaint.id]);
+  }, [complaint.id, refreshLog]);
+
+  const saveNote = useCallback(async () => {
+    if (!noteText.trim()) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch("/api/pengaduan", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: complaint.id,
+          catatan: noteText.trim(),
+          catatanVisibility: noteVisibility,
+        }),
+      });
+      if (res.ok) {
+        setNoteText("");
+        await refreshLog();
+      }
+    } catch (err) {
+      console.error("[PengaduanDetailClient] note error:", err);
+    } finally {
+      setSavingNote(false);
+    }
+  }, [complaint.id, noteText, noteVisibility, refreshLog]);
 
   const ticket = formatTicket(complaint.nomorUrut, complaint.createdAt);
   const slaStatus = getSlaStatus(complaint.createdAt, complaint.prioritas, complaint.status);
@@ -170,6 +291,13 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
 
   const imageAttachments = complaint.lampiran.filter((l) => l.mimeType.startsWith("image/"));
   const fileAttachments = complaint.lampiran.filter((l) => !l.mimeType.startsWith("image/"));
+
+  // Current modal config
+  const modalConfig = statusModal.targetStatus
+    ? STATUS_MODAL_CONFIG[statusModal.targetStatus]
+    : null;
+  const canConfirm =
+    !modalConfig?.required || statusModal.reason.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -363,7 +491,7 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                   {statusMeta.label}
                 </span>
               </div>
-              {/* Status buttons */}
+              {/* Status buttons — all open modal now */}
               <div className="grid grid-cols-2 gap-2">
                 {STATUS_LIST.map((s) => {
                   const meta = STATUS_META[s];
@@ -373,13 +501,9 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                       key={s}
                       type="button"
                       disabled={updating || isActive}
-                      onClick={() => {
-                        if (s === "DITOLAK") {
-                          setDitolakModal({ open: true, alasan: "" });
-                        } else {
-                          patchComplaint({ status: s });
-                        }
-                      }}
+                      onClick={() =>
+                        setStatusModal({ open: true, targetStatus: s, reason: "" })
+                      }
                       className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
                         isActive
                           ? `${meta.color} ${meta.bg} ${meta.border} cursor-default`
@@ -464,6 +588,7 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                   {log.map((entry, idx) => {
                     const meta = AKSI_META[entry.aksi] ?? { label: entry.aksi, icon: "•" };
                     const isLast = idx === log.length - 1;
+                    const isPublic = entry.visibility === "public";
                     return (
                       <li key={entry.id} className="flex gap-3">
                         {/* Timeline line + dot */}
@@ -494,7 +619,21 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                               {entry.deskripsi}
                             </p>
                           )}
-                          <p className="text-[10px] text-slate-400 mt-0.5">oleh {entry.oleh}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] text-slate-400">oleh {entry.oleh}</p>
+                            {/* Visibility badge */}
+                            {isPublic ? (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200">
+                                <Users className="w-2.5 h-2.5" />
+                                Publik
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                                <Lock className="w-2.5 h-2.5" />
+                                Internal
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </li>
                     );
@@ -503,83 +642,151 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
               )}
             </div>
 
+            {/* Tambah Catatan card */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                Tambah Catatan
+              </p>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Tulis catatan internal atau pesan publik untuk pelapor…"
+                rows={3}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none leading-relaxed"
+              />
+              {/* Visibility toggle */}
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setNoteVisibility("internal")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    noteVisibility === "internal"
+                      ? "bg-slate-800 text-white border-slate-800"
+                      : "border-gray-200 text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <Lock className="w-3 h-3" />
+                  Internal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNoteVisibility("public")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    noteVisibility === "public"
+                      ? "bg-cyan-600 text-white border-cyan-600"
+                      : "border-gray-200 text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <Users className="w-3 h-3" />
+                  Publik
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1.5">
+                {noteVisibility === "internal"
+                  ? "Hanya terlihat oleh admin, tidak ditampilkan ke pelapor."
+                  : "Akan ditampilkan di halaman lacak pengaduan pelapor."}
+              </p>
+              <button
+                type="button"
+                disabled={!noteText.trim() || savingNote}
+                onClick={saveNote}
+                className="mt-3 w-full px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {savingNote ? "Menyimpan…" : "Simpan Catatan"}
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ── Rejection reason modal ── */}
-      {ditolakModal.open && (
+      {/* ── Generic status-change modal ── */}
+      {statusModal.open && modalConfig && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setDitolakModal({ open: false, alasan: "" })}
+          onClick={() => setStatusModal({ open: false, targetStatus: "", reason: "" })}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
+            {/* Colored header */}
+            <div className={`${modalConfig.headerBg} px-6 py-4 flex items-start justify-between gap-3`}>
               <div>
-                <h2 className="text-base font-bold text-slate-900">Tolak Pengaduan</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Berikan alasan penolakan agar pelapor memahami keputusan ini.
-                </p>
+                <h2 className="text-base font-bold text-white">{modalConfig.title}</h2>
+                <p className="text-xs text-white/80 mt-0.5">{modalConfig.subtitle}</p>
               </div>
               <button
                 type="button"
-                onClick={() => setDitolakModal({ open: false, alasan: "" })}
-                className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
+                onClick={() => setStatusModal({ open: false, targetStatus: "", reason: "" })}
+                className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white/80 hover:bg-white/20 transition-colors"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Textarea */}
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">
-                Alasan Penolakan <span className="text-slate-400 normal-case tracking-normal font-normal">(opsional)</span>
-              </label>
-              <textarea
-                value={ditolakModal.alasan}
-                onChange={(e) => setDitolakModal((prev) => ({ ...prev, alasan: e.target.value }))}
-                placeholder="Contoh: Pengaduan di luar kewenangan BKPSDM, mohon sampaikan ke instansi terkait."
-                rows={4}
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none leading-relaxed"
-              />
-            </div>
+            <div className="p-6 space-y-4">
+              {/* Textarea */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">
+                  {modalConfig.label}
+                  {!modalConfig.required && (
+                    <span className="text-slate-400 normal-case tracking-normal font-normal ml-1">(opsional)</span>
+                  )}
+                </label>
+                <textarea
+                  value={statusModal.reason}
+                  onChange={(e) =>
+                    setStatusModal((prev) => ({ ...prev, reason: e.target.value }))
+                  }
+                  placeholder={modalConfig.placeholder}
+                  rows={4}
+                  autoFocus
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none leading-relaxed"
+                />
+                {modalConfig.required && !statusModal.reason.trim() && (
+                  <p className="text-[10px] text-red-500 mt-1">
+                    ★ Pesan wajib diisi sebelum mengubah status ini.
+                  </p>
+                )}
+              </div>
 
-            {/* Warning note */}
-            <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2.5">
-              <p className="text-xs text-red-700 leading-relaxed">
-                Tindakan ini akan mengubah status menjadi <strong>Ditolak</strong> dan
-                mengirimkan notifikasi email kepada pelapor.
-              </p>
-            </div>
+              {/* Warning note (only for email-triggering statuses) */}
+              {modalConfig.warningText && (
+                <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    {modalConfig.warningText}
+                  </p>
+                </div>
+              )}
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setDitolakModal({ open: false, alasan: "" })}
-                className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() => {
-                  patchComplaint({
-                    status: "DITOLAK",
-                    ...(ditolakModal.alasan.trim() ? { catatan: ditolakModal.alasan.trim() } : {}),
-                  });
-                  setDitolakModal({ open: false, alasan: "" });
-                }}
-                className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {updating ? "Menyimpan…" : "Tolak Pengaduan"}
-              </button>
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setStatusModal({ open: false, targetStatus: "", reason: "" })}
+                  className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={updating || !canConfirm}
+                  onClick={() => {
+                    patchComplaint({
+                      status: statusModal.targetStatus,
+                      ...(statusModal.reason.trim()
+                        ? { catatan: statusModal.reason.trim() }
+                        : {}),
+                    });
+                    setStatusModal({ open: false, targetStatus: "", reason: "" });
+                  }}
+                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${modalConfig.confirmBg}`}
+                >
+                  {updating ? "Menyimpan…" : modalConfig.confirmLabel}
+                </button>
+              </div>
             </div>
           </div>
         </div>
