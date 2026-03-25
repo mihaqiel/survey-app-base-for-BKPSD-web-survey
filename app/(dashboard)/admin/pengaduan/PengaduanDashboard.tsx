@@ -1,291 +1,463 @@
 "use client";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  MessageSquareWarning,
+  Search,
+  Filter,
+  Paperclip,
+  Clock,
+  AlertTriangle,
+  ChevronRight,
+} from "lucide-react";
+import {
+  STATUS_LIST,
+  STATUS_META,
+  PRIORITAS_META,
+  KATEGORI_LIST,
+  formatTicket,
+  formatSlaRemaining,
+  getSlaStatus,
+  type StatusPengaduan,
+  type PrioratasPengaduan,
+} from "@/lib/pengaduan";
 
-import { useState, useEffect } from "react";
-import { MessageSquareWarning, ChevronDown, ChevronUp, Paperclip, FileText, X, ZoomIn } from "lucide-react";
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-type Lampiran = {
-  id: string;
-  mimeType: string;
-  nama: string;
-  urutan: number;
-};
+type Lampiran = { id: string; mimeType: string; nama: string; urutan: number };
 
 type Complaint = {
   id: string;
+  nomorUrut: number;
   nama: string;
   email: string;
   telepon: string | null;
   judul: string;
   isi: string;
+  kategori: string | null;
+  prioritas: string;
   status: string;
   createdAt: Date;
   lampiran: Lampiran[];
+  petugas: { id: string; nama: string } | null;
 };
 
-const STATUS_OPTIONS = ["BARU", "DIPROSES", "SELESAI"] as const;
+// ---------------------------------------------------------------------------
+// Module-level constants (hoisted to avoid new object refs per render)
+// ---------------------------------------------------------------------------
 
-const statusStyle: Record<string, string> = {
-  BARU:     "bg-red-100 text-red-700 border border-red-200",
-  DIPROSES: "bg-yellow-100 text-yellow-700 border border-yellow-200",
-  SELESAI:  "bg-green-100 text-green-700 border border-green-200",
+const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
 };
 
-const statusLabel: Record<string, string> = {
-  BARU:     "Baru",
-  DIPROSES: "Diproses",
-  SELESAI:  "Selesai",
+const STATUS_META_FALLBACK = {
+  label: "",
+  color: "text-slate-700",
+  bg: "bg-slate-100",
+  border: "border-slate-200",
 };
 
-export default function PengaduanDashboard({ initialData }: { initialData: Complaint[] }) {
-  const [data, setData]       = useState<Complaint[]>(initialData);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+// ---------------------------------------------------------------------------
+// Prioritas dot colors (explicit hex, not dynamic Tailwind classes)
+// ---------------------------------------------------------------------------
 
-  // Close lightbox on Escape
-  useEffect(() => {
-    if (!lightbox) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightbox(null); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [lightbox]);
+const PRIORITAS_DOT_COLOR: Record<string, string> = {
+  RENDAH:   "#94a3b8",
+  NORMAL:   "#3b82f6",
+  TINGGI:   "#f59e0b",
+  MENDESAK: "#ef4444",
+};
 
-  const updateStatus = async (id: string, status: string) => {
-    setUpdating(id);
-    try {
-      const res = await fetch("/api/pengaduan", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status }),
-      });
-      if (res.ok) setData((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
-    } catch (err) {
-      console.error("[PengaduanDashboard] update error:", err);
-    } finally {
-      setUpdating(null);
-    }
-  };
+// ---------------------------------------------------------------------------
+// SLA chip
+// ---------------------------------------------------------------------------
 
-  const counts = {
-    BARU:     data.filter((d) => d.status === "BARU").length,
-    DIPROSES: data.filter((d) => d.status === "DIPROSES").length,
-    SELESAI:  data.filter((d) => d.status === "SELESAI").length,
-  };
+function SlaChip({
+  createdAt,
+  prioritas,
+  status,
+}: {
+  createdAt: Date;
+  prioritas: string;
+  status: string;
+}) {
+  // Hide for terminal statuses
+  if (status === "SELESAI" || status === "DITOLAK") return null;
+
+  const slaState = getSlaStatus(createdAt, prioritas, status);
+  const label = formatSlaRemaining(createdAt, prioritas, status);
+
+  const classes =
+    slaState === "overdue"
+      ? "bg-red-50 text-red-600 border border-red-200"
+      : slaState === "warning"
+      ? "bg-amber-50 text-amber-600 border border-amber-200"
+      : "bg-green-50 text-green-600 border border-green-200";
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-          <MessageSquareWarning className="w-5 h-5 text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Pengaduan Masyarakat</h1>
-          <p className="text-sm text-slate-500">{data.length} pengaduan masuk</p>
-        </div>
-      </div>
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${classes}`}
+    >
+      <Clock className="w-3 h-3 shrink-0" />
+      {label}
+    </span>
+  );
+}
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {(["BARU", "DIPROSES", "SELESAI"] as const).map((s) => (
-          <div key={s} className="bg-white rounded-xl border border-gray-100 p-4 text-center shadow-sm">
-            <p className="text-2xl font-bold text-slate-900">{counts[s]}</p>
-            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle[s]}`}>
-              {statusLabel[s]}
-            </span>
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface PengaduanDashboardProps {
+  initialData: Complaint[];
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export default function PengaduanDashboard({ initialData }: PengaduanDashboardProps) {
+  const router = useRouter();
+
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterKategori, setFilterKategori] = useState("");
+  const [filterPrioritas, setFilterPrioritas] = useState("");
+
+  // -------------------------------------------------------------------------
+  // Filtered list
+  // -------------------------------------------------------------------------
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return initialData.filter((p) => {
+      if (q) {
+        const ticket = formatTicket(p.nomorUrut, p.createdAt).toLowerCase();
+        const matchSearch =
+          p.nama.toLowerCase().includes(q) ||
+          p.email.toLowerCase().includes(q) ||
+          ticket.includes(q);
+        if (!matchSearch) return false;
+      }
+      if (filterStatus && p.status !== filterStatus) return false;
+      if (filterKategori && p.kategori !== filterKategori) return false;
+      if (filterPrioritas && p.prioritas !== filterPrioritas) return false;
+      return true;
+    });
+  }, [initialData, search, filterStatus, filterKategori, filterPrioritas]);
+
+  // -------------------------------------------------------------------------
+  // Stats
+  // -------------------------------------------------------------------------
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const s of STATUS_LIST) counts[s] = 0;
+    for (const p of initialData) {
+      if (counts[p.status] !== undefined) counts[p.status]++;
+    }
+    return counts;
+  }, [initialData]);
+
+  const overdueCount = useMemo(
+    () =>
+      initialData.filter(
+        (p) => getSlaStatus(p.createdAt, p.prioritas, p.status) === "overdue",
+      ).length,
+    [initialData],
+  );
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* ------------------------------------------------------------------ */}
+      {/* Header                                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <div
+        className="px-6 py-8 animate-fade-up"
+        style={{ background: "var(--navy, #132B4F)" }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-start gap-3">
+            <div
+              className="p-2.5 rounded-xl"
+              style={{ background: "rgba(0,156,197,0.20)" }}
+            >
+              <MessageSquareWarning
+                className="w-6 h-6"
+                style={{ color: "var(--cyan, #009CC5)" }}
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white leading-tight tracking-tight">
+                Pengaduan Masyarakat
+              </h1>
+              <p className="mt-0.5 text-sm text-slate-300">
+                {initialData.length} pengaduan terdaftar
+              </p>
+            </div>
           </div>
-        ))}
+
+          {/* ---------------------------------------------------------------- */}
+          {/* Stats bar                                                         */}
+          {/* ---------------------------------------------------------------- */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {STATUS_LIST.map((s) => {
+              const meta = STATUS_META[s];
+              const active = filterStatus === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus((prev) => (prev === s ? "" : s))}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
+                    ${
+                      active
+                        ? `${meta.bg} ${meta.color} ${meta.border} ring-2 ring-white/30`
+                        : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                    }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                  {meta.label}
+                  <span className={`ml-0.5 font-bold tabular-nums ${active ? meta.color : "text-white/80"}`}>
+                    {statusCounts[s]}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* Terlambat pill */}
+            {overdueCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-500/20 text-red-200 border-red-400/30">
+                <AlertTriangle className="w-3 h-3" />
+                Terlambat
+                <span className="ml-0.5 font-bold tabular-nums text-red-100">
+                  {overdueCount}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Empty state */}
-      {data.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
-          <MessageSquareWarning className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-slate-400 font-medium">Belum ada pengaduan masuk</p>
+      {/* ------------------------------------------------------------------ */}
+      {/* Search + filter bar                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm animate-fade-in">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap gap-3 items-center">
+          {/* Search input */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama, email, atau nomor tiket…"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 text-slate-400 shrink-0">
+            <Filter className="w-4 h-4" />
+          </div>
+
+          {/* Status filter */}
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition cursor-pointer"
+          >
+            <option value="">Semua Status</option>
+            {STATUS_LIST.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_META[s].label}
+              </option>
+            ))}
+          </select>
+
+          {/* Kategori filter */}
+          <select
+            value={filterKategori}
+            onChange={(e) => setFilterKategori(e.target.value)}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition cursor-pointer"
+          >
+            <option value="">Semua Kategori</option>
+            {KATEGORI_LIST.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+
+          {/* Prioritas filter */}
+          <select
+            value={filterPrioritas}
+            onChange={(e) => setFilterPrioritas(e.target.value)}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition cursor-pointer"
+          >
+            <option value="">Semua Prioritas</option>
+            {(["RENDAH", "NORMAL", "TINGGI", "MENDESAK"] as PrioratasPengaduan[]).map((p) => (
+              <option key={p} value={p}>
+                {PRIORITAS_META[p].label}
+              </option>
+            ))}
+          </select>
+
+          {(search || filterStatus || filterKategori || filterPrioritas) && (
+            <span className="text-xs text-slate-500 tabular-nums shrink-0">
+              {filtered.length} hasil
+            </span>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* List */}
-      <div className="space-y-3">
-        {data.map((p) => {
-          const isOpen = expanded === p.id;
-          return (
-            <div key={p.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              {/* Row */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Complaint list                                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-3 animate-fade-up">
+        {filtered.length === 0 ? (
+          /* Empty state */
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="p-5 rounded-full bg-slate-100 mb-4">
+              <MessageSquareWarning className="w-10 h-10 text-slate-400" />
+            </div>
+            <p className="text-lg font-semibold text-slate-600">
+              Tidak ada pengaduan ditemukan
+            </p>
+            <p className="mt-1 text-sm text-slate-400">
+              Coba ubah filter atau kata kunci pencarian Anda.
+            </p>
+            {(search || filterStatus || filterKategori || filterPrioritas) && (
               <button
-                className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-slate-50 transition-colors"
-                onClick={() => setExpanded(isOpen ? null : p.id)}
+                onClick={() => {
+                  setSearch("");
+                  setFilterStatus("");
+                  setFilterKategori("");
+                  setFilterPrioritas("");
+                }}
+                className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
               >
-                <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle[p.status]}`}>
-                  {statusLabel[p.status]}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{p.judul}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {p.nama} · {p.email} ·{" "}
-                    {new Date(p.createdAt).toLocaleDateString("id-ID", {
-                      day: "2-digit", month: "short", year: "numeric",
-                    })}
-                  </p>
-                </div>
-                {p.lampiran.length > 0 && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-xs text-slate-400">{p.lampiran.length}</span>
-                  </div>
-                )}
-                {isOpen ? (
-                  <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-                )}
+                Reset filter
               </button>
+            )}
+          </div>
+        ) : (
+          filtered.map((p) => {
+            const ticketNo = formatTicket(p.nomorUrut, p.createdAt);
+            const statusMeta = STATUS_META[p.status as StatusPengaduan] ?? {
+              ...STATUS_META_FALLBACK,
+              label: p.status,
+            };
+            const dotColor = PRIORITAS_DOT_COLOR[p.prioritas] ?? "#94a3b8";
 
-              {/* Expanded detail */}
-              {isOpen && (
-                <div className="px-5 pb-5 pt-0 border-t border-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <p className="text-xs text-slate-400 mb-1">No. Telepon</p>
-                      <p className="text-sm text-slate-700">{p.telepon ?? "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 mb-1">Tanggal Masuk</p>
-                      <p className="text-sm text-slate-700">
-                        {new Date(p.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <p className="text-xs text-slate-400 mb-1">Isi Pengaduan</p>
-                    <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                      {p.isi}
-                    </div>
-                  </div>
-
-                  {/* Lampiran */}
-                  {p.lampiran.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-xs text-slate-400 mb-2">
-                        Lampiran Bukti ({p.lampiran.length})
-                      </p>
-
-                      {/* Image grid */}
-                      {p.lampiran.some((l) => l.mimeType.startsWith("image/")) && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
-                          {p.lampiran.filter((l) => l.mimeType.startsWith("image/")).map((l) => {
-                            const src = `/api/pengaduan/${p.id}/gambar?lid=${l.id}`;
-                            return (
-                              <button
-                                key={l.id}
-                                type="button"
-                                onClick={() => setLightbox({ src, alt: l.nama })}
-                                className="group relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-slate-50 hover:border-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={src}
-                                  alt={l.nama}
-                                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                />
-                                {/* Hover overlay */}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                                  <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
-                                </div>
-                                {/* Filename tooltip */}
-                                <p className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] text-white bg-black/50 truncate translate-y-full group-hover:translate-y-0 transition-transform">
-                                  {l.nama}
-                                </p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Non-image files */}
-                      {p.lampiran.some((l) => !l.mimeType.startsWith("image/")) && (
-                        <div className="flex flex-wrap gap-2">
-                          {p.lampiran.filter((l) => !l.mimeType.startsWith("image/")).map((l) => (
-                            <a
-                              key={l.id}
-                              href={`/api/pengaduan/${p.id}/gambar?lid=${l.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[140px]">{l.nama}</span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Status update */}
-                  <div className="mt-4 flex items-center gap-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Ubah Status:
-                    </p>
-                    {STATUS_OPTIONS.map((s) => (
-                      <button
-                        key={s}
-                        disabled={p.status === s || updating === p.id}
-                        onClick={() => updateStatus(p.id, s)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                          p.status === s
-                            ? statusStyle[s] + " opacity-100"
-                            : "bg-white text-slate-500 border-gray-200 hover:border-slate-400 disabled:opacity-40"
-                        }`}
-                      >
-                        {statusLabel[s]}
-                      </button>
-                    ))}
-                    {updating === p.id && (
-                      <span className="text-xs text-slate-400">Menyimpan...</span>
+            return (
+              <article
+                key={p.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => router.push(`/admin/pengaduan/${p.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/admin/pengaduan/${p.id}`);
+                  }
+                }}
+                aria-label={`Lihat detail pengaduan ${ticketNo}: ${p.judul}`}
+                className="group relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                style={{
+                  borderLeftWidth: "4px",
+                  borderLeftColor: dotColor,
+                }}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  {/* -------------------------------------------------------- */}
+                  {/* LEFT: priority dot + ticket number + attachment count      */}
+                  {/* -------------------------------------------------------- */}
+                  <div className="flex flex-col items-center gap-1.5 shrink-0 w-[84px]">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: dotColor }}
+                    />
+                    <span className="font-mono text-xs text-slate-500 whitespace-nowrap">
+                      {ticketNo}
+                    </span>
+                    {p.lampiran.length > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
+                        <Paperclip className="w-3 h-3" />
+                        {p.lampiran.length}
+                      </span>
                     )}
                   </div>
+
+                  {/* -------------------------------------------------------- */}
+                  {/* CENTER: title + complainant meta                           */}
+                  {/* -------------------------------------------------------- */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 truncate leading-snug">
+                      {p.judul}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400 truncate">
+                      {p.nama}
+                      {" · "}
+                      {p.email}
+                      {" · "}
+                      {new Date(p.createdAt).toLocaleDateString("id-ID", DATE_FORMAT_OPTIONS)}
+                    </p>
+                    {p.petugas && (
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Petugas:{" "}
+                        <span className="text-slate-600 font-medium">{p.petugas.nama}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* -------------------------------------------------------- */}
+                  {/* RIGHT: category pill + SLA chip + status badge + CTA       */}
+                  {/* -------------------------------------------------------- */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                    {p.kategori && (
+                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {p.kategori}
+                      </span>
+                    )}
+
+                    <SlaChip
+                      createdAt={p.createdAt}
+                      prioritas={p.prioritas}
+                      status={p.status}
+                    />
+
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full border whitespace-nowrap
+                        ${statusMeta.color} ${statusMeta.bg} ${statusMeta.border}`}
+                    >
+                      {statusMeta.label}
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/admin/pengaduan/${p.id}`);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+                      style={{ background: "var(--navy, #132B4F)" }}
+                    >
+                      Lihat Detail
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </article>
+            );
+          })
+        )}
       </div>
-
-      {/* ── Lightbox ── */}
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setLightbox(null)}
-        >
-          <div
-            className="relative max-w-4xl w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={() => setLightbox(null)}
-              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors"
-              aria-label="Tutup"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Image */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.src}
-              alt={lightbox.alt}
-              className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
-            />
-
-            {/* Filename caption */}
-            <p className="mt-2 text-center text-xs text-white/60 truncate">{lightbox.alt}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

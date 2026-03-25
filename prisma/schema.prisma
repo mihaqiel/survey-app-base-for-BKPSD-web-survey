@@ -32,9 +32,10 @@ model Layanan {
 
 // EMPLOYEE
 model Pegawai {
-  id     String   @id @default(cuid())
-  nama   String
-  respon Respon[]
+  id        String      @id @default(cuid())
+  nama      String
+  respon    Respon[]
+  pengaduan Pengaduan[] // complaints assigned to this officer
 }
 
 // RESPONSE
@@ -110,15 +111,23 @@ model BlockedIp {
 
 // PUBLIC COMPLAINTS (Pengaduan Masyarakat)
 model Pengaduan {
-  id        String              @id @default(cuid())
+  id        String   @id @default(cuid())
+  nomorUrut Int      @default(autoincrement())
   nama      String
   email     String
   telepon   String?
   judul     String
   isi       String
-  status    String              @default("BARU") // BARU | DIPROSES | SELESAI
-  createdAt DateTime            @default(now())
-  lampiran  PengaduanLampiran[]
+  kategori  String?  // Layanan | Kepegawaian | Infrastruktur | Fasilitas | Lainnya
+  prioritas String   @default("NORMAL") // RENDAH | NORMAL | TINGGI | MENDESAK
+  // BARU | PENDING_VERIFIKASI | DIPROSES | PERLU_DATA | SELESAI | DITOLAK
+  status    String   @default("BARU")
+  petugasId String?  // optional FK → Pegawai
+  createdAt DateTime @default(now())
+
+  lampiran PengaduanLampiran[]
+  log      PengaduanLog[]
+  petugas  Pegawai?            @relation(fields: [petugasId], references: [id])
 }
 
 // COMPLAINT ATTACHMENTS (up to 5 per complaint)
@@ -129,5 +138,16 @@ model PengaduanLampiran {
   mimeType    String
   nama        String
   urutan      Int       @default(0)
+  pengaduan   Pengaduan @relation(fields: [pengaduanId], references: [id], onDelete: Cascade)
+}
+
+// COMPLAINT ACTIVITY LOG (audit trail)
+model PengaduanLog {
+  id          String    @id @default(cuid())
+  pengaduanId String
+  aksi        String    // DIBUAT | STATUS_BERUBAH | PRIORITAS_BERUBAH | PETUGAS_DITUGASKAN | CATATAN
+  deskripsi   String?
+  oleh        String    @default("Admin")
+  createdAt   DateTime  @default(now())
   pengaduan   Pengaduan @relation(fields: [pengaduanId], references: [id], onDelete: Cascade)
 }

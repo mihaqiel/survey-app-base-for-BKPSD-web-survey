@@ -21,11 +21,10 @@ const CONTACT_PHONE = "(0778) xxxx xxx";
 // Utility helpers
 // ---------------------------------------------------------------------------
 
-/** Ticket number: "PGD-2026-CM3X9K" — no DB migration needed, uses CUID tail */
-function ticketId(id: string, createdAt: Date | string): string {
-  const year   = new Date(createdAt).getFullYear();
-  const suffix = id.slice(-6).toUpperCase();
-  return `PGD-${year}-${suffix}`;
+/** Sequential ticket number: "PGD-2026-00023" */
+function formatTicket(nomorUrut: number, createdAt: Date | string): string {
+  const year = new Date(createdAt).getFullYear();
+  return `PGD-${year}-${String(nomorUrut).padStart(5, "0")}`;
 }
 
 /** Indonesian long date: "24 Maret 2026" */
@@ -323,7 +322,7 @@ export function unblockApprovedTemplate(opts: {
 export function pengaduanConfirmTemplate(opts: {
   nama: string;
   judul: string;
-  id: string;
+  nomorUrut: number;
   createdAt: string;
 }): { subject: string; html: string } {
   const subject = "[BKPSDM] Pengaduan Anda Telah Diterima";
@@ -343,7 +342,7 @@ export function pengaduanConfirmTemplate(opts: {
            style="background:#f8f9fb;border-radius:10px;border:1px solid #e8eaf0;
                   overflow:hidden;margin-bottom:28px;">
       ${infoRow("Judul Pengaduan", opts.judul)}
-      ${infoRow("Nomor Tiket", ticketId(opts.id, opts.createdAt))}
+      ${infoRow("Nomor Tiket", formatTicket(opts.nomorUrut, opts.createdAt))}
       ${infoRow("Tanggal Pengajuan", formatDate(opts.createdAt))}
       <tr>
         <td style="border-left:3px solid ${BRAND_CYAN};padding:16px 20px 16px 17px;">
@@ -438,19 +437,68 @@ export function pengaduanNotifTemplate(opts: {
 export function pengaduanStatusUpdateTemplate(opts: {
   nama: string;
   judul: string;
-  status: "DIPROSES" | "SELESAI";
-  id: string;
+  status: "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK";
+  nomorUrut: number;
   createdAt: string;
 }): { subject: string; html: string } {
-  const isDiproses = opts.status === "DIPROSES";
 
-  const subject = isDiproses
-    ? "[BKPSDM] Pengaduan Anda Sedang Diproses"
-    : "[BKPSDM] Pengaduan Anda Telah Selesai";
+  const subjectMap: Record<string, string> = {
+    DIPROSES:   "[BKPSDM] Pengaduan Anda Sedang Diproses",
+    PERLU_DATA: "[BKPSDM] Informasi Tambahan Dibutuhkan",
+    SELESAI:    "[BKPSDM] Pengaduan Anda Telah Selesai",
+    DITOLAK:    "[BKPSDM] Pengaduan Tidak Dapat Diproses",
+  };
 
-  const badgeColor = isDiproses ? BRAND_CYAN : "#16a34a";
-  const badgeBg    = isDiproses ? "#e0f4fa"  : "#dcfce7";
-  const badgeLabel = isDiproses ? "Sedang Diproses" : "Selesai Ditangani";
+  const badgeMap: Record<string, { label: string; color: string; bg: string }> = {
+    DIPROSES:   { label: "Sedang Diproses",     color: BRAND_CYAN,  bg: "#e0f4fa" },
+    PERLU_DATA: { label: "Perlu Data Tambahan", color: "#7c3aed",   bg: "#f5f3ff" },
+    SELESAI:    { label: "Selesai Ditangani",   color: "#16a34a",   bg: "#dcfce7" },
+    DITOLAK:    { label: "Tidak Dapat Diproses",color: "#dc2626",   bg: "#fef2f2" },
+  };
+
+  const messageMap: Record<string, string> = {
+    DIPROSES: `
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Pengaduan Anda saat ini sedang ditindaklanjuti oleh tim kami. Proses verifikasi
+      dan penanganan sedang berlangsung sesuai dengan prosedur yang berlaku.
+    </p>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Kami akan menghubungi Anda apabila diperlukan informasi tambahan atau ketika
+      terdapat pembaruan lebih lanjut.
+    </p>`,
+    PERLU_DATA: `
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Tim kami memerlukan informasi atau dokumen tambahan untuk dapat memproses
+      pengaduan Anda lebih lanjut.
+    </p>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Mohon hubungi kami melalui email atau telepon di bawah untuk menyampaikan
+      informasi yang diperlukan.
+    </p>`,
+    SELESAI: `
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Pengaduan Anda telah selesai ditangani oleh tim Badan Kepegawaian dan Pengembangan
+      Sumber Daya Manusia Kabupaten Kepulauan Anambas.
+    </p>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Terima kasih atas kepercayaan dan partisipasi Anda demi peningkatan kualitas
+      pelayanan publik.
+    </p>`,
+    DITOLAK: `
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Mohon maaf, pengaduan Anda tidak dapat kami proses lebih lanjut. Hal ini
+      dapat disebabkan oleh kurangnya informasi pendukung atau pengaduan di luar
+      kewenangan kami.
+    </p>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Apabila Anda memiliki pertanyaan mengenai keputusan ini, silakan hubungi kami
+      melalui kontak di bawah.
+    </p>`,
+  };
+
+  const badge = badgeMap[opts.status] ?? badgeMap.DIPROSES;
+  const subject = subjectMap[opts.status] ?? subjectMap.DIPROSES;
+  const message = messageMap[opts.status] ?? messageMap.DIPROSES;
 
   const html = wrap(`
     <!-- Formal greeting -->
@@ -468,42 +516,23 @@ export function pengaduanStatusUpdateTemplate(opts: {
            style="background:#f8f9fb;border-radius:10px;border:1px solid #e8eaf0;
                   overflow:hidden;margin-bottom:28px;">
       ${infoRow("Judul Pengaduan", opts.judul)}
-      ${infoRow("Nomor Tiket", ticketId(opts.id, opts.createdAt))}
+      ${infoRow("Nomor Tiket", formatTicket(opts.nomorUrut, opts.createdAt))}
       ${infoRow("Tanggal Pengajuan", formatDate(opts.createdAt))}
       <tr>
         <td style="border-left:3px solid ${BRAND_CYAN};padding:16px 20px 16px 17px;">
           <span style="display:block;font-size:10px;color:#9ca3af;text-transform:uppercase;
                        letter-spacing:0.6px;font-weight:600;margin-bottom:8px;
                        font-family:${FONT_BODY};">Status Saat Ini</span>
-          <span style="display:inline-block;padding:6px 16px;background:${badgeBg};
-                       color:${badgeColor};font-size:13px;font-weight:700;
+          <span style="display:inline-block;padding:6px 16px;background:${badge.bg};
+                       color:${badge.color};font-size:13px;font-weight:700;
                        border-radius:6px;font-family:${FONT_BODY};">
-            ${badgeLabel}
+            ${badge.label}
           </span>
         </td>
       </tr>
     </table>
 
-    <!-- Status-specific content -->
-    ${isDiproses ? `
-    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
-      Pengaduan Anda saat ini sedang ditindaklanjuti oleh tim kami. Proses verifikasi
-      dan penanganan sedang berlangsung sesuai dengan prosedur yang berlaku.
-    </p>
-    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
-      Kami akan menghubungi Anda apabila diperlukan informasi tambahan atau ketika
-      terdapat pembaruan lebih lanjut.
-    </p>
-    ` : `
-    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
-      Pengaduan Anda telah selesai ditangani oleh tim Badan Kepegawaian dan Pengembangan
-      Sumber Daya Manusia Kabupaten Kepulauan Anambas.
-    </p>
-    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
-      Terima kasih atas kepercayaan dan partisipasi Anda dalam menyampaikan pengaduan
-      demi peningkatan kualitas pelayanan publik.
-    </p>
-    `}
+    ${message}
 
     <!-- CTA -->
     ${ctaButton("Pantau Status Pengaduan", `${APP_URL}/pengaduan`)}

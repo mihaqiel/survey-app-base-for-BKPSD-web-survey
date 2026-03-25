@@ -48,11 +48,23 @@ export async function submitPengaduan(
     });
   }
 
+  const kategori = (formData.get("kategori") as string)?.trim() || null;
+
   try {
     const record = await prisma.pengaduan.create({
       data: {
-        nama, email, telepon, judul, isi,
+        nama, email, telepon, judul, isi, kategori,
         lampiran: { create: lampiranData },
+      },
+    });
+
+    // Create the DIBUAT activity log entry
+    await prisma.pengaduanLog.create({
+      data: {
+        pengaduanId: record.id,
+        aksi: "DIBUAT",
+        deskripsi: "Pengaduan diterima dari masyarakat",
+        oleh: nama,
       },
     });
 
@@ -65,7 +77,7 @@ export async function submitPengaduan(
           ...pengaduanConfirmTemplate({
             nama,
             judul,
-            id: record.id,
+            nomorUrut: record.nomorUrut,
             createdAt: record.createdAt.toISOString(),
           }),
         }),

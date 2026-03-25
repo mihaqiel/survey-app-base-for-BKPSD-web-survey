@@ -15,17 +15,22 @@ export default async function PengaduanAdminPage() {
   const pengaduan = await prisma.pengaduan.findMany({
     select: {
       id: true,
+      nomorUrut: true,
       nama: true,
       email: true,
       telepon: true,
       judul: true,
       isi: true,
+      kategori: true,
+      prioritas: true,
       status: true,
+      petugasId: true,
       createdAt: true,
       lampiran: {
         select: { id: true, mimeType: true, nama: true, urutan: true },
         orderBy: { urutan: "asc" },
       },
+      petugas: { select: { id: true, nama: true } },
     },
     orderBy: { createdAt: "desc" },
   });
