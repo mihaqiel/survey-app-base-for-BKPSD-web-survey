@@ -49,7 +49,7 @@ export async function submitPengaduan(
   }
 
   try {
-    await prisma.pengaduan.create({
+    const record = await prisma.pengaduan.create({
       data: {
         nama, email, telepon, judul, isi,
         lampiran: { create: lampiranData },
@@ -60,7 +60,15 @@ export async function submitPengaduan(
     // until the promise resolves, preventing Vercel from freezing it early.
     after(
       Promise.all([
-        sendEmail({ to: email, ...pengaduanConfirmTemplate({ nama, judul }) }),
+        sendEmail({
+          to: email,
+          ...pengaduanConfirmTemplate({
+            nama,
+            judul,
+            id: record.id,
+            createdAt: record.createdAt.toISOString(),
+          }),
+        }),
         process.env.ADMIN_EMAIL
           ? sendEmail({
               to: process.env.ADMIN_EMAIL,

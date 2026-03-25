@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest) {
     const updated = await prisma.pengaduan.update({
       where: { id },
       data: { status },
-      select: { nama: true, email: true, judul: true },
+      select: { id: true, nama: true, email: true, judul: true, createdAt: true },
     });
 
     // Schedule email after response — `after()` keeps the function alive
@@ -58,6 +58,8 @@ export async function PATCH(req: NextRequest) {
         nama: updated.nama,
         judul: updated.judul,
         status,
+        id: updated.id,
+        createdAt: updated.createdAt.toISOString(),
       });
       after(
         sendEmail({ to: updated.email, subject, html }).catch(err =>
