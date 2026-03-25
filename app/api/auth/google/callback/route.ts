@@ -76,11 +76,25 @@ export async function GET(req: NextRequest) {
 
     // Create admin session — same token format as password login
     const sessionToken = await createSessionToken();
-    const successRes = NextResponse.redirect(`${appUrl}/admin`);
+
+    // Return a 200 HTML page instead of a 307 redirect.
+    // Cookies set on 307 responses during cross-site OAuth chains are NOT reliably
+    // included in the browser's follow-up request (cookie present: false in proxy).
+    // A 200 response guarantees the browser commits the cookie before the
+    // meta-refresh navigation fires.
+    const html = `<!DOCTYPE html><html><head>
+<meta http-equiv="refresh" content="0;url=/admin">
+<title>Redirecting…</title>
+</head><body>Redirecting to dashboard…</body></html>`;
+
+    const successRes = new NextResponse(html, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
     successRes.cookies.set(COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: MAX_AGE,
       path: "/",
     });
