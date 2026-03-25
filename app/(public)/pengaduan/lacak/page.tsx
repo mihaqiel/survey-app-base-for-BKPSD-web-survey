@@ -213,30 +213,111 @@ function LacakContent() {
       className={`${playfair.variable} ${dmSans.variable}`}
       style={{ fontFamily: "var(--lk-body, DM Sans, sans-serif)" }}
     >
+      {/* ── KEYFRAMES + GRADIENT CLASSES ── */}
+      <style>{`
+        @keyframes lacakHeroGrad {
+          0%   { background-position: 0%   50%; }
+          25%  { background-position: 100% 50%; }
+          50%  { background-position: 100% 0%;  }
+          75%  { background-position: 0%  100%; }
+          100% { background-position: 0%   50%; }
+        }
+        @keyframes lacakOrbA {
+          0%,100% { transform: translate(0,0) scale(1); }
+          40%     { transform: translate(28px,-20px) scale(1.09); }
+          70%     { transform: translate(-16px,26px) scale(0.92); }
+        }
+        @keyframes lacakOrbB {
+          0%,100% { transform: translate(0,0) scale(1); }
+          35%     { transform: translate(-26px,22px) scale(1.07); }
+          75%     { transform: translate(24px,-14px) scale(0.93); }
+        }
+        @keyframes lacakOrbC {
+          0%,100% { transform: translate(0,0) scale(1); }
+          50%     { transform: translate(18px,30px) scale(1.11); }
+        }
+        @keyframes lacakPulse {
+          0%,100% { opacity: 1; }
+          50%     { opacity: 0.5; }
+        }
+
+        .lacak-hero-grad {
+          background: linear-gradient(-45deg,
+            #0d2d58, #1565c0, #38bdf8, #FAE705, #38bdf8, #0d2d58, #091a33
+          );
+          background-size: 400% 400%;
+          animation: lacakHeroGrad 18s ease infinite;
+          will-change: background-position;
+        }
+        .lacak-dot-grid {
+          background-image: radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1px);
+          background-size: 36px 36px;
+        }
+        .lacak-orb-a { animation: lacakOrbA 10s ease-in-out infinite; }
+        .lacak-orb-b { animation: lacakOrbB 13s ease-in-out infinite; animation-delay: -5s; }
+        .lacak-orb-c { animation: lacakOrbC  8s ease-in-out infinite; animation-delay: -3s; }
+        .lacak-skeleton { animation: lacakPulse 1.5s ease-in-out infinite; }
+      `}</style>
+
       {/* ── HERO ── */}
       <section
+        className="lacak-hero-grad"
         style={{
-          background: "linear-gradient(135deg, #0d2d58 0%, #0d1b2a 60%, #091a33 100%)",
           padding: "4rem 1rem 5rem",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Decorative glow */}
+        {/* Dot grid overlay */}
         <div
+          className="lacak-dot-grid"
+          style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+        />
+
+        {/* Orb A — top-right */}
+        <div
+          className="lacak-orb-a"
           style={{
             position: "absolute",
-            top: "-80px",
-            right: "-80px",
-            width: "320px",
-            height: "320px",
+            top: "-60px",
+            right: "-60px",
+            width: "340px",
+            height: "340px",
             borderRadius: "50%",
-            background: "rgba(56,189,248,0.07)",
+            background: "radial-gradient(circle at 40% 40%, rgba(56,189,248,0.18), transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* Orb B — bottom-left */}
+        <div
+          className="lacak-orb-b"
+          style={{
+            position: "absolute",
+            bottom: "-80px",
+            left: "-80px",
+            width: "400px",
+            height: "400px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 60% 60%, rgba(250,231,5,0.10), transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* Orb C — centre-right */}
+        <div
+          className="lacak-orb-c"
+          style={{
+            position: "absolute",
+            top: "30%",
+            right: "10%",
+            width: "220px",
+            height: "220px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 50% 50%, rgba(21,101,192,0.15), transparent 70%)",
             pointerEvents: "none",
           }}
         />
 
-        <div style={{ maxWidth: "640px", margin: "0 auto", textAlign: "center" }}>
+        <div style={{ maxWidth: "640px", margin: "0 auto", textAlign: "center", position: "relative" }}>
           {/* Icon badge */}
           <div
             style={{
@@ -462,39 +543,20 @@ function LacakContent() {
         </div>
       </section>
 
-      {/* ── RESULTS ── */}
-      <section style={{ background: "#f8f7f3", minHeight: "12rem", padding: "2.5rem 1rem 4rem" }}>
-        <div style={{ maxWidth: "640px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* ── RESULTS ──
+          No minHeight — section only grows when there is actual content.
+          This prevents the scroll jump that occurred when results loaded
+          into a pre-reserved empty space. ── */}
+      {searched && (
+        <section style={{ background: "#f8f7f3", padding: "2.5rem 1rem 4rem" }}>
+          <div style={{ maxWidth: "640px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-          {/* Error state */}
-          {!loading && searched && error && (
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "16px",
-                border: "1.5px solid #fca5a5",
-                padding: "1.5rem",
-                display: "flex",
-                gap: "0.875rem",
-                alignItems: "flex-start",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-              }}
-            >
-              <AlertCircle className="w-5 h-5 shrink-0" style={{ color: "#ef4444", marginTop: "1px" }} />
-              <div>
-                <p style={{ fontWeight: 600, color: "#1e293b", fontSize: "0.9rem", marginBottom: "4px" }}>
-                  Pengaduan tidak ditemukan
-                </p>
-                <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.5 }}>{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Result */}
-          {!loading && result && statusCfg && (
-            <>
-              {/* Ticket summary card */}
+            {/* ── Loading skeleton ──
+                Holds page height stable while the API fetch is in-flight,
+                preventing layout shift when the real result card appears. ── */}
+            {loading && (
               <div
+                className="lacak-skeleton"
                 style={{
                   background: "#ffffff",
                   borderRadius: "16px",
@@ -503,134 +565,170 @@ function LacakContent() {
                   boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
                 }}
               >
-                {/* Card header accent bar */}
+                <div style={{ height: "4px", background: "#e2e8f0" }} />
+                <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                  <div style={{ height: "13px", width: "140px", background: "#f1f5f9", borderRadius: "6px" }} />
+                  <div style={{ height: "22px", width: "75%", background: "#f1f5f9", borderRadius: "6px" }} />
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <div style={{ height: "12px", width: "160px", background: "#f1f5f9", borderRadius: "6px" }} />
+                    <div style={{ height: "12px", width: "100px", background: "#f1f5f9", borderRadius: "6px" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error state */}
+            {!loading && error && (
+              <div
+                style={{
+                  background: "#ffffff",
+                  borderRadius: "16px",
+                  border: "1.5px solid #fca5a5",
+                  padding: "1.5rem",
+                  display: "flex",
+                  gap: "0.875rem",
+                  alignItems: "flex-start",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                }}
+              >
+                <AlertCircle className="w-5 h-5 shrink-0" style={{ color: "#ef4444", marginTop: "1px" }} />
+                <div>
+                  <p style={{ fontWeight: 600, color: "#1e293b", fontSize: "0.9rem", marginBottom: "4px" }}>
+                    Pengaduan tidak ditemukan
+                  </p>
+                  <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.5 }}>{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Result */}
+            {!loading && result && statusCfg && (
+              <>
+                {/* Ticket summary card */}
                 <div
                   style={{
-                    height: "4px",
-                    background: `linear-gradient(90deg, ${statusCfg.dotColor}, ${statusCfg.borderColor})`,
+                    background: "#ffffff",
+                    borderRadius: "16px",
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
                   }}
-                />
-                <div style={{ padding: "1.25rem 1.5rem" }}>
-                  {/* Ticket number + copy */}
+                >
+                  {/* Card header accent bar */}
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "0.75rem",
-                      flexWrap: "wrap",
-                      gap: "0.5rem",
+                      height: "4px",
+                      background: `linear-gradient(90deg, ${statusCfg.dotColor}, ${statusCfg.borderColor})`,
                     }}
-                  >
-                    <span
+                  />
+                  <div style={{ padding: "1.25rem 1.5rem" }}>
+                    {/* Ticket number + copy */}
+                    <div
                       style={{
-                        fontFamily: "ui-monospace, SFMono-Regular, monospace",
-                        fontSize: "0.78rem",
-                        fontWeight: 700,
-                        color: "#475569",
-                        letterSpacing: "0.04em",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "0.75rem",
+                        flexWrap: "wrap",
+                        gap: "0.5rem",
                       }}
                     >
-                      {formatTicketStr(result.nomorUrut, result.createdAt)}
-                    </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <button
-                        onClick={handleCopy}
+                      <span
+                        style={{
+                          fontFamily: "ui-monospace, SFMono-Regular, monospace",
+                          fontSize: "0.78rem",
+                          fontWeight: 700,
+                          color: "#475569",
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        {formatTicketStr(result.nomorUrut, result.createdAt)}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <button
+                          onClick={handleCopy}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            border: "1px solid #e2e8f0",
+                            background: copied ? "#f0fdf4" : "#f8f7f3",
+                            color: copied ? "#15803d" : "#64748b",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          {copied ? (
+                            <Check className="w-3 h-3" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          {copied ? "Tersalin!" : "Salin"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Title + status */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: "1rem",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <h2
+                        style={{
+                          fontFamily: "var(--lk-display, Playfair Display, Georgia, serif)",
+                          fontSize: "1.15rem",
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.35,
+                          flex: 1,
+                          minWidth: "180px",
+                        }}
+                      >
+                        {result.judul}
+                      </h2>
+
+                      {/* Status badge */}
+                      <span
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "5px",
-                          padding: "4px 10px",
-                          borderRadius: "6px",
-                          border: "1px solid #e2e8f0",
-                          background: copied ? "#f0fdf4" : "#f8f7f3",
-                          color: copied ? "#15803d" : "#64748b",
-                          fontSize: "0.72rem",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          transition: "all 0.2s",
+                          gap: "6px",
+                          padding: "6px 14px",
+                          borderRadius: "99px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          color: statusCfg.textColor,
+                          background: statusCfg.bgColor,
+                          border: `1.5px solid ${statusCfg.borderColor}`,
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}
                       >
-                        {copied ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        {copied ? "Tersalin!" : "Salin"}
-                      </button>
+                        <statusCfg.Icon
+                          className={`w-3.5 h-3.5 ${result.displayStatus === "DIPROSES" ? "animate-spin" : ""}`}
+                        />
+                        {statusCfg.label}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Title + status */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: "1rem",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <h2
+                    {/* Meta row */}
+                    <div
                       style={{
-                        fontFamily: "var(--lk-display, Playfair Display, Georgia, serif)",
-                        fontSize: "1.15rem",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        lineHeight: 1.35,
-                        flex: 1,
-                        minWidth: "180px",
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.875rem",
+                        marginTop: "0.875rem",
                       }}
                     >
-                      {result.judul}
-                    </h2>
-
-                    {/* Status badge */}
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "6px 14px",
-                        borderRadius: "99px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        color: statusCfg.textColor,
-                        background: statusCfg.bgColor,
-                        border: `1.5px solid ${statusCfg.borderColor}`,
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <statusCfg.Icon
-                        className={`w-3.5 h-3.5 ${result.displayStatus === "DIPROSES" ? "animate-spin" : ""}`}
-                      />
-                      {statusCfg.label}
-                    </span>
-                  </div>
-
-                  {/* Meta row */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "0.875rem",
-                      marginTop: "0.875rem",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        fontSize: "0.75rem",
-                        color: "#64748b",
-                      }}
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      Diajukan: {formatDateLong(result.createdAt)}
-                    </span>
-                    {result.kategori && (
                       <span
                         style={{
                           display: "inline-flex",
@@ -640,192 +738,208 @@ function LacakContent() {
                           color: "#64748b",
                         }}
                       >
-                        <Tag className="w-3.5 h-3.5" />
-                        {result.kategori}
+                        <Calendar className="w-3.5 h-3.5" />
+                        Diajukan: {formatDateLong(result.createdAt)}
                       </span>
-                    )}
+                      {result.kategori && (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            fontSize: "0.75rem",
+                            color: "#64748b",
+                          }}
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                          {result.kategori}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Timeline card */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: "16px",
-                  border: "1px solid #e2e8f0",
-                  padding: "1.5rem",
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
-                }}
-              >
-                <p
+                {/* Timeline card */}
+                <div
                   style={{
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    color: "#94a3b8",
-                    marginBottom: "1.25rem",
+                    background: "#ffffff",
+                    borderRadius: "16px",
+                    border: "1px solid #e2e8f0",
+                    padding: "1.5rem",
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
                   }}
                 >
-                  Riwayat Pengaduan
-                </p>
-
-                {result.log.length === 0 ? (
-                  <p style={{ fontSize: "0.83rem", color: "#94a3b8", textAlign: "center", padding: "1rem 0" }}>
-                    Belum ada pembaruan yang tersedia.
+                  <p
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      color: "#94a3b8",
+                      marginBottom: "1.25rem",
+                    }}
+                  >
+                    Riwayat Pengaduan
                   </p>
-                ) : (
-                  <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                    {result.log.map((entry, idx) => {
-                      const isLast = idx === result.log.length - 1;
-                      const label = AKSI_LABEL[entry.aksi] ?? entry.aksi;
 
-                      // For STATUS_BERUBAH: strip "PREV → NEXT\n" — show only the admin message
-                      let displayDesc = entry.deskripsi;
-                      if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("\n")) {
-                        displayDesc = entry.deskripsi.split("\n").slice(1).join("\n").trim() || null;
-                      } else if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("→")) {
-                        displayDesc = null; // hide raw "PREV → NEXT" from citizens
-                      }
+                  {result.log.length === 0 ? (
+                    <p style={{ fontSize: "0.83rem", color: "#94a3b8", textAlign: "center", padding: "1rem 0" }}>
+                      Belum ada pembaruan yang tersedia.
+                    </p>
+                  ) : (
+                    <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                      {result.log.map((entry, idx) => {
+                        const isLast = idx === result.log.length - 1;
+                        const label = AKSI_LABEL[entry.aksi] ?? entry.aksi;
 
-                      return (
-                        <li key={entry.id} style={{ display: "flex", gap: "12px" }}>
-                          {/* Timeline dot + connector */}
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              flexShrink: 0,
-                            }}
-                          >
+                        // For STATUS_BERUBAH: strip "PREV → NEXT\n" — show only the admin message
+                        let displayDesc = entry.deskripsi;
+                        if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("\n")) {
+                          displayDesc = entry.deskripsi.split("\n").slice(1).join("\n").trim() || null;
+                        } else if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("→")) {
+                          displayDesc = null; // hide raw "PREV → NEXT" from citizens
+                        }
+
+                        return (
+                          <li key={entry.id} style={{ display: "flex", gap: "12px" }}>
+                            {/* Timeline dot + connector */}
                             <div
                               style={{
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "50%",
-                                background: "#38bdf8",
                                 display: "flex",
+                                flexDirection: "column",
                                 alignItems: "center",
-                                justifyContent: "center",
                                 flexShrink: 0,
                               }}
                             >
-                              <ChevronRight className="w-3.5 h-3.5" style={{ color: "#ffffff" }} />
-                            </div>
-                            {!isLast && (
                               <div
                                 style={{
-                                  width: "1px",
-                                  flex: 1,
-                                  background: "#e2e8f0",
-                                  margin: "4px 0",
+                                  width: "26px",
+                                  height: "26px",
+                                  borderRadius: "50%",
+                                  background: "#38bdf8",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
                                 }}
-                              />
-                            )}
-                          </div>
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" style={{ color: "#ffffff" }} />
+                              </div>
+                              {!isLast && (
+                                <div
+                                  style={{
+                                    width: "1px",
+                                    flex: 1,
+                                    background: "#e2e8f0",
+                                    margin: "4px 0",
+                                  }}
+                                />
+                              )}
+                            </div>
 
-                          {/* Content */}
-                          <div
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              paddingBottom: isLast ? 0 : "1.25rem",
-                            }}
-                          >
+                            {/* Content */}
                             <div
                               style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                justifyContent: "space-between",
-                                gap: "0.5rem",
+                                flex: 1,
+                                minWidth: 0,
+                                paddingBottom: isLast ? 0 : "1.25rem",
                               }}
                             >
-                              <p
+                              <div
                                 style={{
-                                  fontSize: "0.83rem",
-                                  fontWeight: 600,
-                                  color: "#1e293b",
-                                  lineHeight: 1.3,
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  justifyContent: "space-between",
+                                  gap: "0.5rem",
                                 }}
                               >
-                                {label}
-                              </p>
-                              <span
-                                style={{
-                                  fontSize: "0.7rem",
-                                  color: "#94a3b8",
-                                  whiteSpace: "nowrap",
-                                  flexShrink: 0,
-                                  marginTop: "1px",
-                                }}
-                              >
-                                {formatDateLong(entry.createdAt)}
-                              </span>
+                                <p
+                                  style={{
+                                    fontSize: "0.83rem",
+                                    fontWeight: 600,
+                                    color: "#1e293b",
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  {label}
+                                </p>
+                                <span
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    color: "#94a3b8",
+                                    whiteSpace: "nowrap",
+                                    flexShrink: 0,
+                                    marginTop: "1px",
+                                  }}
+                                >
+                                  {formatDateLong(entry.createdAt)}
+                                </span>
+                              </div>
+                              {displayDesc && (
+                                <p
+                                  style={{
+                                    fontSize: "0.82rem",
+                                    color: "#475569",
+                                    marginTop: "6px",
+                                    lineHeight: 1.6,
+                                    whiteSpace: "pre-wrap",
+                                    background:
+                                      entry.aksi === "CATATAN"
+                                        ? "rgba(56,189,248,0.06)"
+                                        : "transparent",
+                                    borderLeft:
+                                      entry.aksi === "CATATAN"
+                                        ? "3px solid #38bdf8"
+                                        : "none",
+                                    padding: entry.aksi === "CATATAN" ? "8px 12px" : "0",
+                                    borderRadius: entry.aksi === "CATATAN" ? "0 6px 6px 0" : "0",
+                                  }}
+                                >
+                                  {displayDesc}
+                                </p>
+                              )}
                             </div>
-                            {displayDesc && (
-                              <p
-                                style={{
-                                  fontSize: "0.82rem",
-                                  color: "#475569",
-                                  marginTop: "6px",
-                                  lineHeight: 1.6,
-                                  whiteSpace: "pre-wrap",
-                                  background:
-                                    entry.aksi === "CATATAN"
-                                      ? "rgba(56,189,248,0.06)"
-                                      : "transparent",
-                                  borderLeft:
-                                    entry.aksi === "CATATAN"
-                                      ? "3px solid #38bdf8"
-                                      : "none",
-                                  padding: entry.aksi === "CATATAN" ? "8px 12px" : "0",
-                                  borderRadius: entry.aksi === "CATATAN" ? "0 6px 6px 0" : "0",
-                                }}
-                              >
-                                {displayDesc}
-                              </p>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                )}
-              </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  )}
+                </div>
 
-              {/* Help note */}
-              <div
-                style={{
-                  background: "rgba(13,29,88,0.05)",
-                  borderRadius: "12px",
-                  padding: "0.875rem 1.125rem",
-                  border: "1px solid rgba(13,45,88,0.08)",
-                }}
-              >
-                <p style={{ fontSize: "0.78rem", color: "#64748b", lineHeight: 1.6, margin: 0 }}>
-                  Jika ada pertanyaan lebih lanjut, silakan hubungi BKPSDM Kabupaten Kepulauan Anambas
-                  secara langsung atau melalui email{" "}
-                  <a
-                    href="mailto:bkpsdm@anambaskab.go.id"
-                    style={{ color: "#0d2d58", fontWeight: 600 }}
-                  >
-                    bkpsdm@anambaskab.go.id
-                  </a>
-                  .
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
+                {/* Help note */}
+                <div
+                  style={{
+                    background: "rgba(13,29,88,0.05)",
+                    borderRadius: "12px",
+                    padding: "0.875rem 1.125rem",
+                    border: "1px solid rgba(13,45,88,0.08)",
+                  }}
+                >
+                  <p style={{ fontSize: "0.78rem", color: "#64748b", lineHeight: 1.6, margin: 0 }}>
+                    Jika ada pertanyaan lebih lanjut, silakan hubungi BKPSDM Kabupaten Kepulauan Anambas
+                    secara langsung atau melalui email{" "}
+                    <a
+                      href="mailto:bkpsdm@anambaskab.go.id"
+                      style={{ color: "#0d2d58", fontWeight: 600 }}
+                    >
+                      bkpsdm@anambaskab.go.id
+                    </a>
+                    .
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Default export — Suspense wrapper required for useSearchParams()
+// The fallback uses the same padding as the real hero section so that
+// hydration causes no height jump (previously it was minHeight:100vh).
 // ---------------------------------------------------------------------------
 
 export default function LacakPengaduanPage() {
@@ -834,8 +948,8 @@ export default function LacakPengaduanPage() {
       fallback={
         <div
           style={{
-            minHeight: "100vh",
-            background: "linear-gradient(135deg, #0d2d58 0%, #0d1b2a 100%)",
+            background: "linear-gradient(-45deg, #0d2d58, #38bdf8, #FAE705, #0d2d58)",
+            padding: "4rem 1rem 5rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
