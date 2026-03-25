@@ -155,7 +155,6 @@ function LacakContent() {
       setResult(null);
       setSearched(true);
 
-      // Reflect ticket in URL (for deep-linking) but don't expose email
       router.replace(`/pengaduan/lacak?ticket=${encodeURIComponent(trimmed)}`, {
         scroll: false,
       });
@@ -181,7 +180,6 @@ function LacakContent() {
     [router]
   );
 
-  // Auto-search if ?ticket= is present on mount
   useEffect(() => {
     const ticketParam = searchParams.get("ticket");
     if (ticketParam) {
@@ -213,111 +211,61 @@ function LacakContent() {
       className={`${playfair.variable} ${dmSans.variable}`}
       style={{ fontFamily: "var(--lk-body, DM Sans, sans-serif)" }}
     >
-      {/* ── KEYFRAMES + GRADIENT CLASSES ── */}
+      {/* ── KEYFRAMES — identical to LandingClient + PengaduanClient ── */}
       <style>{`
-        @keyframes lacakHeroGrad {
+        @keyframes heroGrad {
           0%   { background-position: 0%   50%; }
           25%  { background-position: 100% 50%; }
           50%  { background-position: 100% 0%;  }
           75%  { background-position: 0%  100%; }
           100% { background-position: 0%   50%; }
         }
-        @keyframes lacakOrbA {
-          0%,100% { transform: translate(0,0) scale(1); }
-          40%     { transform: translate(28px,-20px) scale(1.09); }
-          70%     { transform: translate(-16px,26px) scale(0.92); }
-        }
-        @keyframes lacakOrbB {
-          0%,100% { transform: translate(0,0) scale(1); }
-          35%     { transform: translate(-26px,22px) scale(1.07); }
-          75%     { transform: translate(24px,-14px) scale(0.93); }
-        }
-        @keyframes lacakOrbC {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50%     { transform: translate(18px,30px) scale(1.11); }
-        }
-        @keyframes lacakPulse {
-          0%,100% { opacity: 1; }
-          50%     { opacity: 0.5; }
-        }
+        @keyframes orbA { 0%,100%{transform:translate(0,0)scale(1)} 40%{transform:translate(28px,-20px)scale(1.09)} 70%{transform:translate(-16px,26px)scale(0.92)} }
+        @keyframes orbB { 0%,100%{transform:translate(0,0)scale(1)} 35%{transform:translate(-26px,22px)scale(1.07)} 75%{transform:translate(24px,-14px)scale(0.93)} }
+        @keyframes orbC { 0%,100%{transform:translate(0,0)scale(1)} 50%{transform:translate(18px,30px)scale(1.11)} }
+        @keyframes lacakPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .lacak-hero-grad {
+        .hero-grad {
           background: linear-gradient(-45deg,
             #0d2d58, #1565c0, #38bdf8, #FAE705, #38bdf8, #0d2d58, #091a33
           );
           background-size: 400% 400%;
-          animation: lacakHeroGrad 18s ease infinite;
-          will-change: background-position;
+          animation: heroGrad 18s ease infinite;
         }
-        .lacak-dot-grid {
+        .dot-grid {
           background-image: radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1px);
           background-size: 36px 36px;
         }
-        .lacak-orb-a { animation: lacakOrbA 10s ease-in-out infinite; }
-        .lacak-orb-b { animation: lacakOrbB 13s ease-in-out infinite; animation-delay: -5s; }
-        .lacak-orb-c { animation: lacakOrbC  8s ease-in-out infinite; animation-delay: -3s; }
+        .orb-a { animation: orbA 10s ease-in-out infinite; }
+        .orb-b { animation: orbB 13s ease-in-out infinite; animation-delay: -5s; }
+        .orb-c { animation: orbC  8s ease-in-out infinite; animation-delay: -3s; }
         .lacak-skeleton { animation: lacakPulse 1.5s ease-in-out infinite; }
       `}</style>
 
-      {/* ── HERO ── */}
-      <section
-        className="lacak-hero-grad"
-        style={{
-          padding: "4rem 1rem 5rem",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Dot grid overlay */}
-        <div
-          className="lacak-dot-grid"
-          style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
-        />
+      {/* ── HERO — same structure as PengaduanClient / LandingClient ── */}
+      <section className="hero-grad relative min-h-screen flex items-center overflow-hidden px-6 py-20">
 
-        {/* Orb A — top-right */}
-        <div
-          className="lacak-orb-a"
-          style={{
-            position: "absolute",
-            top: "-60px",
-            right: "-60px",
-            width: "340px",
-            height: "340px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 40% 40%, rgba(56,189,248,0.18), transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-        {/* Orb B — bottom-left */}
-        <div
-          className="lacak-orb-b"
-          style={{
-            position: "absolute",
-            bottom: "-80px",
-            left: "-80px",
-            width: "400px",
-            height: "400px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 60% 60%, rgba(250,231,5,0.10), transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-        {/* Orb C — centre-right */}
-        <div
-          className="lacak-orb-c"
-          style={{
-            position: "absolute",
-            top: "30%",
-            right: "10%",
-            width: "220px",
-            height: "220px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 50% 50%, rgba(21,101,192,0.15), transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
+        {/* Orbs — identical rgba values and blur to other landing pages */}
+        <div className="orb-a pointer-events-none absolute top-[15%] right-[8%]  w-[460px] h-[460px] rounded-full blur-[130px]" style={{ background: "rgba(250,231,5,0.18)" }} />
+        <div className="orb-b pointer-events-none absolute bottom-[20%] left-[4%] w-[400px] h-[400px] rounded-full blur-[120px]" style={{ background: "rgba(56,189,248,0.18)" }} />
+        <div className="orb-c pointer-events-none absolute top-[50%] left-[40%]  w-[300px] h-[300px] rounded-full blur-[90px]"  style={{ background: "rgba(13,45,88,0.40)" }} />
 
-        <div style={{ maxWidth: "640px", margin: "0 auto", textAlign: "center", position: "relative" }}>
+        {/* Dot grid */}
+        <div className="dot-grid pointer-events-none absolute inset-0" />
+
+        {/* Dark overlay — same depth as other landing pages */}
+        <div className="pointer-events-none absolute inset-0" style={{ background: "rgba(6,18,32,0.55)" }} />
+
+        {/* Content */}
+        <div
+          style={{
+            maxWidth: "640px",
+            margin: "0 auto",
+            textAlign: "center",
+            position: "relative",
+            width: "100%",
+          }}
+        >
           {/* Icon badge */}
           <div
             style={{
@@ -339,7 +287,7 @@ function LacakContent() {
           <h1
             style={{
               fontFamily: "var(--lk-display, Playfair Display, Georgia, serif)",
-              fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+              fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
               fontWeight: 700,
               color: "#ffffff",
               lineHeight: 1.2,
@@ -350,10 +298,10 @@ function LacakContent() {
           </h1>
           <p
             style={{
-              fontSize: "0.95rem",
-              color: "rgba(255,255,255,0.65)",
+              fontSize: "1rem",
+              color: "rgba(255,255,255,0.70)",
               marginBottom: "2.5rem",
-              lineHeight: 1.6,
+              lineHeight: 1.65,
             }}
           >
             Masukkan nomor tiket untuk melihat perkembangan terkini pengaduan Anda.
@@ -365,7 +313,7 @@ function LacakContent() {
               background: "#ffffff",
               borderRadius: "20px",
               padding: "1.75rem",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.40)",
               textAlign: "left",
             }}
           >
@@ -544,16 +492,13 @@ function LacakContent() {
       </section>
 
       {/* ── RESULTS ──
-          No minHeight — section only grows when there is actual content.
-          This prevents the scroll jump that occurred when results loaded
-          into a pre-reserved empty space. ── */}
+          Only rendered after a search — no min-height so the section
+          never artificially inflates the page height. ── */}
       {searched && (
         <section style={{ background: "#f8f7f3", padding: "2.5rem 1rem 4rem" }}>
           <div style={{ maxWidth: "640px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-            {/* ── Loading skeleton ──
-                Holds page height stable while the API fetch is in-flight,
-                preventing layout shift when the real result card appears. ── */}
+            {/* Loading skeleton */}
             {loading && (
               <div
                 className="lacak-skeleton"
@@ -614,7 +559,6 @@ function LacakContent() {
                     boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
                   }}
                 >
-                  {/* Card header accent bar */}
                   <div
                     style={{
                       height: "4px",
@@ -644,32 +588,26 @@ function LacakContent() {
                       >
                         {formatTicketStr(result.nomorUrut, result.createdAt)}
                       </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <button
-                          onClick={handleCopy}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            padding: "4px 10px",
-                            borderRadius: "6px",
-                            border: "1px solid #e2e8f0",
-                            background: copied ? "#f0fdf4" : "#f8f7f3",
-                            color: copied ? "#15803d" : "#64748b",
-                            fontSize: "0.72rem",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          {copied ? (
-                            <Check className="w-3 h-3" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                          {copied ? "Tersalin!" : "Salin"}
-                        </button>
-                      </div>
+                      <button
+                        onClick={handleCopy}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          padding: "4px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
+                          background: copied ? "#f0fdf4" : "#f8f7f3",
+                          color: copied ? "#15803d" : "#64748b",
+                          fontSize: "0.72rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copied ? "Tersalin!" : "Salin"}
+                      </button>
                     </div>
 
                     {/* Title + status */}
@@ -695,8 +633,6 @@ function LacakContent() {
                       >
                         {result.judul}
                       </h2>
-
-                      {/* Status badge */}
                       <span
                         style={{
                           display: "inline-flex",
@@ -721,36 +657,13 @@ function LacakContent() {
                     </div>
 
                     {/* Meta row */}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "0.875rem",
-                        marginTop: "0.875rem",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontSize: "0.75rem",
-                          color: "#64748b",
-                        }}
-                      >
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.875rem", marginTop: "0.875rem" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.75rem", color: "#64748b" }}>
                         <Calendar className="w-3.5 h-3.5" />
                         Diajukan: {formatDateLong(result.createdAt)}
                       </span>
                       {result.kategori && (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            fontSize: "0.75rem",
-                            color: "#64748b",
-                          }}
-                        >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.75rem", color: "#64748b" }}>
                           <Tag className="w-3.5 h-3.5" />
                           {result.kategori}
                         </span>
@@ -792,25 +705,16 @@ function LacakContent() {
                         const isLast = idx === result.log.length - 1;
                         const label = AKSI_LABEL[entry.aksi] ?? entry.aksi;
 
-                        // For STATUS_BERUBAH: strip "PREV → NEXT\n" — show only the admin message
                         let displayDesc = entry.deskripsi;
                         if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("\n")) {
                           displayDesc = entry.deskripsi.split("\n").slice(1).join("\n").trim() || null;
                         } else if (entry.aksi === "STATUS_BERUBAH" && entry.deskripsi?.includes("→")) {
-                          displayDesc = null; // hide raw "PREV → NEXT" from citizens
+                          displayDesc = null;
                         }
 
                         return (
                           <li key={entry.id} style={{ display: "flex", gap: "12px" }}>
-                            {/* Timeline dot + connector */}
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                flexShrink: 0,
-                              }}
-                            >
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
                               <div
                                 style={{
                                   width: "26px",
@@ -826,52 +730,15 @@ function LacakContent() {
                                 <ChevronRight className="w-3.5 h-3.5" style={{ color: "#ffffff" }} />
                               </div>
                               {!isLast && (
-                                <div
-                                  style={{
-                                    width: "1px",
-                                    flex: 1,
-                                    background: "#e2e8f0",
-                                    margin: "4px 0",
-                                  }}
-                                />
+                                <div style={{ width: "1px", flex: 1, background: "#e2e8f0", margin: "4px 0" }} />
                               )}
                             </div>
-
-                            {/* Content */}
-                            <div
-                              style={{
-                                flex: 1,
-                                minWidth: 0,
-                                paddingBottom: isLast ? 0 : "1.25rem",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "flex-start",
-                                  justifyContent: "space-between",
-                                  gap: "0.5rem",
-                                }}
-                              >
-                                <p
-                                  style={{
-                                    fontSize: "0.83rem",
-                                    fontWeight: 600,
-                                    color: "#1e293b",
-                                    lineHeight: 1.3,
-                                  }}
-                                >
+                            <div style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? 0 : "1.25rem" }}>
+                              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+                                <p style={{ fontSize: "0.83rem", fontWeight: 600, color: "#1e293b", lineHeight: 1.3 }}>
                                   {label}
                                 </p>
-                                <span
-                                  style={{
-                                    fontSize: "0.7rem",
-                                    color: "#94a3b8",
-                                    whiteSpace: "nowrap",
-                                    flexShrink: 0,
-                                    marginTop: "1px",
-                                  }}
-                                >
+                                <span style={{ fontSize: "0.7rem", color: "#94a3b8", whiteSpace: "nowrap", flexShrink: 0, marginTop: "1px" }}>
                                   {formatDateLong(entry.createdAt)}
                                 </span>
                               </div>
@@ -883,14 +750,8 @@ function LacakContent() {
                                     marginTop: "6px",
                                     lineHeight: 1.6,
                                     whiteSpace: "pre-wrap",
-                                    background:
-                                      entry.aksi === "CATATAN"
-                                        ? "rgba(56,189,248,0.06)"
-                                        : "transparent",
-                                    borderLeft:
-                                      entry.aksi === "CATATAN"
-                                        ? "3px solid #38bdf8"
-                                        : "none",
+                                    background: entry.aksi === "CATATAN" ? "rgba(56,189,248,0.06)" : "transparent",
+                                    borderLeft: entry.aksi === "CATATAN" ? "3px solid #38bdf8" : "none",
                                     padding: entry.aksi === "CATATAN" ? "8px 12px" : "0",
                                     borderRadius: entry.aksi === "CATATAN" ? "0 6px 6px 0" : "0",
                                   }}
@@ -918,10 +779,7 @@ function LacakContent() {
                   <p style={{ fontSize: "0.78rem", color: "#64748b", lineHeight: 1.6, margin: 0 }}>
                     Jika ada pertanyaan lebih lanjut, silakan hubungi BKPSDM Kabupaten Kepulauan Anambas
                     secara langsung atau melalui email{" "}
-                    <a
-                      href="mailto:bkpsdm@anambaskab.go.id"
-                      style={{ color: "#0d2d58", fontWeight: 600 }}
-                    >
+                    <a href="mailto:bkpsdm@anambaskab.go.id" style={{ color: "#0d2d58", fontWeight: 600 }}>
                       bkpsdm@anambaskab.go.id
                     </a>
                     .
@@ -938,8 +796,7 @@ function LacakContent() {
 
 // ---------------------------------------------------------------------------
 // Default export — Suspense wrapper required for useSearchParams()
-// The fallback uses the same padding as the real hero section so that
-// hydration causes no height jump (previously it was minHeight:100vh).
+// Fallback matches min-h-screen height so hydration causes no layout shift.
 // ---------------------------------------------------------------------------
 
 export default function LacakPengaduanPage() {
@@ -947,9 +804,9 @@ export default function LacakPengaduanPage() {
     <Suspense
       fallback={
         <div
+          className="hero-grad"
           style={{
-            background: "linear-gradient(-45deg, #0d2d58, #38bdf8, #FAE705, #0d2d58)",
-            padding: "4rem 1rem 5rem",
+            minHeight: "100vh",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
