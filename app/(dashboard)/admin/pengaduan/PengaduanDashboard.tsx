@@ -6,6 +6,7 @@ import {
   Search,
   Filter,
   Paperclip,
+  MessageSquare,
   Clock,
   AlertTriangle,
   ChevronRight,
@@ -42,6 +43,7 @@ type Complaint = {
   createdAt: Date;
   lampiran: Lampiran[];
   petugas: { id: string; nama: string } | null;
+  _count: { log: number };
 };
 
 // ---------------------------------------------------------------------------
@@ -391,6 +393,12 @@ export default function PengaduanDashboard({ initialData }: PengaduanDashboardPr
                       <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
                         <Paperclip className="w-3 h-3" />
                         {p.lampiran.length}
+                      </span>
+                    )}
+                    {p._count.log > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 bg-slate-100 rounded px-1 py-0.5">
+                        <MessageSquare className="w-2.5 h-2.5" />
+                        {p._count.log}
                       </span>
                     )}
                   </div>

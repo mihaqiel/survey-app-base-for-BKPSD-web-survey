@@ -34,6 +34,11 @@ export async function GET() {
           orderBy: { urutan: "asc" },
         },
         petugas: { select: { id: true, nama: true } },
+        _count: {
+          select: {
+            log: { where: { aksi: "CATATAN" } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

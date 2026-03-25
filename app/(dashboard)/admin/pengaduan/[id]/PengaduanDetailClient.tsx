@@ -20,7 +20,6 @@ import {
   Users,
 } from "lucide-react";
 import {
-  STATUS_LIST,
   STATUS_META,
   PRIORITAS_LIST,
   PRIORITAS_META,
@@ -299,6 +298,27 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
   const canConfirm =
     !modalConfig?.required || statusModal.reason.trim().length > 0;
 
+  // Reusable status button — used in both internal and public groups below
+  const renderStatusButton = (s: string) => {
+    const meta = STATUS_META[s as keyof typeof STATUS_META];
+    const isActive = complaint.status === s;
+    return (
+      <button
+        key={s}
+        type="button"
+        disabled={updating || isActive}
+        onClick={() => setStatusModal({ open: true, targetStatus: s, reason: "" })}
+        className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all text-center ${
+          isActive
+            ? `${meta.color} ${meta.bg} ${meta.border} cursor-default`
+            : "border-gray-200 text-slate-500 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        }`}
+      >
+        {meta.label}
+      </button>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -476,7 +496,7 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="w-full lg:w-80 shrink-0 space-y-4">
+          <div className="w-full lg:w-80 shrink-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
 
             {/* Status card */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
@@ -491,29 +511,25 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                   {statusMeta.label}
                 </span>
               </div>
-              {/* Status buttons — all open modal now */}
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_LIST.map((s) => {
-                  const meta = STATUS_META[s];
-                  const isActive = complaint.status === s;
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      disabled={updating || isActive}
-                      onClick={() =>
-                        setStatusModal({ open: true, targetStatus: s, reason: "" })
-                      }
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                        isActive
-                          ? `${meta.color} ${meta.bg} ${meta.border} cursor-default`
-                          : "border-gray-200 text-slate-500 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                      }`}
-                    >
-                      {meta.label}
-                    </button>
-                  );
-                })}
+              {/* Internal workflow statuses — no email sent */}
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
+                Alur Internal
+              </p>
+              <div className="grid grid-cols-3 gap-1.5 mb-3">
+                {["BARU", "PENDING_VERIFIKASI", "PERLU_DATA"].map(renderStatusButton)}
+              </div>
+              <div className="border-t border-slate-100 my-2" />
+              {/* Public-facing statuses — triggers email to citizen */}
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan-600">
+                  Update ke Pelapor
+                </p>
+                <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                  <Mail className="w-3 h-3" /> Email otomatis
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {["DIPROSES", "SELESAI", "DITOLAK"].map(renderStatusButton)}
               </div>
               {updating && (
                 <p className="text-xs text-slate-400 mt-2 text-center">Menyimpan...</p>
@@ -573,129 +589,133 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
               </div>
             </div>
 
-            {/* Riwayat Aktivitas card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                Riwayat Aktivitas
+          </div>
+        </div>
+
+        {/* ── Bottom section: Riwayat Aktivitas (left) + Tambah Catatan (right) ── */}
+        <div className="flex flex-col lg:flex-row gap-4 items-start">
+
+          {/* Riwayat Aktivitas — full remaining width */}
+          <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+              Riwayat Aktivitas
+            </p>
+
+            {log.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-3">
+                Belum ada aktivitas tercatat.
               </p>
-
-              {log.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-3">
-                  Belum ada aktivitas tercatat.
-                </p>
-              ) : (
-                <ol className="relative space-y-0">
-                  {log.map((entry, idx) => {
-                    const meta = AKSI_META[entry.aksi] ?? { label: entry.aksi, icon: "•" };
-                    const isLast = idx === log.length - 1;
-                    const isPublic = entry.visibility === "public";
-                    return (
-                      <li key={entry.id} className="flex gap-3">
-                        {/* Timeline line + dot */}
-                        <div className="flex flex-col items-center shrink-0">
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0"
-                            style={{ background: "#009CC5" }}
-                          >
-                            <AksiIcon aksi={entry.aksi} />
-                          </div>
-                          {!isLast && (
-                            <div className="w-px flex-1 bg-gray-200 my-1" />
-                          )}
+            ) : (
+              <ol className="relative space-y-0">
+                {log.map((entry, idx) => {
+                  const meta = AKSI_META[entry.aksi] ?? { label: entry.aksi, icon: "•" };
+                  const isLast = idx === log.length - 1;
+                  const isPublic = entry.visibility === "public";
+                  return (
+                    <li key={entry.id} className="flex gap-3">
+                      {/* Timeline line + dot */}
+                      <div className="flex flex-col items-center shrink-0">
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0"
+                          style={{ background: "#009CC5" }}
+                        >
+                          <AksiIcon aksi={entry.aksi} />
                         </div>
+                        {!isLast && (
+                          <div className="w-px flex-1 bg-gray-200 my-1" />
+                        )}
+                      </div>
 
-                        {/* Entry content */}
-                        <div className={`min-w-0 flex-1 ${isLast ? "" : "pb-4"}`}>
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-xs font-semibold text-slate-700 leading-snug">
-                              {meta.label}
-                            </p>
-                            <span className="text-[10px] text-slate-400 shrink-0 mt-0.5">
-                              {formatRelativeTime(entry.createdAt)}
+                      {/* Entry content */}
+                      <div className={`min-w-0 flex-1 ${isLast ? "" : "pb-4"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-slate-700 leading-snug">
+                            {meta.label}
+                          </p>
+                          <span className="text-[10px] text-slate-400 shrink-0 mt-0.5">
+                            {formatRelativeTime(entry.createdAt)}
+                          </span>
+                        </div>
+                        {entry.deskripsi && (
+                          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                            {entry.deskripsi}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[10px] text-slate-400">oleh {entry.oleh}</p>
+                          {/* Visibility badge */}
+                          {isPublic ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200">
+                              <Users className="w-2.5 h-2.5" />
+                              Publik
                             </span>
-                          </div>
-                          {entry.deskripsi && (
-                            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                              {entry.deskripsi}
-                            </p>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                              <Lock className="w-2.5 h-2.5" />
+                              Internal
+                            </span>
                           )}
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-[10px] text-slate-400">oleh {entry.oleh}</p>
-                            {/* Visibility badge */}
-                            {isPublic ? (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200">
-                                <Users className="w-2.5 h-2.5" />
-                                Publik
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                                <Lock className="w-2.5 h-2.5" />
-                                Internal
-                              </span>
-                            )}
-                          </div>
                         </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-            </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
 
-            {/* Tambah Catatan card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                Tambah Catatan
-              </p>
-              <textarea
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Tulis catatan internal atau pesan publik untuk pelapor…"
-                rows={3}
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none leading-relaxed"
-              />
-              {/* Visibility toggle */}
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setNoteVisibility("internal")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                    noteVisibility === "internal"
-                      ? "bg-slate-800 text-white border-slate-800"
-                      : "border-gray-200 text-slate-500 hover:bg-slate-50"
-                  }`}
-                >
-                  <Lock className="w-3 h-3" />
-                  Internal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNoteVisibility("public")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                    noteVisibility === "public"
-                      ? "bg-cyan-600 text-white border-cyan-600"
-                      : "border-gray-200 text-slate-500 hover:bg-slate-50"
-                  }`}
-                >
-                  <Users className="w-3 h-3" />
-                  Publik
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1.5">
-                {noteVisibility === "internal"
-                  ? "Hanya terlihat oleh admin, tidak ditampilkan ke pelapor."
-                  : "Akan ditampilkan di halaman lacak pengaduan pelapor."}
-              </p>
+          {/* Tambah Catatan — fixed sidebar width, stays anchored while log scrolls */}
+          <div className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-gray-100 shadow-sm p-5 lg:sticky lg:top-6">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Tambah Catatan
+            </p>
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Tulis catatan internal atau pesan publik untuk pelapor…"
+              rows={4}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none leading-relaxed"
+            />
+            {/* Visibility toggle */}
+            <div className="flex items-center gap-2 mt-2">
               <button
                 type="button"
-                disabled={!noteText.trim() || savingNote}
-                onClick={saveNote}
-                className="mt-3 w-full px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setNoteVisibility("internal")}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  noteVisibility === "internal"
+                    ? "bg-slate-800 text-white border-slate-800"
+                    : "border-gray-200 text-slate-500 hover:bg-slate-50"
+                }`}
               >
-                {savingNote ? "Menyimpan…" : "Simpan Catatan"}
+                <Lock className="w-3 h-3" />
+                Internal
+              </button>
+              <button
+                type="button"
+                onClick={() => setNoteVisibility("public")}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  noteVisibility === "public"
+                    ? "bg-cyan-600 text-white border-cyan-600"
+                    : "border-gray-200 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <Users className="w-3 h-3" />
+                Publik
               </button>
             </div>
-
+            <p className="text-[10px] text-slate-400 mt-1.5">
+              {noteVisibility === "internal"
+                ? "Hanya terlihat oleh admin, tidak ditampilkan ke pelapor."
+                : "Akan ditampilkan di halaman lacak pengaduan pelapor."}
+            </p>
+            <button
+              type="button"
+              disabled={!noteText.trim() || savingNote}
+              onClick={saveNote}
+              className="mt-3 w-full px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {savingNote ? "Menyimpan…" : "Simpan Catatan"}
+            </button>
           </div>
         </div>
       </div>

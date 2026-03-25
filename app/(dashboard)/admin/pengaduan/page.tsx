@@ -31,6 +31,11 @@ export default async function PengaduanAdminPage() {
         orderBy: { urutan: "asc" },
       },
       petugas: { select: { id: true, nama: true } },
+      _count: {
+        select: {
+          log: { where: { aksi: "CATATAN" } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
