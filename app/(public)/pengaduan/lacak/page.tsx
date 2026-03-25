@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
@@ -105,7 +105,7 @@ function formatDate(dateStr: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function LacakPengaduanPage() {
+function LacakContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -365,5 +365,21 @@ export default function LacakPengaduanPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Suspense wrapper required because LacakContent calls useSearchParams(),
+// which opts out of static prerendering and must be inside a Suspense boundary.
+export default function LacakPengaduanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+        </div>
+      }
+    >
+      <LacakContent />
+    </Suspense>
   );
 }
