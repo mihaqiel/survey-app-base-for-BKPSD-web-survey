@@ -11,7 +11,7 @@ const MAX_FILES = 5;
 export async function submitPengaduan(
   _prev: unknown,
   formData: FormData,
-): Promise<{ success?: true; error?: string }> {
+): Promise<{ success?: true; nomorUrut?: number; createdAt?: string; error?: string }> {
   const nama   = (formData.get("nama")   as string)?.trim().slice(0, 100);
   const email  = (formData.get("email")  as string)?.trim().slice(0, 200);
   const telepon = (formData.get("telepon") as string)?.trim().slice(0, 30) || null;
@@ -90,7 +90,7 @@ export async function submitPengaduan(
       ]).catch((err) => console.error("[pengaduan] email error:", err))
     );
 
-    return { success: true };
+    return { success: true, nomorUrut: record.nomorUrut, createdAt: record.createdAt.toISOString() };
   } catch (err) {
     console.error("[pengaduan] db error:", err);
     return { error: "Gagal menyimpan pengaduan. Silakan coba lagi." };

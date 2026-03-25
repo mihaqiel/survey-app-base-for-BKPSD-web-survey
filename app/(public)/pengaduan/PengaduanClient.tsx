@@ -15,7 +15,9 @@ import {
   MessageSquareWarning,
   FileText,
   Users,
+  Search,
 } from "lucide-react";
+import { formatTicket } from "@/lib/pengaduan";
 
 /* ── Fonts ─────────────────────────────────────── */
 const playfair = Playfair_Display({
@@ -92,7 +94,12 @@ interface FileItem {
 }
 
 /* ── Page ─────────────────────────────────────── */
-const initialState = { success: undefined as true | undefined, error: undefined as string | undefined };
+const initialState = {
+  success: undefined as true | undefined,
+  error: undefined as string | undefined,
+  nomorUrut: undefined as number | undefined,
+  createdAt: undefined as string | undefined,
+};
 
 export default function PengaduanClient() {
   const [progress, setProgress] = useState(0);
@@ -538,16 +545,28 @@ export default function PengaduanClient() {
                     Tim kami akan segera menindaklanjuti dalam 1×24 jam kerja.
                   </p>
                 </div>
-                {/* Reset button */}
-                <button
-                  type="button"
-                  onClick={() => setSubmitted(false)}
-                  className="mt-2 inline-flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
-                  style={{ background: "#FAE705", color: "#0d1b2a" }}
-                >
-                  <Send className="w-4 h-4" />
-                  Kirim Pengaduan Baru
-                </button>
+                {/* Action buttons */}
+                <div className="flex flex-col gap-3 w-full mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSubmitted(false)}
+                    className="inline-flex items-center justify-center gap-2 font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+                    style={{ background: "#FAE705", color: "#0d1b2a" }}
+                  >
+                    <Send className="w-4 h-4" />
+                    Kirim Pengaduan Baru
+                  </button>
+                  {state.nomorUrut && state.createdAt && (
+                    <a
+                      href={`/pengaduan/lacak?ticket=${encodeURIComponent(formatTicket(state.nomorUrut, state.createdAt))}`}
+                      className="inline-flex items-center justify-center gap-2 font-semibold text-sm px-6 py-3 rounded-xl border-2 transition-all duration-200 hover:-translate-y-0.5"
+                      style={{ borderColor: "#38bdf8", color: "#38bdf8" }}
+                    >
+                      <Search className="w-4 h-4" />
+                      Lacak Status Pengaduan
+                    </a>
+                  )}
+                </div>
               </div>
             )}
 
