@@ -114,8 +114,8 @@ function wrap(bodyContent: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:32px 0;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0"
-               style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;
+        <table width="680" cellpadding="0" cellspacing="0"
+               style="max-width:680px;width:100%;background:#ffffff;border-radius:12px;
                       overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.10);">
 
           <!-- Yellow accent bar -->
