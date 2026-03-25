@@ -625,6 +625,26 @@ export default function PengaduanClient() {
                     <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>Maksimal 2.000 karakter</p>
                   </div>
 
+                  {/* Kategori */}
+                  <div>
+                    <label className="form-label">
+                      Kategori{" "}
+                      <span style={{ color: "#94a3b8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opsional)</span>
+                    </label>
+                    <div className="relative">
+                      <select name="kategori" className="form-input appearance-none pr-10"
+                        style={{ cursor: "pointer" }} defaultValue="">
+                        <option value="">-- Pilih kategori --</option>
+                        <option value="Layanan">Layanan</option>
+                        <option value="Kepegawaian">Kepegawaian</option>
+                        <option value="Infrastruktur">Infrastruktur</option>
+                        <option value="Fasilitas">Fasilitas</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    </div>
+                  </div>
+
                   {/* Upload — multi-file (max 5, max 5 MB each) */}
                   <div>
                     <label className="form-label">
