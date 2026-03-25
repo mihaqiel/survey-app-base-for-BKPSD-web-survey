@@ -437,12 +437,13 @@ export function pengaduanNotifTemplate(opts: {
 export function pengaduanStatusUpdateTemplate(opts: {
   nama: string;
   judul: string;
-  status: "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK";
+  status: "PENDING_VERIFIKASI" | "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK";
   nomorUrut: number;
   createdAt: string;
 }): { subject: string; html: string } {
 
   const subjectMap: Record<string, string> = {
+    PENDING_VERIFIKASI: "[BKPSDM] Pengaduan Anda Sedang Diverifikasi",
     DIPROSES:   "[BKPSDM] Pengaduan Anda Sedang Diproses",
     PERLU_DATA: "[BKPSDM] Informasi Tambahan Dibutuhkan",
     SELESAI:    "[BKPSDM] Pengaduan Anda Telah Selesai",
@@ -450,6 +451,7 @@ export function pengaduanStatusUpdateTemplate(opts: {
   };
 
   const badgeMap: Record<string, { label: string; color: string; bg: string }> = {
+    PENDING_VERIFIKASI: { label: "Sedang Diverifikasi",  color: "#c2410c",  bg: "#fff7ed" },
     DIPROSES:   { label: "Sedang Diproses",     color: BRAND_CYAN,  bg: "#e0f4fa" },
     PERLU_DATA: { label: "Perlu Data Tambahan", color: "#7c3aed",   bg: "#f5f3ff" },
     SELESAI:    { label: "Selesai Ditangani",   color: "#16a34a",   bg: "#dcfce7" },
@@ -457,6 +459,15 @@ export function pengaduanStatusUpdateTemplate(opts: {
   };
 
   const messageMap: Record<string, string> = {
+    PENDING_VERIFIKASI: `
+    <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Pengaduan Anda saat ini sedang melalui tahap verifikasi awal oleh tim Badan Kepegawaian
+      dan Pengembangan Sumber Daya Manusia Kabupaten Kepulauan Anambas.
+    </p>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
+      Proses verifikasi dilakukan untuk memastikan kelengkapan dan keabsahan informasi
+      yang Anda sampaikan. Kami akan menghubungi Anda apabila diperlukan klarifikasi lebih lanjut.
+    </p>`,
     DIPROSES: `
     <p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
       Pengaduan Anda saat ini sedang ditindaklanjuti oleh tim kami. Proses verifikasi

@@ -6,7 +6,7 @@ import { sendEmail } from "@/lib/email";
 import { pengaduanStatusUpdateTemplate } from "@/lib/email-templates";
 import { STATUS_LIST } from "@/lib/pengaduan";
 
-const EMAIL_STATUSES = new Set(["DIPROSES", "PERLU_DATA", "SELESAI", "DITOLAK"]);
+const EMAIL_STATUSES = new Set(["PENDING_VERIFIKASI", "DIPROSES", "PERLU_DATA", "SELESAI", "DITOLAK"]);
 
 // GET /api/pengaduan — list all complaints (admin only)
 export async function GET() {
@@ -126,7 +126,7 @@ export async function PATCH(req: NextRequest) {
       const { subject, html } = pengaduanStatusUpdateTemplate({
         nama: updated.nama,
         judul: updated.judul,
-        status: status as "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK",
+        status: status as "PENDING_VERIFIKASI" | "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK",
         nomorUrut: updated.nomorUrut,
         createdAt: updated.createdAt.toISOString(),
       });
