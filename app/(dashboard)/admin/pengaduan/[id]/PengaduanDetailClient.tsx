@@ -115,6 +115,10 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
   const [log, setLog] = useState(data.log);
   const [updating, setUpdating] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [ditolakModal, setDitolakModal] = useState<{ open: boolean; alasan: string }>({
+    open: false,
+    alasan: "",
+  });
 
   // Close lightbox on Escape — depend on truthiness only; handler doesn't close over lightbox content
   const lightboxOpen = !!lightbox;
@@ -369,7 +373,13 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
                       key={s}
                       type="button"
                       disabled={updating || isActive}
-                      onClick={() => patchComplaint({ status: s })}
+                      onClick={() => {
+                        if (s === "DITOLAK") {
+                          setDitolakModal({ open: true, alasan: "" });
+                        } else {
+                          patchComplaint({ status: s });
+                        }
+                      }}
                       className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
                         isActive
                           ? `${meta.color} ${meta.bg} ${meta.border} cursor-default`
@@ -496,6 +506,84 @@ export default function PengaduanDetailClient({ data, pegawaiList }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Rejection reason modal ── */}
+      {ditolakModal.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setDitolakModal({ open: false, alasan: "" })}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Tolak Pengaduan</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Berikan alasan penolakan agar pelapor memahami keputusan ini.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDitolakModal({ open: false, alasan: "" })}
+                className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">
+                Alasan Penolakan <span className="text-slate-400 normal-case tracking-normal font-normal">(opsional)</span>
+              </label>
+              <textarea
+                value={ditolakModal.alasan}
+                onChange={(e) => setDitolakModal((prev) => ({ ...prev, alasan: e.target.value }))}
+                placeholder="Contoh: Pengaduan di luar kewenangan BKPSDM, mohon sampaikan ke instansi terkait."
+                rows={4}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none leading-relaxed"
+              />
+            </div>
+
+            {/* Warning note */}
+            <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2.5">
+              <p className="text-xs text-red-700 leading-relaxed">
+                Tindakan ini akan mengubah status menjadi <strong>Ditolak</strong> dan
+                mengirimkan notifikasi email kepada pelapor.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setDitolakModal({ open: false, alasan: "" })}
+                className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() => {
+                  patchComplaint({
+                    status: "DITOLAK",
+                    ...(ditolakModal.alasan.trim() ? { catatan: ditolakModal.alasan.trim() } : {}),
+                  });
+                  setDitolakModal({ open: false, alasan: "" });
+                }}
+                className="flex-1 px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {updating ? "Menyimpan…" : "Tolak Pengaduan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Lightbox ── */}
       {lightbox && (

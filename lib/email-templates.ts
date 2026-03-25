@@ -440,6 +440,7 @@ export function pengaduanStatusUpdateTemplate(opts: {
   status: "PENDING_VERIFIKASI" | "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK";
   nomorUrut: number;
   createdAt: string;
+  catatan?: string;
 }): { subject: string; html: string } {
 
   const subjectMap: Record<string, string> = {
@@ -501,6 +502,16 @@ export function pengaduanStatusUpdateTemplate(opts: {
       dapat disebabkan oleh kurangnya informasi pendukung atau pengaduan di luar
       kewenangan kami.
     </p>
+    ${opts.catatan ? `
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;
+                padding:16px 20px;margin:0 0 12px;">
+      <p style="margin:0 0 6px;font-size:11px;color:#991b1b;text-transform:uppercase;
+                letter-spacing:0.6px;font-weight:700;font-family:${FONT_BODY};">
+        Alasan Penolakan
+      </p>
+      <p style="margin:0;font-size:14px;color:#7f1d1d;line-height:1.7;
+                font-family:${FONT_BODY};white-space:pre-wrap;">${opts.catatan}</p>
+    </div>` : ""}
     <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:${FONT_BODY};">
       Apabila Anda memiliki pertanyaan mengenai keputusan ini, silakan hubungi kami
       melalui kontak di bawah.

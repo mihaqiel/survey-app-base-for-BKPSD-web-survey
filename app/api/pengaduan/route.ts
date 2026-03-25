@@ -50,12 +50,13 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, status, prioritas, petugasId, kategori } = body as {
+    const { id, status, prioritas, petugasId, kategori, catatan } = body as {
       id?: string;
       status?: string;
       prioritas?: string;
       petugasId?: string | null;
       kategori?: string | null;
+      catatan?: string;
     };
 
     if (!id) {
@@ -93,10 +94,13 @@ export async function PATCH(req: NextRequest) {
     if (status !== undefined && status !== current.status) {
       const prevLabel = current.status;
       const nextLabel = status;
+      const deskripsi = catatan && status === "DITOLAK"
+        ? `${prevLabel} → ${nextLabel}\nAlasan: ${catatan}`
+        : `${prevLabel} → ${nextLabel}`;
       logEntries.push({
         pengaduanId: id,
         aksi: "STATUS_BERUBAH",
-        deskripsi: `${prevLabel} → ${nextLabel}`,
+        deskripsi,
         oleh: "Admin",
       });
     }
@@ -129,6 +133,7 @@ export async function PATCH(req: NextRequest) {
         status: status as "PENDING_VERIFIKASI" | "DIPROSES" | "PERLU_DATA" | "SELESAI" | "DITOLAK",
         nomorUrut: updated.nomorUrut,
         createdAt: updated.createdAt.toISOString(),
+        ...(catatan && status === "DITOLAK" ? { catatan } : {}),
       });
       after(
         sendEmail({ to: updated.email, subject, html }).catch(err =>
