@@ -30,38 +30,38 @@ function wrap(bodyContent: string): string {
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.10);">
 
-          <!-- Yellow accent bar -->
+          <!-- Yellow accent bar (top) -->
           <tr>
             <td style="background:${BRAND_YELLOW};height:4px;line-height:4px;font-size:0;">&nbsp;</td>
           </tr>
 
-          <!-- Header: navy band with dual logos -->
+          <!-- Header: white background so both logos are fully visible -->
           <tr>
-            <td style="background:${BRAND_NAVY};padding:20px 28px;">
+            <td style="background:#ffffff;padding:20px 28px;border-bottom:4px solid ${BRAND_NAVY};">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <!-- Logo kiri: Lambang Anambas -->
-                  <td width="56" valign="middle">
-                    <img src="${APP_URL}/logo-anambas.png" height="48" width="48"
+                  <td width="60" valign="middle">
+                    <img src="${APP_URL}/logo-anambas.png" height="52" width="52"
                          alt="Lambang Kabupaten Kepulauan Anambas"
-                         style="display:block;border:0;height:48px;width:auto;object-fit:contain;" />
+                         style="display:block;border:0;height:52px;width:auto;" />
                   </td>
 
                   <!-- Nama instansi (tengah) -->
                   <td valign="middle" style="padding:0 16px;">
-                    <div style="color:#ffffff;font-family:${FONT_BODY};font-size:13px;font-weight:700;line-height:1.35;letter-spacing:0.1px;">
+                    <div style="color:${BRAND_NAVY};font-family:${FONT_BODY};font-size:13px;font-weight:700;line-height:1.4;letter-spacing:0.1px;">
                       Badan Kepegawaian dan Pengembangan Sumber Daya Manusia
                     </div>
-                    <div style="color:${BRAND_YELLOW};font-family:${FONT_BODY};font-size:11px;font-weight:500;letter-spacing:0.8px;margin-top:3px;">
+                    <div style="color:${BRAND_CYAN};font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:0.8px;margin-top:3px;">
                       Kabupaten Kepulauan Anambas
                     </div>
                   </td>
 
                   <!-- Logo kanan: BKPSDM -->
-                  <td width="56" valign="middle" align="right">
-                    <img src="${APP_URL}/logo-bkpsdm.png" height="48" width="48"
+                  <td width="60" valign="middle" align="right">
+                    <img src="${APP_URL}/logo-bkpsdm.png" height="52" width="52"
                          alt="Logo BKPSDM"
-                         style="display:block;border:0;height:48px;width:auto;object-fit:contain;margin-left:auto;" />
+                         style="display:block;border:0;height:52px;width:auto;margin-left:auto;" />
                   </td>
                 </tr>
               </table>
