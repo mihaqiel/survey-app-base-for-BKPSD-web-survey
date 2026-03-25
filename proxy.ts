@@ -7,7 +7,13 @@ export async function proxy(req: NextRequest) {
   // Protect all /admin routes
   if (pathname.startsWith("/admin")) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
-    const valid = await verifySessionToken(token);
+    let valid = false;
+    try {
+      valid = await verifySessionToken(token);
+    } catch (err) {
+      console.error("[proxy] verifySessionToken threw:", err);
+    }
+    console.log("[proxy] /admin check — cookie present:", !!token, "valid:", valid);
 
     if (!valid) {
       const loginUrl = new URL("/login", req.url);
