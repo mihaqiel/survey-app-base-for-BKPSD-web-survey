@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { calcWeightedIkm } from "@/lib/fingerprint";
 
 // Unsur labels per Permenpan RB 14/2017
 const UNSUR_LABELS: Record<string, string> = {
@@ -57,6 +58,7 @@ export async function getAdminDashboardStats(periodeId?: string) {
           u6: true, u7: true, u8: true, u9: true,
           createdAt: true, jenisKelamin: true, nama: true,
           pegawaiId: true, tglLayanan: true,
+          weight: true, responStatus: true,
         }
       }
     }
@@ -81,8 +83,10 @@ export async function getAdminDashboardStats(periodeId?: string) {
   const allRespon = await prisma.respon.findMany({
     where: responFilter,
     select: {
-      createdAt: true, u1: true, u2: true, u3: true,
-      u4: true, u5: true, u6: true, u7: true, u8: true, u9: true,
+      createdAt: true,
+      u1: true, u2: true, u3: true, u4: true, u5: true,
+      u6: true, u7: true, u8: true, u9: true,
+      weight: true, responStatus: true,
     }
   });
 
@@ -91,23 +95,18 @@ export async function getAdminDashboardStats(periodeId?: string) {
       r.createdAt >= w.start && r.createdAt <= w.end
     );
     const count = weekRespon.length;
-    let ikm = 0;
-    if (count > 0) {
-      const total = weekRespon.reduce((acc: number, r: UnsurFields) =>
-        acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
-      ikm = parseFloat(((total / (9 * count)) * 25).toFixed(2));
-    }
+    const ikm = count > 0 ? calcWeightedIkm(weekRespon as any) : 0;
     return { label: w.label, ikm, count };
   }).filter(w => w.count > 0);
 
   // ── Employee stats
-  const pegawaiMap = new Map<string, { id: string; nama: string; count: number; totalScore: number }>();
+  const pegawaiMap = new Map<string, { id: string; nama: string; count: number; respon: any[] }>();
   services.forEach((s: typeof services[0]) => {
     s.respon.forEach((r: any) => {
       if (!r.pegawaiId) return;
-      const cur = pegawaiMap.get(r.pegawaiId) || { id: r.pegawaiId, nama: "", count: 0, totalScore: 0 };
+      const cur = pegawaiMap.get(r.pegawaiId) || { id: r.pegawaiId, nama: "", count: 0, respon: [] as any[] };
       cur.count++;
-      cur.totalScore += (r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9);
+      cur.respon.push(r);
       pegawaiMap.set(r.pegawaiId, cur);
     });
   });
@@ -122,7 +121,7 @@ export async function getAdminDashboardStats(periodeId?: string) {
   });
 
   const employees = Array.from(pegawaiMap.values())
-    .map(e => ({ id: e.id, nama: e.nama || "Unknown", count: e.count, ikm: parseFloat(((e.totalScore / (9 * e.count)) * 25).toFixed(2)) }))
+    .map(e => ({ id: e.id, nama: e.nama || "Unknown", count: e.count, ikm: calcWeightedIkm(e.respon) }))
     .sort((a, b) => b.ikm - a.ikm);
 
   // ── Recent responses
@@ -166,30 +165,33 @@ export async function getAdminDashboardStats(periodeId?: string) {
 
   const fmt = (d: Date) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
-  // ── Bottom-3 UNSUR (lowest-scoring service aspects across all responses)
+  // ── Bottom-3 UNSUR (lowest-scoring service aspects, weighted)
   const UNSUR_KEYS = ["u1","u2","u3","u4","u5","u6","u7","u8","u9"] as const;
-  const bottom3Unsur = allRespon.length === 0 ? [] : UNSUR_KEYS.map(key => ({
-    key,
-    label: UNSUR_LABELS[key],
-    avg: parseFloat(
-      ((allRespon.reduce((s: number, r: any) => s + r[key], 0) / allRespon.length) * 25
-      ).toFixed(1)
-    ),
-  })).sort((a, b) => a.avg - b.avg).slice(0, 3);
+  const bottom3Unsur = allRespon.length === 0 ? [] : (() => {
+    const totalWeight = allRespon.reduce((s: number, r: any) => s + (r.weight ?? 1.0), 0);
+    return UNSUR_KEYS.map(key => ({
+      key,
+      label: UNSUR_LABELS[key],
+      avg: parseFloat(
+        totalWeight > 0
+          ? ((allRespon.reduce((s: number, r: any) => s + (r.weight ?? 1.0) * r[key], 0) / totalWeight) * 25).toFixed(1)
+          : "0"
+      ),
+    })).sort((a, b) => a.avg - b.avg).slice(0, 3);
+  })();
+
+  // ── Anomaly count (non-normal responses)
+  const suspiciousCount = allRespon.filter((r: any) => r.responStatus !== "normal").length;
 
   return {
     periodLabel,
     periodStart: firstRespon ? fmt(new Date(firstRespon.createdAt)) : "",
     periodEnd:   lastRespon  ? fmt(new Date(lastRespon.createdAt))  : "",
     totalResponses,
+    suspiciousCount,
     services: services.map((s: typeof services[0]) => {
       const total = s.respon.length;
-      let ikm = 0;
-      if (total > 0) {
-        const totalScore = s.respon.reduce((acc: number, r: UnsurFields) =>
-          acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
-        ikm = parseFloat(((totalScore / (9 * total)) * 25).toFixed(1));
-      }
+      const ikm = total > 0 ? calcWeightedIkm(s.respon as any) : 0;
       return { id: s.id, nama: s.nama, count: total, ikm };
     }),
     trendData,
@@ -355,16 +357,12 @@ export async function getPeriodeComparisonData(periodeIds: string[]) {
         select: {
           u1: true, u2: true, u3: true, u4: true, u5: true,
           u6: true, u7: true, u8: true, u9: true,
+          weight: true, responStatus: true,
           createdAt: true,
         },
       });
       const count = respon.length;
-      let ikm = 0;
-      if (count > 0) {
-        const total = respon.reduce((acc: number, r: any) =>
-          acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
-        ikm = parseFloat(((total / (9 * count)) * 25).toFixed(2));
-      }
+      const ikm = count > 0 ? calcWeightedIkm(respon as any) : 0;
       return { periodeId: p.id, label: p.label, ikm, count };
     })
   );
@@ -387,15 +385,14 @@ export async function getLayananPeriodeComparison(layananId: string, periodeIds:
     periods.map(async (p: { id: string; label: string }) => {
       const respon = await prisma.respon.findMany({
         where: { periodeId: p.id, layananId },
-        select: { u1: true, u2: true, u3: true, u4: true, u5: true, u6: true, u7: true, u8: true, u9: true },
+        select: {
+          u1: true, u2: true, u3: true, u4: true, u5: true,
+          u6: true, u7: true, u8: true, u9: true,
+          weight: true, responStatus: true,
+        },
       });
       const count = respon.length;
-      let ikm = 0;
-      if (count > 0) {
-        const total = respon.reduce((acc: number, r: UnsurFields) =>
-          acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
-        ikm = parseFloat(((total / (9 * count)) * 25).toFixed(2));
-      }
+      const ikm = count > 0 ? calcWeightedIkm(respon as any) : 0;
       return { periodeId: p.id, label: p.label, ikm, count };
     })
   );
@@ -417,17 +414,19 @@ export async function getLayananWithRespondents(layananId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  const total = responses.length;
-  const sums  = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  responses.forEach((r: any) => {
-    sums[0] += r.u1; sums[1] += r.u2; sums[2] += r.u3;
-    sums[3] += r.u4; sums[4] += r.u5; sums[5] += r.u6;
-    sums[6] += r.u7; sums[7] += r.u8; sums[8] += r.u9;
-  });
+  const total      = responses.length;
+  const ikm        = total > 0 ? calcWeightedIkm(responses as any) : 0;
 
-  const totalScore = sums.reduce((a, b) => a + b, 0);
-  const ikm        = total > 0 ? parseFloat(((totalScore / (9 * total)) * 25).toFixed(2)) : 0;
-  const unsurAvg   = sums.map(s => total > 0 ? parseFloat((s / total).toFixed(2)) : 0);
+  // Weighted per-unsur averages (for the radar/bar chart)
+  const unsurAvg = (() => {
+    const keys = ["u1","u2","u3","u4","u5","u6","u7","u8","u9"] as const;
+    const totalWeight = responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0), 0);
+    return keys.map(k =>
+      totalWeight > 0
+        ? parseFloat((responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0) * r[k], 0) / totalWeight).toFixed(2))
+        : 0
+    );
+  })();
 
   return {
     layanan,
@@ -445,6 +444,8 @@ export async function getLayananWithRespondents(layananId: string) {
       pekerjaan:    r.pekerjaan,
       rating:       r.rating,
       saran:        r.saran,
+      responStatus: r.responStatus,
+      weight:       r.weight,
       ikm:          parseFloat((((r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9) / 9) * 25).toFixed(2)),
     })),
   };
@@ -471,34 +472,33 @@ export async function getPegawaiDetail(pegawaiId: string) {
   });
 
   const total = responses.length;
-  let totalScore = 0;
-  let ratingSum  = 0;
+  const ikm   = total > 0 ? calcWeightedIkm(responses as any) : 0;
+
+  let ratingSum   = 0;
   let ratingCount = 0;
   let negFeedback = 0;
 
-  const layananMap = new Map<string, { id: string; nama: string; count: number; score: number }>();
+  const layananMap = new Map<string, { id: string; nama: string; respon: any[] }>();
 
   responses.forEach((r: any) => {
-    const score = (r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9);
-    totalScore += score;
+    const w = r.weight ?? 1.0;
     if (r.rating) { ratingSum += r.rating; ratingCount++; }
-    const ikmVal = (score / 9) * 25;
-    if (ikmVal < 65) negFeedback++;
+    const ikmVal = ((r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9) / 9) * 25;
+    // Count negative feedback only for responses with meaningful weight
+    if (ikmVal < 65 && w > 0) negFeedback++;
 
-    const cur = layananMap.get(r.layananId) || { id: r.layananId, nama: r.layanan?.nama ?? "—", count: 0, score: 0 };
-    cur.count++;
-    cur.score += score;
+    const cur = layananMap.get(r.layananId) || { id: r.layananId, nama: r.layanan?.nama ?? "—", respon: [] as any[] };
+    cur.respon.push(r);
     layananMap.set(r.layananId, cur);
   });
 
-  const ikm = total > 0 ? parseFloat(((totalScore / (9 * total)) * 25).toFixed(2)) : 0;
   const avgRating = ratingCount > 0 ? parseFloat((ratingSum / ratingCount).toFixed(1)) : 0;
 
   const layananStats = Array.from(layananMap.values()).map(l => ({
     layananId:   l.id,
     layananNama: l.nama,
-    count:       l.count,
-    ikm:         parseFloat(((l.score / (9 * l.count)) * 25).toFixed(2)),
+    count:       l.respon.length,
+    ikm:         calcWeightedIkm(l.respon),
   })).sort((a, b) => b.count - a.count);
 
   const respondents = responses.map((r: any) => ({
@@ -509,6 +509,8 @@ export async function getPegawaiDetail(pegawaiId: string) {
     jenisKelamin: r.jenisKelamin,
     pendidikan:   r.pendidikan,
     rating:       r.rating,
+    responStatus: r.responStatus,
+    weight:       r.weight,
     ikm:          parseFloat((((r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9) / 9) * 25).toFixed(2)),
     saran:        r.saran,
   }));
@@ -532,15 +534,14 @@ export async function getServiceIkmAcrossPeriods(layananId: string, periodeIds: 
     periods.map(async (p: typeof periods[0]) => {
       const respon = await prisma.respon.findMany({
         where: { periodeId: p.id, layananId },
-        select: { u1: true, u2: true, u3: true, u4: true, u5: true, u6: true, u7: true, u8: true, u9: true },
+        select: {
+          u1: true, u2: true, u3: true, u4: true, u5: true,
+          u6: true, u7: true, u8: true, u9: true,
+          weight: true, responStatus: true,
+        },
       });
       const count = respon.length;
-      let ikm = 0;
-      if (count > 0) {
-        const total = respon.reduce((acc: number, r: any) =>
-          acc + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9, 0);
-        ikm = parseFloat(((total / (9 * count)) * 25).toFixed(2));
-      }
+      const ikm = count > 0 ? calcWeightedIkm(respon as any) : 0;
       return { periodeId: p.id, label: p.label, ikm, count };
     })
   );
@@ -578,16 +579,18 @@ export async function getLayananByPeriod(layananId: string, periodeId: string) {
   });
 
   const total = responses.length;
-  const sums  = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  responses.forEach((r: any) => {
-    sums[0] += r.u1; sums[1] += r.u2; sums[2] += r.u3;
-    sums[3] += r.u4; sums[4] += r.u5; sums[5] += r.u6;
-    sums[6] += r.u7; sums[7] += r.u8; sums[8] += r.u9;
-  });
+  const ikm   = total > 0 ? calcWeightedIkm(responses as any) : 0;
 
-  const totalScore = sums.reduce((a, b) => a + b, 0);
-  const ikm        = total > 0 ? parseFloat(((totalScore / (9 * total)) * 25).toFixed(2)) : 0;
-  const unsurAvg   = sums.map(s => total > 0 ? parseFloat((s / total).toFixed(2)) : 0);
+  // Weighted per-unsur averages
+  const unsurAvg = (() => {
+    const keys = ["u1","u2","u3","u4","u5","u6","u7","u8","u9"] as const;
+    const totalWeight = responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0), 0);
+    return keys.map(k =>
+      totalWeight > 0
+        ? parseFloat((responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0) * r[k], 0) / totalWeight).toFixed(2))
+        : 0
+    );
+  })();
 
   return {
     layanan,
@@ -605,6 +608,8 @@ export async function getLayananByPeriod(layananId: string, periodeId: string) {
       pekerjaan:    r.pekerjaan,
       rating:       r.rating,
       saran:        r.saran,
+      responStatus: r.responStatus,
+      weight:       r.weight,
       ikm:          parseFloat((((r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9) / 9) * 25).toFixed(2)),
       u1: r.u1, u2: r.u2, u3: r.u3, u4: r.u4, u5: r.u5,
       u6: r.u6, u7: r.u7, u8: r.u8, u9: r.u9,

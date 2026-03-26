@@ -65,11 +65,18 @@ export default async function AdminDashboard(props: {
   const bottom3Unsur = (stats as any).bottom3Unsur ?? [];
 
   // ── KPI pills ──────────────────────────────────────────────────────────────
+  const suspiciousCount  = (stats as any).suspiciousCount ?? 0;
+  const suspiciousPct    = stats.totalResponses > 0
+    ? Math.round((suspiciousCount / stats.totalResponses) * 100)
+    : 0;
+  const anomalyWarning   = suspiciousPct > 10;
+
   const pills = [
     { label: "Responden",  value: stats.totalResponses,                  color: "#10b981", dot: true  },
     { label: "Layanan",    value: services.length,                       color: "#64748b", dot: false },
     { label: "IKM",        value: overallIkm > 0 ? overallIkm : "—",    color: ikmColor(overallIkm), dot: false },
     { label: "Pengaduan",  value: pengaduanAktif,                        color: pengaduanAktif > 0 ? "#ef4444" : "#10b981", dot: pengaduanAktif > 0 },
+    { label: "Anomali",    value: `${suspiciousPct}%`,                   color: anomalyWarning ? "#f59e0b" : "#10b981",      dot: anomalyWarning },
   ];
 
   // Performa tab: sorted services (best → worst for ranking table)

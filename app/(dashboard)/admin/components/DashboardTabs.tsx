@@ -93,12 +93,14 @@ function MetricPill({ pill }: { pill: Pill }) {
     Layanan:    "Total Layanan SKM",
     IKM:        "Overall IKM Score",
     Pengaduan:  "Pengaduan Belum Ditangani",
+    Anomali:    "Respons Mencurigakan",
   };
   const subs: Record<string, string> = {
     Responden:  "Responden terkumpul",
     Layanan:    "Layanan terdaftar",
     IKM:        "Indeks Kepuasan Masyarakat",
     Pengaduan:  "Status: Baru · perlu tindak lanjut",
+    Anomali:    "% respons dengan bobot < 1.0",
   };
   return (
     <div ref={ref} className="relative">

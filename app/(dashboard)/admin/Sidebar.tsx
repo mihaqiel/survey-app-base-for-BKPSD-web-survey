@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   MessageSquareWarning,
+  ScanEye,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -139,9 +140,15 @@ export default function Sidebar() {
         )}
         {navItem(
           "/admin/ip",
-          "IP Spam Block",
+          "Keamanan",
           false,
           <ShieldCheck className="w-4 h-4" />,
+        )}
+        {navItem(
+          "/admin/anomaly",
+          "Anomali",
+          false,
+          <ScanEye className="w-4 h-4" />,
         )}
         {navItem(
           "/admin/logs",

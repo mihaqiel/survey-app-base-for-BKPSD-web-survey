@@ -12,6 +12,34 @@ interface Employee { id: string; nama: string; }
 
 const inputClass = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100";
 
+// ── Response quality constants (client-safe, mirrors lib/fingerprint.ts) ──
+const RESP_STATUS_LABELS: Record<string, string> = {
+  normal: "Valid", suspicious: "Mencurigakan",
+  low_quality: "Kualitas Rendah", spam: "Spam",
+};
+const RESP_STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  normal:      { bg: "#dcfce7", text: "#14532d", border: "#86efac" },
+  suspicious:  { bg: "#fef3c7", text: "#92400e", border: "#fcd34d" },
+  low_quality: { bg: "#fee2e2", text: "#7f1d1d", border: "#fca5a5" },
+  spam:        { bg: "#f1f5f9", text: "#64748b", border: "#e2e8f0" },
+};
+function QualityBadge({ status, weight }: { status?: string; weight?: number }) {
+  const s = status ?? "normal";
+  const w = weight ?? 1.0;
+  const c = RESP_STATUS_COLORS[s] ?? RESP_STATUS_COLORS.normal;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`,
+        padding: "1px 6px", borderRadius: "99px", fontSize: "0.65rem", fontWeight: 700, whiteSpace: "nowrap" }}>
+        {RESP_STATUS_LABELS[s] ?? s}
+      </span>
+      {w < 1.0 && (
+        <span style={{ fontSize: "0.65rem", color: "#f59e0b", fontWeight: 600 }}>×{w.toFixed(1)}</span>
+      )}
+    </div>
+  );
+}
+
 // ── Star Rating Display ─────────────────────────────────────────────────────
 function RatingIndicator({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -196,14 +224,14 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
-                    {["Nama", "Layanan", "Tanggal", "IKM", "Rating"].map(h => (
+                    {["Nama", "Layanan", "Tanggal", "IKM", "Rating", "Kualitas"].map(h => (
                       <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {data.respondents.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">Belum ada responden</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">Belum ada responden</td></tr>
                   ) : (showAllRespondents ? data.respondents : data.respondents.slice(0, 20)).map((r: any) => (
                     <tr key={r.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-2.5 text-sm font-medium text-slate-900 truncate">{r.nama}</td>
@@ -219,6 +247,9 @@ function PegawaiDetailPanel({ employee }: { employee: Employee }) {
                             ))
                           ) : <span className="text-xs text-slate-300">—</span>}
                         </div>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <QualityBadge status={r.responStatus} weight={r.weight} />
                       </td>
                     </tr>
                   ))}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition, useRef } from "react";
 import { getAllLayanan, createLayanan, deleteLayanan, updateLayanan, getAllPeriode, getLayananByPeriod } from "@/app/action/admin";
+import { overrideResponseQuality } from "@/app/action/moderation";
 import StatusBadge, { ikmColor, ikmLabel } from "@/components/ui/StatusBadge";
 import ServiceTree from "@/components/ui/ServiceTree";
 import {
@@ -19,14 +20,67 @@ const UNSUR_LABELS = [
 
 const inputClass = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-slate-900 placeholder-gray-300 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-100";
 
+// ── Response quality UI constants (mirrored from lib/fingerprint.ts) ──────
+const RESP_STATUS_LABELS: Record<string, string> = {
+  normal:      "Valid",
+  suspicious:  "Mencurigakan",
+  low_quality: "Kualitas Rendah",
+  spam:        "Spam",
+};
+const RESP_STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  normal:      { bg: "#dcfce7", text: "#14532d", border: "#86efac" },
+  suspicious:  { bg: "#fef3c7", text: "#92400e", border: "#fcd34d" },
+  low_quality: { bg: "#fee2e2", text: "#7f1d1d", border: "#fca5a5" },
+  spam:        { bg: "#f1f5f9", text: "#64748b", border: "#e2e8f0" },
+};
+function QualityBadge({ status, weight }: { status?: string; weight?: number }) {
+  const s = status ?? "normal";
+  const w = weight ?? 1.0;
+  const c = RESP_STATUS_COLORS[s] ?? RESP_STATUS_COLORS.normal;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`,
+        padding: "1px 6px", borderRadius: "99px", fontSize: "0.65rem", fontWeight: 700, whiteSpace: "nowrap" }}>
+        {RESP_STATUS_LABELS[s] ?? s}
+      </span>
+      {w < 1.0 && (
+        <span style={{ fontSize: "0.65rem", color: "#f59e0b", fontWeight: 600 }}>
+          ×{w.toFixed(1)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Respondent detail popover ─────────────────────────────────────────────
-function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
+function RespondentPopover({ r, onClose, onOverride }: { r: any; onClose: () => void; onOverride?: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [overrideOpen,  setOverrideOpen]  = useState(false);
+  const [newStatus,     setNewStatus]     = useState<string>(r.responStatus ?? "normal");
+  const [newWeight,     setNewWeight]     = useState<string>(String(r.weight ?? 1.0));
+  const [adminNote,     setAdminNote]     = useState("");
+  const [saving,        setSaving]        = useState(false);
+  const [saveResult,    setSaveResult]    = useState<{ ok: boolean; msg: string } | null>(null);
+
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  async function handleOverrideSave() {
+    if (!adminNote.trim()) { setSaveResult({ ok: false, msg: "Catatan admin wajib diisi." }); return; }
+    setSaving(true);
+    setSaveResult(null);
+    const res = await overrideResponseQuality(r.id, newStatus as any, parseFloat(newWeight), adminNote);
+    setSaving(false);
+    if (res.success) {
+      setSaveResult({ ok: true, msg: "Override berhasil disimpan." });
+      onOverride?.();
+    } else {
+      setSaveResult({ ok: false, msg: res.error ?? "Gagal menyimpan." });
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -42,6 +96,21 @@ function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
           </button>
         </div>
         <div className="p-5 space-y-4">
+          {/* Quality indicator — shown whenever status is set */}
+          {r.responStatus && (
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-1">Kualitas Respons</p>
+                <QualityBadge status={r.responStatus} weight={r.weight} />
+              </div>
+              {r.weight != null && r.weight < 1.0 && (
+                <div className="text-right">
+                  <p className="text-xs font-medium text-slate-500 mb-1">Kontribusi IKM</p>
+                  <span className="text-xs font-bold text-amber-600">{(r.weight * 100).toFixed(0)}%</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: "IKM", value: r.ikm.toFixed(2), color: ikmColor(r.ikm) },
@@ -88,6 +157,56 @@ function RespondentPopover({ r, onClose }: { r: any; onClose: () => void }) {
               <p className="text-sm text-slate-700">{r.saran}</p>
             </div>
           )}
+
+          {/* ── Admin Override Panel ─────────────────────────────── */}
+          <div className="border-t border-gray-100 pt-3">
+            <button onClick={() => setOverrideOpen(o => !o)}
+              className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors w-full">
+              <span className="flex-1 text-left">Override Kualitas (Admin)</span>
+              <span className="text-slate-300">{overrideOpen ? "▲" : "▼"}</span>
+            </button>
+            {overrideOpen && (
+              <div className="mt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Status</p>
+                    <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-white outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-100">
+                      <option value="normal">Valid</option>
+                      <option value="suspicious">Mencurigakan</option>
+                      <option value="low_quality">Kualitas Rendah</option>
+                      <option value="spam">Spam</option>
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Bobot</p>
+                    <select value={newWeight} onChange={e => setNewWeight(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-white outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-100">
+                      <option value="1">×1.0 — Penuh</option>
+                      <option value="0.7">×0.7 — Dikurangi</option>
+                      <option value="0.3">×0.3 — Minimal</option>
+                      <option value="0">×0 — Diabaikan</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 mb-1">Catatan Admin <span className="text-red-400">*</span></p>
+                  <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={2}
+                    placeholder="Alasan override (wajib diisi)..."
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-slate-700 bg-white outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-100 resize-none" />
+                </div>
+                {saveResult && (
+                  <p className={`text-xs font-medium ${saveResult.ok ? "text-emerald-600" : "text-red-500"}`}>
+                    {saveResult.msg}
+                  </p>
+                )}
+                <button onClick={handleOverrideSave} disabled={saving}
+                  className="w-full py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-lg transition-colors">
+                  {saving ? "Menyimpan…" : "Simpan Override"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -376,14 +495,14 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                         <table className="w-full text-left">
                           <thead>
                             <tr className="bg-gray-50/50 border-b border-gray-100">
-                              {["Nama", "Saran", "Tanggal", "IKM"].map(h => (
+                              {["Nama", "Saran", "Tanggal", "IKM", "Kualitas"].map(h => (
                                 <th key={h} className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-50">
                             {filteredRespondents.length === 0 ? (
-                              <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-400">
+                              <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400">
                                 {saranSearch ? `Tidak ada hasil untuk "${saranSearch}"` : "Tidak ada data"}
                               </td></tr>
                             ) : paged.map((r: any) => {
@@ -419,6 +538,9 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
                                   </td>
                                   <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{r.tglLayanan}</td>
                                   <td className="px-4 py-2.5 text-sm font-bold whitespace-nowrap" style={{ color: ikmColor(r.ikm) }}>{r.ikm.toFixed(1)}</td>
+                                  <td className="px-4 py-2.5 whitespace-nowrap">
+                                    <QualityBadge status={r.responStatus} weight={r.weight} />
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -469,7 +591,16 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
       </div>
 
       {selectedRespondent && (
-        <RespondentPopover r={selectedRespondent} onClose={() => setSelectedRespondent(null)} />
+        <RespondentPopover
+          r={selectedRespondent}
+          onClose={() => setSelectedRespondent(null)}
+          onOverride={() => {
+            // Reload the layanan data so IKM recalculates
+            setLoading(true);
+            getLayananByPeriod(service.id, selectedPeriode).then(d => { setData(d); setLoading(false); });
+            setSelectedRespondent(null);
+          }}
+        />
       )}
     </div>
   );

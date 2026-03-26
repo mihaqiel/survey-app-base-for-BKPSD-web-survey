@@ -7,6 +7,12 @@ import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email";
 import { unblockRequestTemplate } from "@/lib/email-templates";
 import { getSubmitLimiter } from "@/lib/ratelimit";
+import {
+  buildFingerprintHash,
+  buildAnswerHash,
+  computeSimilarity,
+  assignStatusAndWeight,
+} from "@/lib/fingerprint";
 
 // EMPLOYEE SEARCH
 export async function searchPegawai(query: string) {
@@ -31,6 +37,8 @@ export async function submitSkmResponse(formData: FormData) {
     headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     headerList.get("x-real-ip") ||
     "unknown";
+  const userAgent = headerList.get("user-agent") ?? "unknown";
+  const fingerprintHash = buildFingerprintHash(ip, userAgent);
 
   const layananId = formData.get("layananId") as string;
   const today = todayWib();
@@ -48,8 +56,17 @@ export async function submitSkmResponse(formData: FormData) {
     redirect(`/blocked?reason=manual&ip=${encodeURIComponent(ip)}`);
   }
 
-  // 2. Duplicate check: same IP + layanan + today (24h per service)
-  const existing = await prisma.respon.findFirst({
+  // 1b. Check if device fingerprint is blacklisted
+  const blacklistedFingerprint = await prisma.fingerprintBlacklist.findUnique({
+    where: { fingerprintHash },
+    select: { id: true },
+  });
+  if (blacklistedFingerprint) {
+    redirect("/blocked?reason=fingerprint");
+  }
+
+  // 2. Fallback duplicate check: same IP + layanan + today (catches legacy rows)
+  const existingByIp = await prisma.respon.findFirst({
     where: {
       ipAddress: ip,
       layananId: layananId,
@@ -60,8 +77,7 @@ export async function submitSkmResponse(formData: FormData) {
     },
     select: { id: true },
   });
-
-  if (existing) {
+  if (existingByIp) {
     redirect("/blocked?reason=duplicate");
   }
 
@@ -71,6 +87,16 @@ export async function submitSkmResponse(formData: FormData) {
   });
   if (!activePeriod) {
     redirect("/success?status=closed");
+  }
+
+  // 3b. Primary duplicate check: fingerprint + layanan + same period
+  // (stricter than IP — catches users who change IPs mid-period)
+  const sameFingerprintThisPeriod = await prisma.respon.findFirst({
+    where: { fingerprintHash, layananId, periodeId: activePeriod.id },
+    select: { id: true },
+  });
+  if (sameFingerprintThisPeriod) {
+    redirect("/blocked?reason=duplicate");
   }
 
   // 4. Validate required fields
@@ -117,7 +143,7 @@ export async function submitSkmResponse(formData: FormData) {
   const rating = getOptionalInt("rating");
   const saran  = clamp(formData.get("saran"), 1000) || null;
 
-  // 6. Save to database
+  // 6. Parse scores
   let u1: number, u2: number, u3: number, u4: number, u5: number,
       u6: number, u7: number, u8: number, u9: number;
   try {
@@ -128,6 +154,33 @@ export async function submitSkmResponse(formData: FormData) {
     throw new Error("Semua nilai penilaian harus diisi dengan angka 1-4.");
   }
 
+  // 7. Cross-period similarity analysis
+  const scores = [u1, u2, u3, u4, u5, u6, u7, u8, u9];
+  const answerHash = buildAnswerHash(layananId, scores);
+
+  // Find up to 5 previous responses from same device fingerprint for the same service
+  const historicalResponses = await prisma.respon.findMany({
+    where: { fingerprintHash, layananId },
+    select: { u1: true, u2: true, u3: true, u4: true, u5: true,
+              u6: true, u7: true, u8: true, u9: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  let similarityScore: number | null = null;
+  if (historicalResponses.length > 0) {
+    const similarities = historicalResponses.map(h =>
+      computeSimilarity(scores, [h.u1, h.u2, h.u3, h.u4, h.u5, h.u6, h.u7, h.u8, h.u9])
+    );
+    similarityScore = Math.max(...similarities);
+  }
+
+  const { status: responStatus, weight } = assignStatusAndWeight(
+    similarityScore,
+    historicalResponses.length
+  );
+
+  // 8. Save to database with intelligence fields
   await prisma.respon.create({
     data: {
       periodeId:  activePeriod.id,
@@ -145,8 +198,24 @@ export async function submitSkmResponse(formData: FormData) {
       rating,
       saran,
       ipAddress: ip,
+      fingerprintHash,
+      answerHash,
+      similarityScore,
+      responStatus,
+      weight,
     },
   });
+
+  // 9. Audit log for flagged responses
+  if (responStatus !== "normal") {
+    await prisma.logActivity.create({
+      data: {
+        action:  "FLAG",
+        target:  `Respon ${layananId}`,
+        details: `Auto-flagged: status=${responStatus}, weight=${weight}, similarity=${similarityScore?.toFixed(2) ?? "n/a"}`,
+      },
+    });
+  }
 
   redirect("/success?status=success");
 }

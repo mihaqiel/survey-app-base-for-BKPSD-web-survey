@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { calcWeightedIkm } from "@/lib/fingerprint";
 
 // Helper to construct the database filter
 const getWhereClause = (periodeId: string, layananId?: string) => {
@@ -14,22 +15,21 @@ const getWhereClause = (periodeId: string, layananId?: string) => {
 export async function getAnalyticsOverview(periodeId: string, layananId?: string) {
   const responses = await prisma.respon.findMany({
     where: getWhereClause(periodeId, layananId),
-    select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
+    select: {
+      u1:true, u2:true, u3:true, u4:true, u5:true,
+      u6:true, u7:true, u8:true, u9:true,
+      weight: true, responStatus: true,
+    }
   });
 
-  const totalRespon = responses.length;
-
-  let totalScore = 0;
-  responses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
-    totalScore += (r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9);
-  });
-
-  const currentNRR = totalRespon > 0 ? totalScore / (9 * totalRespon) : 0;
-  const currentIKM = currentNRR * 25;
+  const totalRespon  = responses.length;
+  const currentIKM   = totalRespon > 0 ? calcWeightedIkm(responses as any) : 0;
+  // NRR = IKM / 25 (the Nilai Rata-Rata on the 1-4 scale)
+  const currentNRR   = currentIKM / 25;
 
   const currentPeriodDef = await prisma.periode.findUnique({ where: { id: periodeId } });
 
-  let prevIKM = 0;
+  let prevIKM  = 0;
   let comparison = 0;
   let hasPrevious = false;
 
@@ -46,17 +46,16 @@ export async function getAnalyticsOverview(periodeId: string, layananId?: string
       hasPrevious = true;
       const prevResponses = await prisma.respon.findMany({
         where: getWhereClause(prevPeriod.id, layananId),
-        select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
+        select: {
+          u1:true, u2:true, u3:true, u4:true, u5:true,
+          u6:true, u7:true, u8:true, u9:true,
+          weight: true, responStatus: true,
+        }
       });
 
       if (prevResponses.length > 0) {
-        let prevTotal = 0;
-        prevResponses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
-          prevTotal += (r.u1+r.u2+r.u3+r.u4+r.u5+r.u6+r.u7+r.u8+r.u9);
-        });
-        const prevNRR = prevTotal / (9 * prevResponses.length);
-        prevIKM = prevNRR * 25;
-        comparison = ((currentIKM - prevIKM) / prevIKM) * 100;
+        prevIKM  = calcWeightedIkm(prevResponses as any);
+        comparison = prevIKM > 0 ? ((currentIKM - prevIKM) / prevIKM) * 100 : 0;
       }
     }
   }
@@ -74,18 +73,23 @@ export async function getAnalyticsOverview(periodeId: string, layananId?: string
 export async function getQuestionDistribution(periodeId: string, layananId?: string) {
   const responses = await prisma.respon.findMany({
     where: getWhereClause(periodeId, layananId),
-    select: { u1:true, u2:true, u3:true, u4:true, u5:true, u6:true, u7:true, u8:true, u9:true }
+    select: {
+      u1:true, u2:true, u3:true, u4:true, u5:true,
+      u6:true, u7:true, u8:true, u9:true,
+      weight: true,
+    }
   });
 
-  const count = responses.length;
-  if (count === 0) return [];
+  if (responses.length === 0) return [];
 
-  const sums = [0,0,0,0,0,0,0,0,0];
-  responses.forEach((r: { u1:number; u2:number; u3:number; u4:number; u5:number; u6:number; u7:number; u8:number; u9:number }) => {
-    sums[0] += r.u1; sums[1] += r.u2; sums[2] += r.u3;
-    sums[3] += r.u4; sums[4] += r.u5; sums[5] += r.u6;
-    sums[6] += r.u7; sums[7] += r.u8; sums[8] += r.u9;
-  });
+  // Weighted per-unsur average (same scale as scores: 1.0–4.0)
+  const totalWeight = responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0), 0);
+  const keys = ["u1","u2","u3","u4","u5","u6","u7","u8","u9"] as const;
+  const weightedAvg = keys.map(k =>
+    totalWeight > 0
+      ? parseFloat((responses.reduce((s: number, r: any) => s + (r.weight ?? 1.0) * r[k], 0) / totalWeight).toFixed(2))
+      : 0
+  );
 
   const labels = [
     "Persyaratan", "Prosedur", "Waktu",
@@ -96,7 +100,7 @@ export async function getQuestionDistribution(periodeId: string, layananId?: str
   return labels.map((label, idx) => ({
     label: `U${idx+1}`,
     tooltip: label,
-    value: parseFloat((sums[idx] / count).toFixed(2)),
+    value: weightedAvg[idx],
     code: `U${idx+1}`
   }));
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { calcWeightedIkm } from "@/lib/fingerprint";
 
 /* ── IKM category labels (mirrors DashboardCharts.tsx logic) ── */
 function ikmCategory(ikm: number): string {
@@ -32,6 +33,7 @@ export async function GET() {
       select: {
         u1: true, u2: true, u3: true, u4: true, u5: true,
         u6: true, u7: true, u8: true, u9: true,
+        weight: true, responStatus: true,
         layanan: { select: { nama: true } },
       },
     });
@@ -40,28 +42,23 @@ export async function GET() {
       return NextResponse.json({ active: true, overall: 0, services: [] });
     }
 
-    /* ── Overall IKM ─────────────────────────────── */
-    const totalScore = responses.reduce(
-      (s, r) => s + r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9,
-      0,
-    );
-    const overallIkm = parseFloat(((totalScore / (9 * responses.length)) * 25).toFixed(1));
+    /* ── Overall IKM (weighted) ──────────────────── */
+    const overallIkm = parseFloat(calcWeightedIkm(responses as any).toFixed(1));
 
-    /* ── Per-layanan IKM → top 3 ─────────────────── */
-    const byService: Record<string, { total: number; count: number }> = {};
+    /* ── Per-layanan IKM → top 5 (weighted) ─────── */
+    const byService: Record<string, { respon: typeof responses }> = {};
 
     for (const r of responses) {
       const nama = r.layanan.nama;
-      if (!byService[nama]) byService[nama] = { total: 0, count: 0 };
-      byService[nama].total += r.u1 + r.u2 + r.u3 + r.u4 + r.u5 + r.u6 + r.u7 + r.u8 + r.u9;
-      byService[nama].count++;
+      if (!byService[nama]) byService[nama] = { respon: [] };
+      byService[nama].respon.push(r);
     }
 
     const services = Object.entries(byService)
-      .map(([nama, { total, count }]) => ({
+      .map(([nama, { respon }]) => ({
         nama,
-        count,
-        ikm:      parseFloat(((total / (9 * count)) * 25).toFixed(1)),
+        count: respon.length,
+        ikm:   parseFloat(calcWeightedIkm(respon as any).toFixed(1)),
       }))
       .sort((a, b) => b.ikm - a.ikm)
       .slice(0, 5)

@@ -12,14 +12,16 @@ datasource db {
 
 // GLOBAL PERIOD
 model Periode {
-  id        String    @id @default(cuid())
-  label     String    @default("Global Access")
-  status    String    @default("AKTIF")  // AKTIF | NONAKTIF
-  token     String    @unique
-  startDate DateTime?
-  endDate   DateTime?
-  respon    Respon[]
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  label      String    @default("Global Access")
+  status     String    @default("AKTIF")  // AKTIF | NONAKTIF | LOCKED | ARCHIVED
+  token      String    @unique
+  startDate  DateTime?
+  endDate    DateTime?
+  lockedAt   DateTime?   // set when status → LOCKED
+  archivedAt DateTime?   // set when status → ARCHIVED
+  respon     Respon[]
+  createdAt  DateTime  @default(now())
 }
 
 // FIXED SERVICE (22 Layanan)
@@ -79,6 +81,22 @@ model Respon {
   saran     String?
   ipAddress String?
   createdAt DateTime @default(now())
+
+  // ── Response Intelligence (Phase A) ────────────────────────────────
+  // SHA-256(ip || userAgent) — identifies device across IP changes
+  fingerprintHash String?
+  // SHA-256(layananId:u1u2...u9) — fingerprints the answer pattern
+  answerHash      String?
+  // 0.0–1.0 cosine similarity to best historical match from same fingerprint+service
+  similarityScore Float?
+  // normal | suspicious | low_quality | spam
+  responStatus    String  @default("normal")
+  // Contribution weight to IKM: 1.0 | 0.7 | 0.3 | 0
+  weight          Float   @default(1.0)
+
+  @@index([fingerprintHash])
+  @@index([periodeId, layananId, fingerprintHash])
+  @@index([responStatus])
 }
 
 // SYSTEM AUDIT LOG
@@ -95,6 +113,26 @@ model Admin {
   username  String   @unique
   password  String
   createdAt DateTime @default(now())
+}
+
+// FINGERPRINT BLACKLIST — blocks device fingerprints (survives IP/VPN changes)
+model FingerprintBlacklist {
+  id              String   @id @default(cuid())
+  fingerprintHash String   @unique
+  reason          String   @default("admin") // "auto" | "admin"
+  note            String?  // Admin note
+  blockedAt       DateTime @default(now())
+}
+
+// AUTO-BLOCK RULES — configurable thresholds for automatic blocking
+model AutoBlockRule {
+  id          String   @id @default(cuid())
+  ruleType    String   // "ip_rate" | "fingerprint_rate"
+  threshold   Int      // e.g. 50 submissions
+  windowHours Int      // e.g. 24 hours
+  action      String   // "block_ip" | "block_fingerprint" | "flag_only"
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 // IP BLOCK — persisted in DB so blocks survive server restarts
