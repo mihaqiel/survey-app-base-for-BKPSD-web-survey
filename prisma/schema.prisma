@@ -147,6 +147,23 @@ model BlockedIp {
   messageEmail String?  // optional email for reply
 }
 
+// ASN AWARD RECIPIENTS — manually curated, no link to survey data
+model Penghargaan {
+  id          String   @id @default(cuid())
+  nama        String
+  jabatan     String
+  unitKerja   String
+  periode     String
+  kategori    String
+  fotoUrl     String
+  catatan     String
+  isPublished Boolean  @default(false)
+  urutan      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String
+}
+
 // PUBLIC COMPLAINTS (Pengaduan Masyarakat)
 model Pengaduan {
   id        String   @id @default(cuid())

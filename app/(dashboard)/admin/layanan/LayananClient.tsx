@@ -300,7 +300,7 @@ function LayananDetailPanel({ service, periodes }: { service: Service; periodes:
       <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-slate-500 mb-0.5">Layanan SKM</p>
+            <p className="text-xs font-medium text-slate-500 mb-0.5">Beri Kami Bintang</p>
             <h2 className="text-base font-semibold text-slate-900 leading-tight">{service.nama}</h2>
           </div>
           <PeriodSelector periodes={periodes} selected={selectedPeriode} onChange={setSelectedPeriode} />
@@ -720,7 +720,7 @@ export default function LayananSKMPage() {
       {/* HEADER */}
       <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm">
         <div>
-          <h1 className="text-lg font-bold text-slate-900">Layanan SKM</h1>
+          <h1 className="text-lg font-bold text-slate-900">Beri Kami Bintang</h1>
           <p className="text-xs text-slate-500">Kelola layanan survei kepuasan</p>
         </div>
         <div className="flex items-center gap-2">

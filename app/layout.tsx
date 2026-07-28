@@ -1,10 +1,10 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/config/brand";
 
 export const metadata: Metadata = {
-  title: "Survei Kepuasan Masyarakat — BKPSDM Kab. Kepulauan Anambas",
-  description:
-    "Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten Kepulauan Anambas berdasarkan Permenpan RB No. 14 Tahun 2017.",
+  title: `${BRAND.appName} — ${BRAND.surveyOfficialName} ${BRAND.orgShort}`,
+  description: `Platform digital pengukuran kinerja pelayanan publik ${BRAND.orgName} berdasarkan ${BRAND.surveyRegulation}.`,
 };
 
 export default function RootLayout({

@@ -90,7 +90,7 @@ function MetricPill({ pill }: { pill: Pill }) {
   }, []);
   const labels: Record<string, string> = {
     Responden:  "Total Responden",
-    Layanan:    "Total Layanan SKM",
+    Layanan:    "Total Layanan",
     IKM:        "Overall IKM Score",
     Pengaduan:  "Pengaduan Belum Ditangani",
     Anomali:    "Respons Mencurigakan",

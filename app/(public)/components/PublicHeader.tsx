@@ -23,6 +23,7 @@ const dmSans = DM_Sans({
 const NAV_LINKS = [
   { href: "/",                label: "Beranda"          },
   { href: "/tentang",         label: "Tentang Kami"     },
+  { href: "/penghargaan",     label: "Penghargaan"      },
   { href: "/pengaduan",       label: "Pengaduan"        },
   { href: "/pengaduan/lacak", label: "Lacak Pengaduan"  },
 ];

@@ -439,7 +439,7 @@ const stats    = useInView(0.15);
         {/* Watermark */}
         <div className="serif pointer-events-none select-none absolute inset-0 flex items-center justify-center overflow-hidden" aria-hidden>
           <span className="text-[20vw] font-bold tracking-widest whitespace-nowrap" style={{ color: "rgba(255,255,255,0.022)" }}>
-            SKM
+            SIMBA
           </span>
         </div>
 
@@ -772,7 +772,7 @@ const stats    = useInView(0.15);
 
           <div className="mb-4">
             <h2 className="serif text-3xl md:text-4xl font-bold text-slate-900">
-              <WordReveal text="Fitur Utama SKM" inView={features.inView} delay={0.05} />
+              <WordReveal text="Fitur Utama Beri Kami Bintang" inView={features.inView} delay={0.05} />
             </h2>
           </div>
           <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-14" style={fade(features.inView, 0.3)}>

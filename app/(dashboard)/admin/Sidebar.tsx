@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { logout } from "@/app/action/auth";
 import {
+  Award,
   LayoutDashboard,
   Layers,
   Users,
@@ -121,7 +122,7 @@ export default function Sidebar() {
         )}
         {navItem(
           "/admin/layanan",
-          "Layanan SKM",
+          "Beri Kami Bintang",
           false,
           <Layers className="w-4 h-4" />,
         )}
@@ -130,6 +131,12 @@ export default function Sidebar() {
           "Data Pegawai",
           false,
           <Users className="w-4 h-4" />,
+        )}
+        {navItem(
+          "/admin/penghargaan",
+          "Penghargaan",
+          false,
+          <Award className="w-4 h-4" />,
         )}
         <div className="mx-5 my-3 border-t border-gray-100" />
         {navItem(
@@ -192,7 +199,7 @@ export default function Sidebar() {
 
       <div className="px-5 py-3 border-t border-gray-50 shrink-0">
         <p className="text-xs text-slate-400">
-          SKM System v1.0
+          SIMBA v1.0
         </p>
         <p className="text-xs text-slate-400 mt-0.5">
           Permenpan RB 14/2017

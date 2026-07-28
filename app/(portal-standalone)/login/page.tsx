@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LoginClient from "./LoginClient";
 
 export const metadata: Metadata = {
-  title: "Masuk Dashboard — SKM BKPSDM Anambas",
+  title: "Masuk Dashboard — SIMBA BKPSDM Anambas",
   description: "Halaman masuk untuk administrator dashboard Sistem Survei Kepuasan Masyarakat BKPSDM Kabupaten Kepulauan Anambas.",
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LayananClient from "./LayananClient";
 
 export const metadata: Metadata = {
-  title: "Layanan SKM — Admin BKPSDM Anambas",
+  title: "Beri Kami Bintang — Admin SIMBA",
   description: "Kelola daftar layanan, lihat performa, dan data responden survei kepuasan.",
 };
 

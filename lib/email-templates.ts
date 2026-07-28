@@ -190,7 +190,7 @@ export function loginAlertTemplate(opts: {
   timestamp: string;
   ip?: string;
 }): { subject: string; html: string } {
-  const subject = "[SKM] Login Admin Berhasil";
+  const subject = "[SIMBA] Login Admin Berhasil";
   const html = wrap(`
     <h2 style="margin:0 0 8px;font-size:22px;font-family:${FONT_HEADING};
                color:${BRAND_NAVY};letter-spacing:-0.3px;">
@@ -229,7 +229,7 @@ export function unblockRequestTemplate(opts: {
   userEmail?: string;
   requestedAt: string;
 }): { subject: string; html: string } {
-  const subject = `[SKM] Permintaan Buka Blokir IP: ${opts.ip}`;
+  const subject = `[SIMBA] Permintaan Buka Blokir IP: ${opts.ip}`;
   const html = wrap(`
     <h2 style="margin:0 0 8px;font-size:22px;font-family:${FONT_HEADING};
                color:${BRAND_NAVY};letter-spacing:-0.3px;">
@@ -277,7 +277,7 @@ export function unblockApprovedTemplate(opts: {
   ip: string;
   approvedAt: string;
 }): { subject: string; html: string } {
-  const subject = "[SKM] Permintaan Buka Blokir Disetujui";
+  const subject = "[SIMBA] Permintaan Buka Blokir Disetujui";
   const html = wrap(`
     <h2 style="margin:0 0 8px;font-size:22px;font-family:${FONT_HEADING};
                color:${BRAND_NAVY};letter-spacing:-0.3px;">
@@ -580,7 +580,7 @@ export function surveyConfirmationTemplate(opts: {
   tglLayanan: string;
   periodeLabel: string;
 }): { subject: string; html: string } {
-  const subject = "[SKM] Terima Kasih atas Partisipasi Survei Anda";
+  const subject = "[SIMBA] Terima Kasih atas Partisipasi Survei Anda";
   const html = wrap(`
     <h2 style="margin:0 0 8px;font-size:22px;font-family:${FONT_HEADING};
                color:${BRAND_NAVY};letter-spacing:-0.3px;">

@@ -4,11 +4,12 @@ import { useEffect, useState, useRef, Fragment } from "react";
 import { submitSkmResponse } from "@/app/action/submit";
 import {
   Search, ChevronDown, Check, X,
-  ThumbsDown, MinusCircle, ThumbsUp, Star,
+  ThumbsDown, MinusCircle, ThumbsUp,
   ClipboardList, User, UserCheck, CheckCircle2,
   ArrowLeft, ArrowRight, Loader2, Send,
   Frown, Meh, Smile, Award,
 } from "lucide-react";
+import StarRating from "@/components/ui/StarRating";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 
 const playfair = Playfair_Display({
@@ -50,58 +51,6 @@ const STEP_LABELS = [
 
 interface Layanan { id: string; nama: string }
 interface Pegawai { id: string; nama: string }
-
-/* ─── Star Rating ───────────────────────────────────────── */
-function StarRating({ value, onChange }: { value:number; onChange:(v:number)=>void }) {
-  const [hovered, setHovered] = useState(0);
-  const labels = ["","Tidak Memuaskan","Kurang Memuaskan","Cukup","Memuaskan","Sangat Memuaskan"];
-  return (
-    <div className="flex flex-col items-center gap-5 py-2">
-      <div className="flex items-center gap-3">
-        {[1,2,3,4,5].map((star) => (
-          <button key={star} type="button"
-            onClick={() => onChange(star)}
-            onMouseEnter={() => setHovered(star)}
-            onMouseLeave={() => setHovered(0)}
-            className="transition-transform duration-150 hover:scale-110 focus:outline-none"
-            aria-label={`${star} bintang`}
-          >
-            <Star className="w-12 h-12 transition-all duration-200"
-              style={{
-                color:  star <= (hovered||value) ? "#FAE705" : "#e2e8f0",
-                fill:   star <= (hovered||value) ? "#FAE705" : "none",
-                filter: star <= (hovered||value) ? "drop-shadow(0 0 6px #FAE70588)" : "none",
-              }}
-            />
-          </button>
-        ))}
-      </div>
-      <div className="text-center min-h-[48px] flex flex-col items-center justify-center">
-        {(hovered||value) > 0 ? (
-          <>
-            <p className="text-3xl font-black text-white">{hovered||value}</p>
-            <p className="text-sm font-semibold mt-1" style={{ color:"#FAE705", fontFamily:"var(--pf-body)" }}>
-              {labels[hovered||value]}
-            </p>
-          </>
-        ) : (
-          <p className="text-sm font-medium" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.35)" }}>
-            Ketuk bintang untuk memberi rating
-          </p>
-        )}
-      </div>
-      {value > 0 && (
-        <div className="flex items-center gap-1.5">
-          {[1,2,3,4,5].map((s) => (
-            <div key={s} className="h-1.5 rounded-full transition-all duration-300"
-              style={{ width: s <= value ? 28 : 8, background: s <= value ? "#FAE705" : "#e2e8f0" }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ─── Main component ────────────────────────────────────── */
 export default function PortalForm() {
@@ -759,7 +708,7 @@ export default function PortalForm() {
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-wide" style={{ fontFamily:"var(--pf-body)", color:"#FAE705" }}>Pegawai yang Melayani</p>
                           <p className="text-base font-bold text-white" style={{ fontFamily:"var(--pf-display)" }}>{selectedPegawai.nama}</p>
-                          <p className="text-xs mt-0.5" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.40)" }}>Semua 9 unsur SKM telah dijawab ✓</p>
+                          <p className="text-xs mt-0.5" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.40)" }}>Semua 9 unsur penilaian telah dijawab ✓</p>
                         </div>
                       </div>
                       <p className="text-sm text-center font-medium" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.45)" }}>

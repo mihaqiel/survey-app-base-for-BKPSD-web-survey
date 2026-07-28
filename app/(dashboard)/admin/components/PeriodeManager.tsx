@@ -317,7 +317,7 @@ export default function PeriodeManager({ activePeriode, allPeriodes }: Props) {
               Label Periode <span className="text-red-400">*</span>
             </label>
             <input type="text" value={label} onChange={e => setLabel(e.target.value)}
-              title="Label Periode" placeholder="e.g. SKM Semester 1 2026" className={inputClass} />
+              title="Label Periode" placeholder="mis. Semester 1 2026" className={inputClass} />
             {label && (
               <p className="text-xs font-mono text-slate-400 mt-1.5">
                 Token otomatis: <span className="text-blue-600">{generateToken(label)}</span>

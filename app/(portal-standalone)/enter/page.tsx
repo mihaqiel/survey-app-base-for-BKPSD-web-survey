@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import EnterClient from "./EnterClient";
 
 export const metadata: Metadata = {
-  title: "Masukkan Token Akses — SKM BKPSDM Anambas",
+  title: "Masukkan Token Akses — SIMBA BKPSDM Anambas",
   description: "Masukkan token akses untuk memulai survei kepuasan masyarakat BKPSDM Kabupaten Kepulauan Anambas.",
 };
 

@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS "BlockedIp" (
 );
 
 -- CreateIndex unique on ip
-CREATE UNIQUE INDEX IF NOT EXISTS "BlockedIp_ip_key" ON "BlockedIp"("ip");npx prisma migrate resolve --applied 20260316000000_add_blocked_ip
+CREATE UNIQUE INDEX IF NOT EXISTS "BlockedIp_ip_key" ON "BlockedIp"("ip");
