@@ -458,10 +458,10 @@ const stats    = useInView(0.15);
           {/* Heading */}
           <h1 className="serif mb-6 leading-[1.08]">
             <span className="block text-4xl sm:text-5xl md:text-[3.6rem] font-bold text-white">
-              <CharReveal text="Survei Kepuasan" delay={0.3} />
+              <CharReveal text="Smart Service" delay={0.3} />
             </span>
             <span className="block font-bold text-white" style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)" }}>
-              <CharReveal text="Masyarakat" delay={0.9} />
+              <CharReveal text="BKPSDM Anambas" delay={0.9} />
             </span>
           </h1>
 
@@ -470,8 +470,7 @@ const stats    = useInView(0.15);
             className="char-in text-white/55 text-sm sm:text-base max-w-lg leading-relaxed mb-10"
             style={{ animationDelay: "1.7s" }}
           >
-            Platform digital pengukuran kinerja pelayanan publik BKPSDM Kabupaten
-            Kepulauan Anambas. Transparan, akuntabel, dan terukur.
+            Melayani&nbsp;•&nbsp;Akuntabel&nbsp;•&nbsp;Netral&nbsp;•&nbsp;Teladan&nbsp;•&nbsp;Akhlak&nbsp;•&nbsp;Profesional
           </p>
 
           {/* Buttons */}
