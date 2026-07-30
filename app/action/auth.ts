@@ -46,9 +46,14 @@ export async function login(formData: FormData) {
   // Rate limit: 5 attempts per 15 minutes per IP
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
-  const { success } = await getLoginLimiter().limit(ip);
-  if (!success) {
-    redirect("/login?error=TooManyAttempts");
+  try {
+    const { success } = await getLoginLimiter().limit(ip);
+    if (!success) {
+      redirect("/login?error=TooManyAttempts");
+    }
+  } catch {
+    // Redis unavailable — allow attempt, log for ops visibility
+    console.warn("[login] rate limiter unavailable, proceeding without limit");
   }
 
   const { username: ADMIN_USERNAME, password: ADMIN_PASSWORD } = getAdminCredentials();
