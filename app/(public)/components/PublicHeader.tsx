@@ -207,28 +207,18 @@ export default function PublicHeader() {
                 style={{ width: 1, height: 36, background: sepGradient }}
               />
 
-              {/* Centre logo + unit name */}
+              {/* Centre logo — SIMBA */}
               <div className="flex flex-col items-center gap-1">
                 <div className="hdr-logo-wrap">
                   <Image
-                    src="/logo-anambas-maju.png"
-                    alt="Anambas Maju – Energi Baru"
-                    width={130}
-                    height={56}
+                    src="/logo-simba.png"
+                    alt="SIMBA Smart Service BKPSDM Anambas"
+                    width={80}
+                    height={64}
                     className="object-contain w-auto"
-                    style={{ height: 44 }}
+                    style={{ height: 60 }}
                   />
                 </div>
-                <p
-                  className="text-[9px] tracking-[0.22em] uppercase"
-                  style={{
-                    fontFamily:    "var(--hdr-body)",
-                    color:         "rgba(13,45,88,0.55)",
-                    letterSpacing: "0.22em",
-                  }}
-                >
-                  Kabupaten Kepulauan Anambas
-                </p>
               </div>
 
               <div

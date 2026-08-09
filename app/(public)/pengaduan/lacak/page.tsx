@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import {
@@ -266,6 +267,26 @@ function LacakContent() {
             width: "100%",
           }}
         >
+          {/* Back to Beranda */}
+          <div style={{ textAlign: "left", marginBottom: "1.5rem" }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.55)",
+                textDecoration: "none",
+                padding: "6px 0",
+                transition: "color 0.2s",
+              }}
+            >
+              ← Kembali ke Beranda
+            </Link>
+          </div>
+
           {/* Icon badge */}
           <div
             style={{

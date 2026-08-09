@@ -139,7 +139,7 @@ export default function LoginClient() {
             >
               Masuk Dashboard
             </h1>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p className="text-xs whitespace-nowrap" style={{ color: "rgba(255,255,255,0.45)" }}>
               Badan Kepegawaian dan Pengembangan Sumber Daya Manusia
             </p>
           </div>

@@ -67,11 +67,11 @@ export default function Sidebar() {
       <div className="px-5 py-5 border-b border-gray-100 shrink-0 flex items-start justify-between">
         <div>
           <Image
-            src="/logo-bkpsdm.png"
-            alt="BKPSDM"
+            src="/logo-simba.png"
+            alt="SIMBA"
             width={100}
-            height={40}
-            className="h-10 w-auto object-contain mb-3"
+            height={80}
+            className="h-12 w-auto object-contain mb-3"
           />
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -80,7 +80,7 @@ export default function Sidebar() {
             </p>
           </div>
           <p className="text-xs text-slate-400 mt-0.5 pl-4">
-            Kab. Kepulauan Anambas
+            Kabupaten Kepulauan Anambas
           </p>
         </div>
         <button

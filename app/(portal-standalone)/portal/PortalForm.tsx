@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useRef, Fragment } from "react";
 import { submitSkmResponse } from "@/app/action/submit";
 import {
@@ -666,9 +667,14 @@ export default function PortalForm() {
                               </span>
                               {/* Label block */}
                               <div className="flex-1">
-                                <p className="text-sm font-bold transition-colors" style={{ color: selected?"#0d1b2a":"rgba(255,255,255,0.80)", fontFamily:"var(--pf-body)" }}>
-                                  {opt.label}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-bold transition-colors" style={{ color: selected?"#0d1b2a":"rgba(255,255,255,0.80)", fontFamily:"var(--pf-body)" }}>
+                                    {opt.label}
+                                  </p>
+                                  <span style={{ color: "#FAE705", fontSize: 12, letterSpacing: 1 }}>
+                                    {"★".repeat(opt.val)}
+                                  </span>
+                                </div>
                                 <p className="text-xs mt-0.5 transition-colors" style={{ color: selected ? opt.color : "rgba(255,255,255,0.35)", fontFamily:"var(--pf-body)" }}>
                                   {opt.sublabel}
                                 </p>
@@ -780,6 +786,23 @@ export default function PortalForm() {
                             })}
                           </div>
                         </div>
+
+                        {/* Bintang Pegawai */}
+                        {employeeRating > 0 && (
+                          <div className="px-5 py-4 border-t" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+                            <p className="text-[10px] font-black uppercase tracking-wide mb-2" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.40)" }}>Bintang Pegawai</p>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <span key={i} style={{ fontSize: 20, color: i < employeeRating ? "#FAE705" : "rgba(255,255,255,0.15)" }}>
+                                  ★
+                                </span>
+                              ))}
+                              <span className="ml-2 text-xs font-bold" style={{ fontFamily:"var(--pf-body)", color:"#FAE705" }}>
+                                {employeeRating}/5
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Submit */}
@@ -808,23 +831,43 @@ export default function PortalForm() {
               </div>
 
               {/* Navigation footer — pinned inside card */}
-              {step < 13 && (
-                <div className="shrink-0 px-6 py-4 flex gap-3"
-                  style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.02)" }}>
-                  {step > 0 && (
-                    <button onClick={handleBack} className="btn-back" style={{ fontFamily:"var(--pf-body)" }}>
-                      <ArrowLeft className="w-3.5 h-3.5"/> Kembali
-                    </button>
-                  )}
-                  <button onClick={handleNext} disabled={!canProceed()} className="btn-next" style={{ fontFamily:"var(--pf-body)" }}>
+              <div className="shrink-0 px-6 py-4 flex gap-3"
+                style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.02)" }}>
+                {step === 0 ? (
+                  <Link href="/" className="btn-back" style={{ fontFamily:"var(--pf-body)", textDecoration:"none" }}>
+                    <ArrowLeft className="w-3.5 h-3.5"/> Beranda
+                  </Link>
+                ) : (
+                  <button type="button" onClick={handleBack} className="btn-back" style={{ fontFamily:"var(--pf-body)" }}>
+                    <ArrowLeft className="w-3.5 h-3.5"/> Kembali
+                  </button>
+                )}
+                {step < 13 && (
+                  <button type="button" onClick={handleNext} disabled={!canProceed()} className="btn-next" style={{ fontFamily:"var(--pf-body)" }}>
                     {step === 11 ? "Lanjut ke Rating Pegawai"
                      : step === 12 ? "Lanjut ke Saran dan Kirim"
                      : "Lanjut"
                     }
                     <ArrowRight className="w-3.5 h-3.5"/>
                   </button>
-                </div>
-              )}
+                )}
+                {step === 13 && (
+                  <button type="button" onClick={handleSubmit} disabled={submitting}
+                    className="btn-next"
+                    style={{
+                      fontFamily:"var(--pf-body)",
+                      background: submitting ? "rgba(255,255,255,0.06)" : "#FAE705",
+                      color: submitting ? "rgba(255,255,255,0.30)" : "#0d1b2a",
+                      cursor: submitting ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {submitting
+                      ? <><Loader2 className="w-4 h-4 animate-spin"/> Mengirim...</>
+                      : <><Send className="w-4 h-4"/> Kirim Survei</>
+                    }
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { BarChart3, ShieldCheck, QrCode, ChevronDown } from "lucide-react";
 import { Playfair_Display, DM_Sans } from "next/font/google";
@@ -447,12 +448,25 @@ const stats    = useInView(0.15);
         <div className="relative z-10 max-w-3xl mx-auto w-full py-28 flex flex-col items-center text-center">
 
           {/* Overline */}
-          <div className="char-in section-label justify-center mb-8" style={{ animationDelay: "0.1s" }}>
+          <div className="char-in section-label justify-center mb-6" style={{ animationDelay: "0.1s" }}>
             <span className="section-label-line" />
-            <span className="text-[10px] font-semibold tracking-[0.38em] uppercase" style={{ color: "#FAE705" }}>
-              BKPSDM Kab. Kepulauan Anambas
+            <span className="text-[10px] font-semibold tracking-[0.38em] uppercase whitespace-nowrap" style={{ color: "#FAE705" }}>
+              BKPSDM KABUPATEN KEPULAUAN ANAMBAS
             </span>
             <span className="section-label-line" />
+          </div>
+
+          {/* SIMBA logo */}
+          <div className="char-in mb-6" style={{ animationDelay: "0.2s" }}>
+            <Image
+              src="/logo-simba.png"
+              alt="SIMBA Smart Service BKPSDM Anambas"
+              width={200}
+              height={160}
+              className="object-contain mx-auto"
+              style={{ height: "auto", maxWidth: 180 }}
+              priority
+            />
           </div>
 
           {/* Heading */}
@@ -470,13 +484,13 @@ const stats    = useInView(0.15);
             className="char-in text-white/55 text-sm sm:text-base max-w-lg leading-relaxed mb-10"
             style={{ animationDelay: "1.7s" }}
           >
-            Melayani&nbsp;•&nbsp;Akuntabel&nbsp;•&nbsp;Netral&nbsp;•&nbsp;Teladan&nbsp;•&nbsp;Akhlak&nbsp;•&nbsp;Profesional
+            Platform layanan pintar BKPSDM untuk mewujudkan pelayanan kepegawaian berbasis digital yang berorientasi pada nilai melayani, akuntabel, netral, teladan, berakhlak dan profesional
           </p>
 
           {/* Buttons */}
           <div className="char-in flex flex-col sm:flex-row gap-4 justify-center" style={{ animationDelay: "1.9s" }}>
             <Link href={surveyHref} className="cta-btn text-center justify-center">
-              Mulai Survei
+              Beri Kami Bintang
               <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
             <Link

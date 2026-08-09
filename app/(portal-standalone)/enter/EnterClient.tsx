@@ -85,7 +85,7 @@ function TokenFormContent() {
                 className="text-[10px] font-semibold tracking-[0.35em] uppercase"
                 style={{ color: "#FAE705" }}
               >
-                Portal Survei Kepuasan Masyarakat
+                Portal SIMBA
               </span>
               <span className="w-5 h-px block" style={{ background: "#FAE705" }} />
             </div>
@@ -176,7 +176,7 @@ function TokenFormContent() {
                     Memverifikasi...
                   </span>
                 ) : (
-                  "Masuk ke Portal Survei →"
+                  "Masuk →"
                 )}
               </button>
             </form>

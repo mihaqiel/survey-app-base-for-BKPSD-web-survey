@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Optional email verification — if caller provided email, it must match
-    if (emailParam && pengaduan.email.toLowerCase() !== emailParam) {
+    if (emailParam && pengaduan.email?.toLowerCase() !== emailParam) {
       return NextResponse.json(
         { error: "Email tidak cocok dengan tiket ini. Periksa kembali email yang Anda gunakan saat mendaftar." },
         { status: 403 }

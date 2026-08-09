@@ -160,7 +160,7 @@ export default function PublicFooter() {
                     className="text-[11px] text-white/40 leading-tight mt-0.5"
                     style={{ fontFamily: "var(--ftr-body)" }}
                   >
-                    Kab. Kepulauan Anambas
+                    Kabupaten Kepulauan Anambas
                   </p>
                 </div>
               </div>
