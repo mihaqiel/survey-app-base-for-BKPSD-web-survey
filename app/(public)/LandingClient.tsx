@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import NextImage from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { BarChart3, ShieldCheck, QrCode, ChevronDown } from "lucide-react";
 import { Playfair_Display, DM_Sans } from "next/font/google";
@@ -454,19 +453,6 @@ const stats    = useInView(0.15);
               BKPSDM KABUPATEN KEPULAUAN ANAMBAS
             </span>
             <span className="section-label-line" />
-          </div>
-
-          {/* SIMBA logo */}
-          <div className="char-in mb-6" style={{ animationDelay: "0.2s" }}>
-            <NextImage
-              src="/logo-simba.png"
-              alt="SIMBA Smart Service BKPSDM Anambas"
-              width={200}
-              height={160}
-              className="object-contain mx-auto"
-              style={{ height: "auto", maxWidth: 180 }}
-              priority
-            />
           </div>
 
           {/* Heading */}

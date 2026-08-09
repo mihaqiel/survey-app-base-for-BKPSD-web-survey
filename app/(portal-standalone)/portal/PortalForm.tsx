@@ -58,7 +58,8 @@ export default function PortalForm() {
   const [step,       setStep]       = useState(0);
   const [prevStep,   setPrevStep]   = useState(0);
   const [animKey,    setAnimKey]    = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [submitError,  setSubmitError]  = useState<string | null>(null);
 
   const [layananList, setLayananList]     = useState<Layanan[]>([]);
   const [pegawaiList, setPegawaiList]     = useState<Pegawai[]>([]);
@@ -131,6 +132,7 @@ export default function PortalForm() {
   const handleSubmit = async () => {
     if (!selectedLayanan || !selectedPegawai) return;
     setSubmitting(true);
+    setSubmitError(null);
     const fd = new FormData();
     fd.append("layananId", selectedLayanan.id);
     fd.append("pegawaiId", selectedPegawai.id);
@@ -145,7 +147,12 @@ export default function PortalForm() {
     fd.append("rating", String(employeeRating||""));
     for (let i=1; i<=9; i++) fd.append(`u${i}`, String(answers[`u${i}`]||0));
     fd.append("saran", saran);
-    await submitSkmResponse(fd);
+    try {
+      await submitSkmResponse(fd);
+    } catch {
+      setSubmitting(false);
+      setSubmitError("Gagal mengirim survei. Periksa koneksi Anda lalu coba lagi.");
+    }
   };
 
   const pct       = Math.round((step / (TOTAL_STEPS-1)) * 100);
@@ -821,6 +828,12 @@ export default function PortalForm() {
                           : <><Send className="w-4 h-4"/> Kirim Survei Kepuasan</>
                         }
                       </button>
+                      {submitError && (
+                        <p className="text-center text-xs font-semibold rounded-lg px-3 py-2"
+                          style={{ fontFamily:"var(--pf-body)", color:"#f87171", background:"rgba(239,68,68,0.10)", border:"1px solid rgba(239,68,68,0.20)" }}>
+                          {submitError}
+                        </p>
+                      )}
                       <p className="text-center text-xs font-medium" style={{ fontFamily:"var(--pf-body)", color:"rgba(255,255,255,0.30)" }}>
                         Data survei bersifat rahasia dan hanya untuk evaluasi mutu pelayanan
                       </p>
