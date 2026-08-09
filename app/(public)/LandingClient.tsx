@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import NextImage from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { BarChart3, ShieldCheck, QrCode, ChevronDown } from "lucide-react";
 import { Playfair_Display, DM_Sans } from "next/font/google";
@@ -458,7 +458,7 @@ const stats    = useInView(0.15);
 
           {/* SIMBA logo */}
           <div className="char-in mb-6" style={{ animationDelay: "0.2s" }}>
-            <Image
+            <NextImage
               src="/logo-simba.png"
               alt="SIMBA Smart Service BKPSDM Anambas"
               width={200}
