@@ -151,13 +151,8 @@ export default function PortalForm() {
     for (let i=1; i<=9; i++) fd.append(`u${i}`, String(answers[`u${i}`]||0));
     fd.append("saran", saran);
     try {
-      const result = await submitSkmResponse(fd);
-      if (result?.ok) {
-        // Explicit success sentinel — navigate to success page
-        router.push("/success?status=success");
-      }
-      // If result is undefined, a redirect() in the action handled navigation
-      // transparently (blocked / duplicate / closed) — nothing more to do.
+      await submitSkmResponse(fd);
+      router.push("/success?status=success");
     } catch (err) {
       setSubmitting(false);
       const msg = err instanceof Error ? err.message : null;

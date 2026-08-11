@@ -217,9 +217,7 @@ export async function submitSkmResponse(formData: FormData) {
     });
   }
 
-  // Return a sentinel so the client knows this was a successful submission
-  // (vs. a transparent redirect for blocked/duplicate/closed cases).
-  return { ok: true } as const;
+  // Return void — client uses router.push() after this resolves.
 }
 
 // SUBMIT UNBLOCK REQUEST
