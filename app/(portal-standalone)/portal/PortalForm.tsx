@@ -114,7 +114,8 @@ export default function PortalForm() {
 
   const canProceed = () => {
     if (step === 0)  return !!selectedLayanan;
-    if (step === 1)  return !!(nama && usia && jenisKelamin && pendidikan && pekerjaan && tglLayanan);
+    if (step === 1)  return !!(nama && jenisKelamin && pendidikan && pekerjaan && tglLayanan)
+                          && Number(usia) >= 1 && Number(usia) <= 120;
     if (step === 2)  return !!selectedPegawai;
     if (step >= 3 && step <= 11) return !!answers[`u${step-2}`];
     if (step === 12) return employeeRating > 0;
@@ -150,19 +151,17 @@ export default function PortalForm() {
     for (let i=1; i<=9; i++) fd.append(`u${i}`, String(answers[`u${i}`]||0));
     fd.append("saran", saran);
     try {
-      await submitSkmResponse(fd);
-      // Server action returned normally (success) — navigate to success page
-      router.push("/success?status=success");
-    } catch (err) {
-      // redirect() in server actions throws NEXT_REDIRECT which propagates to client.
-      // Parse the destination URL from the digest and navigate programmatically.
-      const digest = (err as { digest?: string })?.digest ?? "";
-      if (digest.startsWith("NEXT_REDIRECT")) {
-        const destination = digest.split(";")[2];
-        if (destination) { router.push(destination); return; }
+      const result = await submitSkmResponse(fd);
+      if (result?.ok) {
+        // Explicit success sentinel — navigate to success page
+        router.push("/success?status=success");
       }
+      // If result is undefined, a redirect() in the action handled navigation
+      // transparently (blocked / duplicate / closed) — nothing more to do.
+    } catch (err) {
       setSubmitting(false);
-      setSubmitError("Gagal mengirim survei. Periksa koneksi Anda lalu coba lagi.");
+      const msg = err instanceof Error ? err.message : null;
+      setSubmitError(msg ?? "Gagal mengirim survei. Periksa koneksi Anda lalu coba lagi.");
     }
   };
 
@@ -482,9 +481,9 @@ export default function PortalForm() {
                           />
                         </div>
                         <div>
-                          <label htmlFor="f-usia" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Usia</label>
+                          <label htmlFor="f-usia" className={labelCls} style={{ color:"rgba(255,255,255,0.45)" }}>Usia (tahun)</label>
                           <input id="f-usia" type="number" value={usia} onChange={e=>setUsia(e.target.value)}
-                            placeholder="Tahun" min={1} max={120} className={inputCls}
+                            placeholder="Contoh: 35" min={1} max={120} className={inputCls}
                             style={{ ...inputStyle, fontFamily:"var(--pf-body)" }}
                           />
                         </div>

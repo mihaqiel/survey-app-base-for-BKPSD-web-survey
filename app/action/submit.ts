@@ -217,9 +217,9 @@ export async function submitSkmResponse(formData: FormData) {
     });
   }
 
-  // Do NOT call redirect() here — the client navigates via router.push() after
-  // this action returns normally. redirect() throws NEXT_REDIRECT which is
-  // indistinguishable from a real error when caught client-side with await.
+  // Return a sentinel so the client knows this was a successful submission
+  // (vs. a transparent redirect for blocked/duplicate/closed cases).
+  return { ok: true } as const;
 }
 
 // SUBMIT UNBLOCK REQUEST
