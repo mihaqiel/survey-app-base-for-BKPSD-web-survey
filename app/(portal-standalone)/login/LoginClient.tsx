@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { login } from "@/app/action/auth";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Lock, ShieldAlert } from "lucide-react";
@@ -110,6 +111,19 @@ export default function LoginClient() {
       `}</style>
 
       <div className="w-full max-w-md relative z-10">
+        {/* Back to home */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold transition-colors"
+            style={{ color: "rgba(255,255,255,0.40)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.40)"; }}
+          >
+            ← Kembali ke Beranda
+          </Link>
+        </div>
+
         {/* Card */}
         <div
           className="rounded-2xl overflow-hidden"

@@ -217,7 +217,9 @@ export async function submitSkmResponse(formData: FormData) {
     });
   }
 
-  redirect("/success?status=success");
+  // Do NOT call redirect() here — the client navigates via router.push() after
+  // this action returns normally. redirect() throws NEXT_REDIRECT which is
+  // indistinguishable from a real error when caught client-side with await.
 }
 
 // SUBMIT UNBLOCK REQUEST

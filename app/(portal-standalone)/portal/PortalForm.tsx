@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef, Fragment } from "react";
+import { useRouter } from "next/navigation";
 import { submitSkmResponse } from "@/app/action/submit";
 import {
   Search, ChevronDown, Check, X,
@@ -55,6 +56,7 @@ interface Pegawai { id: string; nama: string }
 
 /* ─── Main component ────────────────────────────────────── */
 export default function PortalForm() {
+  const router = useRouter();
   const [step,       setStep]       = useState(0);
   const [prevStep,   setPrevStep]   = useState(0);
   const [animKey,    setAnimKey]    = useState(0);
@@ -149,7 +151,16 @@ export default function PortalForm() {
     fd.append("saran", saran);
     try {
       await submitSkmResponse(fd);
-    } catch {
+      // Server action returned normally (success) — navigate to success page
+      router.push("/success?status=success");
+    } catch (err) {
+      // redirect() in server actions throws NEXT_REDIRECT which propagates to client.
+      // Parse the destination URL from the digest and navigate programmatically.
+      const digest = (err as { digest?: string })?.digest ?? "";
+      if (digest.startsWith("NEXT_REDIRECT")) {
+        const destination = digest.split(";")[2];
+        if (destination) { router.push(destination); return; }
+      }
       setSubmitting(false);
       setSubmitError("Gagal mengirim survei. Periksa koneksi Anda lalu coba lagi.");
     }
@@ -812,22 +823,6 @@ export default function PortalForm() {
                         )}
                       </div>
 
-                      {/* Submit */}
-                      <button onClick={handleSubmit} disabled={submitting}
-                        className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-3 transition-all"
-                        style={{
-                          background: submitting ? "rgba(255,255,255,0.06)" : "#FAE705",
-                          color: submitting ? "rgba(255,255,255,0.30)" : "#0d1b2a",
-                          boxShadow: submitting ? "none" : "0 6px 24px rgba(250,231,5,.20)",
-                          fontFamily:"var(--pf-body)",
-                          cursor: submitting ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {submitting
-                          ? <><Loader2 className="w-4 h-4 animate-spin"/> Mengirim Data...</>
-                          : <><Send className="w-4 h-4"/> Kirim Survei Kepuasan</>
-                        }
-                      </button>
                       {submitError && (
                         <p className="text-center text-xs font-semibold rounded-lg px-3 py-2"
                           style={{ fontFamily:"var(--pf-body)", color:"#f87171", background:"rgba(239,68,68,0.10)", border:"1px solid rgba(239,68,68,0.20)" }}>
@@ -876,7 +871,7 @@ export default function PortalForm() {
                   >
                     {submitting
                       ? <><Loader2 className="w-4 h-4 animate-spin"/> Mengirim...</>
-                      : <><Send className="w-4 h-4"/> Kirim Survei</>
+                      : <>Lanjut <ArrowRight className="w-3.5 h-3.5"/></>
                     }
                   </button>
                 )}
