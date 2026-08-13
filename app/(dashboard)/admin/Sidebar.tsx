@@ -19,6 +19,7 @@ import {
   X,
   MessageSquareWarning,
   ScanEye,
+  UserCog,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -162,6 +163,12 @@ export default function Sidebar() {
           "Audit Log",
           false,
           <FileText className="w-4 h-4" />,
+        )}
+        {navItem(
+          "/admin/pengguna",
+          "Pengguna Dashboard",
+          false,
+          <UserCog className="w-4 h-4" />,
         )}
         {navItem(
           "/admin/settings",

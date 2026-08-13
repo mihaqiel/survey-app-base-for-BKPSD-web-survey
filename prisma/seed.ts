@@ -79,24 +79,44 @@ const PEGAWAI_LIST = [
   "PUTRI DEWI"
 ];
 
-// ── Admin credentials — change these before going to production ──────────
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "bkpsd2026";
+/**
+ * Secrets are read from the environment — never hardcoded.
+ * This file is committed to a public repository, so any literal credential
+ * here would be permanently exposed in git history.
+ *
+ * Required env vars:
+ *   SEED_ADMIN_EMAIL     — break-glass admin account
+ *   SEED_ADMIN_PASSWORD  — break-glass password (hashed before storing)
+ *   SEED_PERIODE_TOKEN   — survey portal access token
+ */
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} is required to seed. Set it in .env.local before running the seed.`,
+    );
+  }
+  return value;
+}
 
 async function main() {
   console.log("🌱 Seeding Database...");
 
-  // 1. Seed Admin
+  const adminEmail    = requireEnv("SEED_ADMIN_EMAIL");
+  const adminPassword = requireEnv("SEED_ADMIN_PASSWORD");
+  const periodeToken  = requireEnv("SEED_PERIODE_TOKEN");
+
+  // 1. Seed break-glass admin
   console.log("Creating admin user...");
-  const existingAdmin = await prisma.admin.findUnique({ where: { username: ADMIN_USERNAME } });
+  const existingAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
-    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
-    await prisma.admin.create({
-      data: { username: ADMIN_USERNAME, password: hashed },
+    const hashed = await bcrypt.hash(adminPassword, 12);
+    await prisma.adminUser.create({
+      data: { email: adminEmail, nama: "Break-glass Admin", passwordHash: hashed },
     });
-    console.log(`✅ Admin created: ${ADMIN_USERNAME}`);
+    console.log(`✅ Admin created: ${adminEmail}`);
   } else {
-    console.log(`ℹ️  Admin already exists: ${ADMIN_USERNAME}`);
+    console.log(`ℹ️  Admin already exists: ${adminEmail}`);
   }
 
   // 2. Seed Services
@@ -124,7 +144,7 @@ async function main() {
       data: {
         label: "Global Access",
         status: "AKTIF",
-        token: "global-token-2026",
+        token: periodeToken,
       }
     });
     console.log("✅ Created active Periode.");

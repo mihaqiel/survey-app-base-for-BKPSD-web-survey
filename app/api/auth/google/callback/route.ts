@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 import { createSessionToken, COOKIE_NAME, MAX_AGE } from "@/lib/session";
+
+/**
+ * Decide whether this Google account may access the dashboard.
+ *
+ * Normally this is a lookup against AdminUser. The env-var branch only runs
+ * when no admin exists yet, so a fresh deployment can bootstrap its first
+ * account; once any AdminUser row exists that path is closed for good.
+ */
+async function resolveAdminAccess(email: string): Promise<boolean> {
+  const existing = await prisma.adminUser.findUnique({
+    where: { email },
+    select: { isActive: true },
+  });
+  if (existing) return existing.isActive;
+
+  const adminCount = await prisma.adminUser.count();
+  if (adminCount > 0) return false;
+
+  const bootstrapList = (process.env.ALLOWED_ADMIN_EMAILS ?? process.env.ADMIN_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!bootstrapList.includes(email)) return false;
+
+  await prisma.adminUser.create({
+    data: { email, nama: email.split("@")[0], createdBy: "bootstrap" },
+  });
+  console.warn("[google/callback] bootstrap admin created:", email);
+  return true;
+}
 
 export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -21,17 +53,10 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const adminEmail = process.env.ADMIN_EMAIL; // used for outbound notifications
 
-  // Support comma-separated allow-list; falls back to ADMIN_EMAIL for single-account setups
-  const allowedEmails = (process.env.ALLOWED_ADMIN_EMAILS ?? adminEmail ?? "")
-    .split(",")
-    .map(e => e.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (!clientId || !clientSecret || allowedEmails.length === 0) {
-    console.error("[google/callback] config missing — clientId:%s secret:%s allowedCount:%d",
-      !!clientId, !!clientSecret, allowedEmails.length);
+  if (!clientId || !clientSecret) {
+    console.error("[google/callback] config missing — clientId:%s secret:%s",
+      !!clientId, !!clientSecret);
     return NextResponse.redirect(`${appUrl}/login?error=ConfigError`);
   }
 
@@ -67,15 +92,28 @@ export async function GET(req: NextRequest) {
     }
 
     const { email, verified_email } = await userRes.json();
+    const normalizedEmail = (email as string)?.trim().toLowerCase();
 
-    if (!verified_email || !allowedEmails.includes(email.toLowerCase())) {
-      console.warn("[google/callback] unauthorized email: %s (verified:%s allowedCount:%d)",
-        email, verified_email, allowedEmails.length);
+    if (!verified_email || !normalizedEmail) {
+      console.warn("[google/callback] unverified email: %s", email);
       return NextResponse.redirect(`${appUrl}/login?error=Unauthorized`);
     }
 
+    // Access is granted by an AdminUser row, not by an env var — so admins can
+    // be added or revoked from the dashboard without a redeploy.
+    const granted = await resolveAdminAccess(normalizedEmail);
+    if (!granted) {
+      console.warn("[google/callback] unauthorized email: %s", normalizedEmail);
+      return NextResponse.redirect(`${appUrl}/login?error=Unauthorized`);
+    }
+
+    await prisma.adminUser.updateMany({
+      where: { email: normalizedEmail },
+      data: { lastLoginAt: new Date() },
+    });
+
     // Create admin session — same token format as password login
-    const sessionToken = await createSessionToken();
+    const sessionToken = await createSessionToken(normalizedEmail);
 
     // Return a 200 HTML page instead of a 307 redirect.
     // Cookies set on 307 responses during cross-site OAuth chains are NOT reliably

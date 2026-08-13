@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
+import { isAdmin } from "@/lib/admin-auth";
 import { sendEmail } from "@/lib/email";
 import { unblockApprovedTemplate } from "@/lib/email-templates";
 
-async function isAdmin(): Promise<boolean> {
-  const c = await cookies();
-  return await verifySessionToken(c.get(COOKIE_NAME)?.value);
-}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!await isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

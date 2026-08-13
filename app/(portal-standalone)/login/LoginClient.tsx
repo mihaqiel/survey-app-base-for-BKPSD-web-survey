@@ -171,15 +171,15 @@ export default function LoginClient() {
                   className={labelClass()}
                   style={{ color: "rgba(255,255,255,0.45)" }}
                 >
-                  Username
+                  Email
                 </label>
                 <DarkInput
                   id="l-username"
                   name="username"
-                  type="text"
+                  type="email"
                   required
-                  placeholder="admin"
-                  autoComplete="username"
+                  placeholder="nama@gmail.com"
+                  autoComplete="email"
                 />
               </div>
 

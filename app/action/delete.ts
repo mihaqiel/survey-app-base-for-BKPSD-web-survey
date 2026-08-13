@@ -4,9 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getPinLimiter } from "@/lib/ratelimit";
+import { assertAdmin } from "@/lib/admin-auth";
+
+/**
+ * Every export here is guarded by assertAdmin(). The DELETE_PIN is a second
+ * factor, not the first one — before this guard existed, anyone who learned the
+ * PIN could invoke these deletions directly without ever holding a session.
+ */
 
 // ── PIN Verification ──────────────────────────────────────────────────────────
 export async function verifyDeletePin(pin: string): Promise<{ success: boolean; error?: string }> {
+  await assertAdmin();
+
   // Rate limit: 3 attempts per hour per IP
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
@@ -19,8 +28,33 @@ export async function verifyDeletePin(pin: string): Promise<{ success: boolean; 
   return { success: true };
 }
 
+/**
+ * Shared precondition for the three destructive actions below.
+ *
+ * The PIN is rate-limited here too. Previously only verifyDeletePin() was
+ * limited, so the delete functions themselves could be used to brute-force it.
+ */
+async function authorizeDestructive(
+  pin: string,
+  confirmPhrase: string,
+): Promise<{ actorEmail: string } | { error: string }> {
+  const actor = await assertAdmin();
+
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { success: allowed } = await getPinLimiter().limit(ip);
+  if (!allowed) return { error: "Terlalu banyak percobaan PIN. Coba lagi dalam 1 jam." };
+
+  const correctPin = process.env.DELETE_PIN;
+  if (!correctPin || pin !== correctPin) return { error: "PIN tidak valid." };
+  if (confirmPhrase !== "HAPUS") return { error: "Frasa konfirmasi salah." };
+
+  return { actorEmail: actor.email };
+}
+
 // ── Data Fetchers ─────────────────────────────────────────────────────────────
 export async function getLayananWithResponseCount() {
+  await assertAdmin();
   const list = await prisma.layanan.findMany({
     orderBy: { nama: "asc" },
     include: { _count: { select: { respon: true } } },
@@ -29,6 +63,7 @@ export async function getLayananWithResponseCount() {
 }
 
 export async function getPegawaiWithResponseCount() {
+  await assertAdmin();
   const list = await prisma.pegawai.findMany({
     orderBy: { nama: "asc" },
     include: { _count: { select: { respon: true } } },
@@ -37,6 +72,7 @@ export async function getPegawaiWithResponseCount() {
 }
 
 export async function getLayananDetail(id: string) {
+  await assertAdmin();
   const layanan = await prisma.layanan.findUnique({
     where: { id },
     include: {
@@ -72,9 +108,8 @@ export async function getLayananDetail(id: string) {
 
 // ── Action 1: Clear responses for a layanan (keep the layanan record) ─────────
 export async function deleteAllResponByLayanan(layananId: string, confirmPhrase: string, pin: string) {
-  const correctPin = process.env.DELETE_PIN;
-  if (!correctPin || pin !== correctPin) return { error: "PIN tidak valid." };
-  if (confirmPhrase !== "HAPUS") return { error: "Frasa konfirmasi salah." };
+  const auth = await authorizeDestructive(pin, confirmPhrase);
+  if ("error" in auth) return { error: auth.error };
 
   const layanan = await prisma.layanan.findUnique({ where: { id: layananId }, select: { nama: true } });
   if (!layanan) return { error: "Layanan tidak ditemukan." };
@@ -84,7 +119,7 @@ export async function deleteAllResponByLayanan(layananId: string, confirmPhrase:
     data: {
       action: "DELETE",
       target: `Respon Layanan: ${layanan.nama}`,
-      details: `Hard delete: ${count} respon dihapus secara permanen.`,
+      details: `Hard delete oleh ${auth.actorEmail}: ${count} respon dihapus secara permanen.`,
     },
   });
   redirect("/admin/hapus-data?tab=respon&success=1");
@@ -92,9 +127,8 @@ export async function deleteAllResponByLayanan(layananId: string, confirmPhrase:
 
 // ── Action 2: Delete layanan record + all its responses ───────────────────────
 export async function deleteLayananWithRespon(layananId: string, confirmPhrase: string, pin: string) {
-  const correctPin = process.env.DELETE_PIN;
-  if (!correctPin || pin !== correctPin) return { error: "PIN tidak valid." };
-  if (confirmPhrase !== "HAPUS") return { error: "Frasa konfirmasi salah." };
+  const auth = await authorizeDestructive(pin, confirmPhrase);
+  if ("error" in auth) return { error: auth.error };
 
   const layanan = await prisma.layanan.findUnique({ where: { id: layananId }, select: { nama: true } });
   if (!layanan) return { error: "Layanan tidak ditemukan." };
@@ -106,7 +140,7 @@ export async function deleteLayananWithRespon(layananId: string, confirmPhrase: 
     data: {
       action: "DELETE",
       target: `Layanan: ${layanan.nama}`,
-      details: `Hard delete: layanan dihapus beserta ${responCount} respon terkait.`,
+      details: `Hard delete oleh ${auth.actorEmail}: layanan dihapus beserta ${responCount} respon terkait.`,
     },
   });
   redirect("/admin/hapus-data?tab=layanan&success=1");
@@ -114,9 +148,8 @@ export async function deleteLayananWithRespon(layananId: string, confirmPhrase: 
 
 // ── Action 3: Delete pegawai record + all their responses ─────────────────────
 export async function deletePegawaiWithRespon(pegawaiId: string, confirmPhrase: string, pin: string) {
-  const correctPin = process.env.DELETE_PIN;
-  if (!correctPin || pin !== correctPin) return { error: "PIN tidak valid." };
-  if (confirmPhrase !== "HAPUS") return { error: "Frasa konfirmasi salah." };
+  const auth = await authorizeDestructive(pin, confirmPhrase);
+  if ("error" in auth) return { error: auth.error };
 
   const pegawai = await prisma.pegawai.findUnique({ where: { id: pegawaiId }, select: { nama: true } });
   if (!pegawai) return { error: "Pegawai tidak ditemukan." };
@@ -128,7 +161,7 @@ export async function deletePegawaiWithRespon(pegawaiId: string, confirmPhrase: 
     data: {
       action: "DELETE",
       target: `Pegawai: ${pegawai.nama}`,
-      details: `Hard delete: pegawai dihapus beserta ${responCount} respon terkait.`,
+      details: `Hard delete oleh ${auth.actorEmail}: pegawai dihapus beserta ${responCount} respon terkait.`,
     },
   });
   redirect("/admin/hapus-data?tab=pegawai&success=1");

@@ -1,13 +1,8 @@
 // app/api/pegawai/[id]/detail/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { verifySessionToken, COOKIE_NAME } from "@/lib/session";
+import { isAdmin } from "@/lib/admin-auth";
 
-async function isAdmin(): Promise<boolean> {
-  const c = await cookies();
-  return await verifySessionToken(c.get(COOKIE_NAME)?.value);
-}
 
 export async function GET(
   req: NextRequest,

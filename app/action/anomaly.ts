@@ -2,7 +2,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/app/action/auth";
+import { isAdmin } from "@/lib/admin-auth";
 
 export interface TopFingerprint {
   hash: string;

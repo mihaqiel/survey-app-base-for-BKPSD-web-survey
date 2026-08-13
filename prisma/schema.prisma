@@ -108,11 +108,23 @@ model LogActivity {
   timestamp DateTime @default(now())
 }
 
-model Admin {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
+// ADMIN USERS — email-based, all roles equal (flat permissions).
+// Access is granted by adding an email here; revoked by isActive = false.
+model AdminUser {
+  id       String  @id @default(cuid())
+  email    String  @unique   // Google account email — the login identity
+  nama     String
+  isActive Boolean @default(true)
+
+  // Set only on the break-glass account used when Google OAuth is unavailable.
+  // Normal users authenticate via Google and have this as null.
+  passwordHash String?
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  createdBy   String?   // email of the admin who granted this access
+
+  @@index([isActive])
 }
 
 // FINGERPRINT BLACKLIST — blocks device fingerprints (survives IP/VPN changes)

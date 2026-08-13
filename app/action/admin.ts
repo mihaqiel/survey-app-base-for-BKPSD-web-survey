@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { calcWeightedIkm } from "@/lib/fingerprint";
+import { assertAdmin } from "@/lib/admin-auth";
 
 // Unsur labels per Permenpan RB 14/2017
 const UNSUR_LABELS: Record<string, string> = {
@@ -33,6 +34,7 @@ type EmployeeStat = {
 // 1. DASHBOARD OVERVIEW
 // ----------------------------------------------------------------------
 export async function getAdminDashboardStats(periodeId?: string) {
+  await assertAdmin();
   // Active period for label fallback only — data filter is controlled by periodeId param
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
 
@@ -206,6 +208,7 @@ export async function getAdminDashboardStats(periodeId?: string) {
 // PENGADUAN AKTIF COUNT (for dashboard KPI pill)
 // ----------------------------------------------------------------------
 export async function getPengaduanAktifCount(): Promise<number> {
+  await assertAdmin();
   return prisma.pengaduan.count({ where: { status: "BARU" } });
 }
 
@@ -213,6 +216,7 @@ export async function getPengaduanAktifCount(): Promise<number> {
 // 2. PORTAL & SERVICE MANAGEMENT
 // ----------------------------------------------------------------------
 export async function getAllLayanan() {
+  await assertAdmin();
   return await prisma.layanan.findMany({ orderBy: { nama: "asc" } });
 }
 
@@ -220,6 +224,7 @@ export async function getAllLayanan() {
 // 3. SERVICE DETAIL: EMPLOYEE ANALYTICS
 // ----------------------------------------------------------------------
 export async function getServiceEmployeeStats(periodeId: string, layananId: string) {
+  await assertAdmin();
   const responses = await prisma.respon.findMany({
     where: { periodeId, layananId },
     include: { pegawai: true }
@@ -244,6 +249,7 @@ export async function getServiceEmployeeStats(periodeId: string, layananId: stri
 // 4. EXCEL EXPORT
 // ----------------------------------------------------------------------
 export async function getGlobalExportData() {
+  await assertAdmin();
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
   if (!activePeriod) return null;
 
@@ -276,12 +282,14 @@ export async function getGlobalExportData() {
 // 5. SERVICE MANAGEMENT (CRUD)
 // ----------------------------------------------------------------------
 export async function createLayanan(formData: FormData) {
+  await assertAdmin();
   const nama = formData.get("nama") as string;
   if (!nama) return;
   await prisma.layanan.create({ data: { nama } });
 }
 
 export async function updateLayanan(id: string, formData: FormData) {
+  await assertAdmin();
   const nama     = formData.get("nama") as string;
   const kategori = formData.get("kategori") as string | null;
   if (!nama) return;
@@ -292,6 +300,7 @@ export async function updateLayanan(id: string, formData: FormData) {
 }
 
 export async function deleteLayanan(id: string) {
+  await assertAdmin();
   await prisma.layanan.delete({ where: { id } });
 }
 
@@ -299,22 +308,26 @@ export async function deleteLayanan(id: string) {
 // 6. EMPLOYEE MANAGEMENT (CRUD)
 // ----------------------------------------------------------------------
 export async function getAllPegawai() {
+  await assertAdmin();
   return await prisma.pegawai.findMany({ orderBy: { nama: "asc" } });
 }
 
 export async function createPegawai(formData: FormData) {
+  await assertAdmin();
   const nama = formData.get("nama") as string;
   if (!nama) return;
   await prisma.pegawai.create({ data: { nama } });
 }
 
 export async function updatePegawai(id: string, formData: FormData) {
+  await assertAdmin();
   const nama = formData.get("nama") as string;
   if (!nama) return;
   await prisma.pegawai.update({ where: { id }, data: { nama } });
 }
 
 export async function deletePegawai(id: string) {
+  await assertAdmin();
   await prisma.pegawai.delete({ where: { id } });
 }
 
@@ -333,6 +346,7 @@ export async function logout() {
 // 8. ALL PERIODS (for Riwayat tab MultiComboBox)
 // ----------------------------------------------------------------------
 export async function getAllPeriode() {
+  await assertAdmin();
   return await prisma.periode.findMany({
     orderBy: { createdAt: "desc" },
     select: { id: true, label: true, status: true, createdAt: true },
@@ -343,6 +357,7 @@ export async function getAllPeriode() {
 // 9. PERIOD COMPARISON DATA (for Riwayat tab chart)
 // ----------------------------------------------------------------------
 export async function getPeriodeComparisonData(periodeIds: string[]) {
+  await assertAdmin();
   if (!periodeIds.length) return [];
 
   const periods = await prisma.periode.findMany({
@@ -374,6 +389,7 @@ export async function getPeriodeComparisonData(periodeIds: string[]) {
 // 10. LAYANAN × PERIOD COMPARISON (for Riwayat tab layanan comparison)
 // ----------------------------------------------------------------------
 export async function getLayananPeriodeComparison(layananId: string, periodeIds: string[]) {
+  await assertAdmin();
   if (!layananId || !periodeIds.length) return { layananNama: "", data: [] };
 
   const [layanan, periods] = await Promise.all([
@@ -404,6 +420,7 @@ export async function getLayananPeriodeComparison(layananId: string, periodeIds:
 // 11. LAYANAN DETAIL WITH RESPONDENTS (for Layanan SKM tabs)
 // ----------------------------------------------------------------------
 export async function getLayananWithRespondents(layananId: string) {
+  await assertAdmin();
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
   const layanan = await prisma.layanan.findUnique({ where: { id: layananId } });
   if (!layanan || !activePeriod) return null;
@@ -455,6 +472,7 @@ export async function getLayananWithRespondents(layananId: string) {
 // 11. PEGAWAI DETAIL (for Data Pegawai tabs)
 // ----------------------------------------------------------------------
 export async function getPegawaiDetail(pegawaiId: string) {
+  await assertAdmin();
   const activePeriod = await prisma.periode.findFirst({ where: { status: "AKTIF" } });
   const pegawai = await prisma.pegawai.findUnique({ where: { id: pegawaiId } });
   if (!pegawai) return null;
@@ -522,6 +540,7 @@ export async function getPegawaiDetail(pegawaiId: string) {
 // 12. SERVICE IKM ACROSS PERIODS (for Riwayat tab)
 // ----------------------------------------------------------------------
 export async function getServiceIkmAcrossPeriods(layananId: string, periodeIds: string[]) {
+  await assertAdmin();
   if (!periodeIds.length) return [];
 
   const periods = await prisma.periode.findMany({
@@ -553,6 +572,7 @@ export async function getServiceIkmAcrossPeriods(layananId: string, periodeIds: 
 // 13. SERVICES AVAILABLE IN PERIODS (for Riwayat tree)
 // ----------------------------------------------------------------------
 export async function getServicesInPeriods(periodeIds: string[]) {
+  await assertAdmin();
   if (!periodeIds.length) return [];
 
   const respon = await prisma.respon.findMany({
@@ -568,6 +588,7 @@ export async function getServicesInPeriods(periodeIds: string[]) {
 // 14. LAYANAN WITH RESPONDENTS FOR SPECIFIC PERIOD
 // ----------------------------------------------------------------------
 export async function getLayananByPeriod(layananId: string, periodeId: string) {
+  await assertAdmin();
   const layanan = await prisma.layanan.findUnique({ where: { id: layananId } });
   const periode = await prisma.periode.findUnique({ where: { id: periodeId }, select: { id: true, label: true } });
   if (!layanan || !periode) return null;

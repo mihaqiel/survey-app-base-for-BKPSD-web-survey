@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/app/action/auth";
+import { isAdmin } from "@/lib/admin-auth";
 import { redirect, notFound } from "next/navigation";
 import PengaduanDetailClient from "./PengaduanDetailClient";
 
